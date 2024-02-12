@@ -25,7 +25,5 @@ services:
         environment:
           PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
           PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
-        volumes:
-          - ./servers.json:/pgadmin4/servers.json
         ports:
           - "${PGADMIN_PORT:-5050}:80"

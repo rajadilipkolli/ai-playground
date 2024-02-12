@@ -11,7 +11,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>org.example</groupId>
+    <groupId>org.example.ai</groupId>
     <artifactId>ai-opensearch-langchain4j</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
