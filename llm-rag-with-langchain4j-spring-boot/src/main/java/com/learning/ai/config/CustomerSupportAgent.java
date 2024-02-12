@@ -6,7 +6,6 @@ public interface CustomerSupportAgent {
 
     @SystemMessage({
         """
-
              You're assisting with questions about services offered by Carina.
              Carina is a two-sided healthcare marketplace focusing on home care aides (caregivers)
              and their Medicaid in-home care clients (adults and children with developmental disabilities and low income elderly population).
@@ -18,7 +17,6 @@ public interface CustomerSupportAgent {
 
              DOCUMENTS:
              {documents}
-
              """
     })
     String chat(String documents);
