@@ -1,7 +1,7 @@
 version: '3.7'
 services:
     postgres:
-        image: ankane/pgvector:v0.5.0
+        image: ankane/pgvector:v0.5.1
         restart: always
         environment:
           - POSTGRES_USER=postgres
