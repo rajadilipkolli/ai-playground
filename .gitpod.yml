@@ -4,8 +4,11 @@ image: gitpod/workspace-java-17
 ports:
   - port: 9200
     visibility: public
+  - port: 8080
+    visibility: public
   - port: 5050
     visibility: public
 vscode:
   extensions:
     - vscjava.vscode-java-pack
+    - Pivotal.vscode-boot-dev-pack
