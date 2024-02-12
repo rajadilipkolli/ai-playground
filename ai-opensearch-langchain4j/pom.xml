@@ -12,8 +12,8 @@
     </parent>
 
     <groupId>org.example</groupId>
-    <artifactId>ai-playground</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>ai-opensearch-langchain4j</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
