@@ -32,11 +32,11 @@ import org.springframework.core.io.ResourceLoader;
 public class AIConfig {
 
     @Bean
-    CustomerSupportAgent customerSupportAgent(
+    AICustomerSupportAgent customerSupportAgent(
             ChatLanguageModel chatLanguageModel,
             //                                              ChatTools bookingTools,
             ContentRetriever contentRetriever) {
-        return AiServices.builder(CustomerSupportAgent.class)
+        return AiServices.builder(AICustomerSupportAgent.class)
                 .chatLanguageModel(chatLanguageModel)
                 .chatMemory(MessageWindowChatMemory.withMaxMessages(20))
                 //                .tools(bookingTools)

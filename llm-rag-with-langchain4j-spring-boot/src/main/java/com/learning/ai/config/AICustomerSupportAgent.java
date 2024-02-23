@@ -1,8 +1,9 @@
 package com.learning.ai.config;
 
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.V;
 
-public interface CustomerSupportAgent {
+public interface AICustomerSupportAgent {
 
     @SystemMessage({
         """
@@ -19,5 +20,5 @@ public interface CustomerSupportAgent {
              {documents}
              """
     })
-    String chat(String documents);
+    String chat(@V("documents") String documents);
 }
