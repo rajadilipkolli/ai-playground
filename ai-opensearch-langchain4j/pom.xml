@@ -38,7 +38,7 @@
             <version>${langchain4j.version}</version>
         </dependency>
 
-       <dependency>
+       <!-- <dependency>
            <groupId>org.tinylog</groupId>
            <artifactId>tinylog-impl</artifactId>
            <version>${tinylog.version}</version>
@@ -47,18 +47,8 @@
            <groupId>org.tinylog</groupId>
            <artifactId>slf4j-tinylog</artifactId>
            <version>${tinylog.version}</version>
-       </dependency>
+       </dependency> -->
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
