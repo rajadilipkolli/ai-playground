@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <langchain4j.version>0.27.1</langchain4j.version>
+        <langchain4j.version>0.28.0</langchain4j.version>
         <spotless.version>2.43.0</spotless.version>
     </properties>
 
@@ -66,11 +66,11 @@
             <version>${langchain4j.version}</version>
         </dependency>
 
-		<dependency>
-			<groupId>dev.langchain4j</groupId>
-			<artifactId>langchain4j-document-parser-apache-pdfbox</artifactId>
-			<version>${langchain4j.version}</version>
-		</dependency>
+	<dependency>
+		<groupId>dev.langchain4j</groupId>
+		<artifactId>langchain4j-document-parser-apache-pdfbox</artifactId>
+		<version>${langchain4j.version}</version>
+	</dependency>
 
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -135,41 +135,4 @@
             </plugin>
         </plugins>
     </build>
-    <repositories>
-        <repository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>spring-snapshots</id>
-            <name>Spring Snapshots</name>
-            <url>https://repo.spring.io/snapshot</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-        <pluginRepository>
-            <id>spring-snapshots</id>
-            <name>Spring Snapshots</name>
-            <url>https://repo.spring.io/snapshot</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </pluginRepository>
-    </pluginRepositories>
-
 </project>
