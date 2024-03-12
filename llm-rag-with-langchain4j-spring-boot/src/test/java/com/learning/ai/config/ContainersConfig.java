@@ -7,6 +7,6 @@ import org.testcontainers.utility.DockerImageName;
 public interface ContainersConfig {
 
     @ServiceConnection
-    PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(
-            DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"));
+    PostgreSQLContainer<?> postgreSQLContainer =
+            new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg16"));
 }
