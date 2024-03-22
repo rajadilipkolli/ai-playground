@@ -29,35 +29,38 @@ public class LangChain4JAIServicesDemo {
                 .chatMemory(chatMemory)
                 .build();
 
-        PromptTemplate promptTemplate = PromptTemplate.from("What are all movies by rajamouli");
+        PromptTemplate promptTemplate = PromptTemplate.from("What are all IPL teams played by Ravichandran Ashwin?");
         String answer = chatAssistant.chat(promptTemplate.template());
         LOGGER.info("response :: {}", answer);
 
-        JokeAssistant jokeAssitant = AiServices.builder(JokeAssistant.class)
+        JokeAssistant jokeAssistant = AiServices.builder(JokeAssistant.class)
                 .chatLanguageModel(openAiChatModel)
                 .chatMemory(chatMemory)
                 .build();
 
-        answer = jokeAssitant.ask("Should we use microservices ?");
+        answer = jokeAssistant.ask("Should we use play cricket ?");
         LOGGER.info("response : {}", answer);
-        answer = jokeAssitant.chat("Should we use phyton ?");
+        answer = jokeAssistant.chat("Should we use red ball or white ball ?");
         LOGGER.info("response : {}", answer);
 
         String personInfo =
                 """
-                Sid, born on 20 March 1991, is a software developer working in India.
-                He has started his career as a Java developer on  20 June 2016 and worked with languages like Java, Angular, Html.
+                Dhoni, born on July 07, 1981, Ranchi, Bihar (now Jharkhand), is a former Indian Cricketer.
+                He has started his career as a wicket keeper for india on December 23, 2004 and played for INDIA, CSK, Asia XI, Raising Pune Super Gaints.
+                He has retired from all formats on 15th Aug 2020 while retired from Tests on 30 Dec 2015
 
-                He was certified in AWS Developer, OCJP professional
+                He has captained india in Tests, ODI and T20
                 """;
-        String summarized = chatAssistant.summarizeInFormat(personInfo);
-        LOGGER.info("response :: {}", summarized);
-        summarized = chatAssistant.summarizeInJson(personInfo);
+        //        String summarized = chatAssistant.summarize("Dhoni", personInfo);
+        //        LOGGER.info("response :: {}", summarized);
+        //        summarized = chatAssistant.summarizeInFormat(personInfo);
+        //        LOGGER.info("response :: {}", summarized);
+        String summarized = chatAssistant.summarizeInJson(personInfo);
         LOGGER.info("response :: {}", summarized);
         Person person = chatAssistant.summarizeAsBean(personInfo);
         LOGGER.info("response :: {}", person);
 
-        person = chatAssistant.summarize(new PersonSummaryPrompt("sid", personInfo));
+        person = chatAssistant.summarize(new PersonSummaryPrompt("Dhoni", personInfo));
         LOGGER.info("response :: {}", person);
     }
 }
