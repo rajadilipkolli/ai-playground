@@ -8,4 +8,4 @@ public record Person(
         LocalDate dateOfBirth,
         int experienceInYears,
         LocalDate dateOfJoining,
-        List<String> certifications) {}
+        List<String> captaincy) {}

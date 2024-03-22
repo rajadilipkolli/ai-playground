@@ -15,7 +15,7 @@ public interface ChatAssistant {
             Name : ...
             Data of Birth : ...
             Profession: ...
-            Certifications: ...
+            Captaincy: ...
 
             Use the following information:
             {{info}}
@@ -24,7 +24,7 @@ public interface ChatAssistant {
 
     @UserMessage(
             """
-            Summarize the following information in JSON format having name, date of birth, experience in years as of {{current_date}}, certifications as keys :
+            Summarize the following information in JSON format having name, date of birth, experience in years as of {{current_date}}, captaincy as keys :
             {{info}}
             """)
     String summarizeInJson(@V("info") String info);
