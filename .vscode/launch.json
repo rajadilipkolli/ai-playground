@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-TestPgVectorEmbeddingStoreExample<pgvector-springai>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.learning.ai.TestPgVectorEmbeddingStoreExample",
+            "projectName": "pgvector-springai",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-PgVectorEmbeddingStoreExample<pgvector-springai>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.learning.ai.PgVectorEmbeddingStoreExample",
+            "projectName": "pgvector-springai",
+            "args": "--spring.profiles.active=local",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
