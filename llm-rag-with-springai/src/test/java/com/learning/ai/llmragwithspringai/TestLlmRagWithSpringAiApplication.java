@@ -22,9 +22,7 @@ public class TestLlmRagWithSpringAiApplication {
 
 	@Bean
 	OllamaContainer ollama(DynamicPropertyRegistry properties) throws UnsupportedOperationException, IOException, InterruptedException {
-		OllamaContainer ollama = new OllamaContainer("ollama/ollama");
-		ollama.start();
-		ollama.execInContainer("ollama", "pull", "mistral");
+		OllamaContainer ollama = new OllamaContainer(DockerImageName.parse("ghcr.io/thomasvitale/ollama-llama2").asCompatibleSubstituteFor("ollama/ollama"));
 		properties.add("spring.ai.ollama.base-url", ollama::getEndpoint);
 		return ollama;
 	}
