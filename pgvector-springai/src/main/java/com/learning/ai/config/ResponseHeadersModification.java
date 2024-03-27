@@ -26,7 +26,7 @@ public class ResponseHeadersModification {
         });
     }
 
-    private class CustomClientHttpResponse implements ClientHttpResponse {
+    private static class CustomClientHttpResponse implements ClientHttpResponse {
 
         private final ClientHttpResponse originalResponse;
         private final HttpHeaders headers;

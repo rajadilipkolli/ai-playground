@@ -19,6 +19,16 @@
             "projectName": "pgvector-springai",
             "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-PgVectorEmbeddingStoreExample<pgvector-langchain4j>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.learning.ai.PgVectorEmbeddingStoreExample",
+            "projectName": "pgvector-langchain4j",
+            "args": "--spring.profiles.active=local",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

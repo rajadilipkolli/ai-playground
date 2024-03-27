@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class Initializer implements CommandLineRunner {
 
-    final PgVectorStoreService pgVectorStoreService;
+    private final PgVectorStoreService pgVectorStoreService;
 
     public Initializer(PgVectorStoreService pgVectorStoreService) {
         this.pgVectorStoreService = pgVectorStoreService;

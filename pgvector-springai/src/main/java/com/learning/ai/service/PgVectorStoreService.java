@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class PgVectorStoreService {
 
-    private final Logger log = LoggerFactory.getLogger(PgVectorStoreService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PgVectorStoreService.class);
 
     private final VectorStore vectorStore;
 
@@ -35,7 +35,7 @@ public class PgVectorStoreService {
         String relevantData =
                 similarDocuments.stream().map(Document::getContent).collect(Collectors.joining(System.lineSeparator()));
 
-        log.info("response from vectorStore :{} ", relevantData);
+        LOGGER.info("response from vectorStore : {} ", relevantData);
         return new AIChatResponse(relevantData);
     }
 }
