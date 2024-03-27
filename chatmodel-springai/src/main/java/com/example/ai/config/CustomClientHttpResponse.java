@@ -1,5 +1,8 @@
 package com.example.ai.config;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -7,14 +10,11 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-
 public class CustomClientHttpResponse implements ClientHttpResponse {
 
     private final ClientHttpResponse originalResponse;
     private final HttpHeaders headers;
+
     public CustomClientHttpResponse(ClientHttpResponse originalResponse) {
         this.originalResponse = originalResponse;
         MultiValueMap<String, String> modifiedHeaders = new LinkedMultiValueMap<>(originalResponse.getHeaders());
@@ -33,9 +33,7 @@ public class CustomClientHttpResponse implements ClientHttpResponse {
     }
 
     @Override
-    public void close() {
-
-    }
+    public void close() {}
 
     @Override
     public InputStream getBody() throws IOException {

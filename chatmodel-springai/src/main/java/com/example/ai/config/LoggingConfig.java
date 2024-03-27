@@ -1,5 +1,9 @@
 package com.example.ai.config;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -13,11 +17,6 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestClient;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(value = "spring.ai.openai.api-key", havingValue = "demo")
 public class LoggingConfig {
@@ -26,13 +25,15 @@ public class LoggingConfig {
 
     @Bean
     RestClient.Builder restClientBuilder() {
-        return RestClient.builder().requestFactory(new BufferingClientHttpRequestFactory(new HttpComponentsClientHttpRequestFactory()))
+        return RestClient.builder()
+                .requestFactory(new BufferingClientHttpRequestFactory(new HttpComponentsClientHttpRequestFactory()))
                 .requestInterceptor((request, body, execution) -> {
                     logRequest(request, body);
                     ClientHttpResponse response = execution.execute(request, body);
                     logResponse(response);
                     return new CustomClientHttpResponse(response);
-                }).defaultHeaders(httpHeaders -> {
+                })
+                .defaultHeaders(httpHeaders -> {
                     httpHeaders.setContentType(MediaType.APPLICATION_JSON);
                     httpHeaders.setAccept(List.of(MediaType.ALL));
                 });
@@ -55,6 +56,5 @@ public class LoggingConfig {
         log.info("Headers     : {}", request.getHeaders());
         log.info("Request body: {}", new String(body, StandardCharsets.UTF_8));
         log.info("==========================request end================================================");
-
     }
 }

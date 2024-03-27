@@ -1,6 +1,8 @@
 package com.example.ai.controller;
 
 import com.example.ai.model.response.AIChatResponse;
+import java.util.List;
+import java.util.Map;
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -11,9 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai")
@@ -26,7 +25,7 @@ public class ChatController {
     }
 
     @GetMapping("/chat")
-    Map<String,String> chat(@RequestParam String question) {
+    Map<String, String> chat(@RequestParam String question) {
         var response = chatClient.call(question);
         return Map.of("question", question, "answer", response);
     }
