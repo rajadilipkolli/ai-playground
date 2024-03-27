@@ -9,6 +9,7 @@ import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.embedding.AllMiniLmL6V2EmbeddingModel;
@@ -34,15 +35,26 @@ public class AIConfig {
     @Bean
     AICustomerSupportAgent customerSupportAgent(
             ChatLanguageModel chatLanguageModel,
-            //                                              ChatTools bookingTools,
-            ContentRetriever contentRetriever) {
+            ChatTools chatAssistantTools,
+            ContentRetriever contentRetriever,
+            ChatMemory chatMemory) {
         return AiServices.builder(AICustomerSupportAgent.class)
                 .chatLanguageModel(chatLanguageModel)
-                .chatMemory(MessageWindowChatMemory.withMaxMessages(20))
-                //                .tools(bookingTools)
+                .chatMemory(chatMemory)
+                .tools(chatAssistantTools)
                 .contentRetriever(contentRetriever)
                 .build();
     }
+
+    @Bean
+    ChatMemory chatMemory() {
+        return MessageWindowChatMemory.withMaxMessages(15);
+    }
+
+    //    @Bean
+    //    ChatMemory chatMemory(Tokenizer tokenizer) {
+    //        return TokenWindowChatMemory.withMaxTokens(1000, tokenizer);
+    //    }
 
     @Bean
     ContentRetriever contentRetriever(EmbeddingStore<TextSegment> embeddingStore, EmbeddingModel embeddingModel) {
