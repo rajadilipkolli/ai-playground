@@ -1,5 +1,6 @@
 package com.example.ai.controller;
 
+import com.example.ai.model.response.AIChatResponse;
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -31,21 +32,21 @@ public class ChatController {
     }
 
     @GetMapping("/chat-with-prompt")
-    Map<String,String> chatWithPrompt(@RequestParam String subject) {
+    AIChatResponse chatWithPrompt(@RequestParam String subject) {
         PromptTemplate promptTemplate = new PromptTemplate("Tell me a joke about {subject}");
         Prompt prompt = promptTemplate.create(Map.of("subject", subject));
         ChatResponse response = chatClient.call(prompt);
         String answer = response.getResult().getOutput().getContent();
-        return Map.of( "answer", answer);
+        return new AIChatResponse(answer);
     }
 
     @GetMapping("/chat-with-system-prompt")
-    Map<String,String> chatWithSystemPrompt(@RequestParam String subject) {
+    AIChatResponse chatWithSystemPrompt(@RequestParam String subject) {
         SystemMessage systemMessage = new SystemMessage("You are a sarcastic and funny chatbot");
         UserMessage userMessage = new UserMessage("Tell me a joke about " + subject);
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
         ChatResponse response = chatClient.call(prompt);
         String answer = response.getResult().getOutput().getContent();
-        return Map.of( "answer", answer);
+        return new AIChatResponse(answer);
     }
 }
