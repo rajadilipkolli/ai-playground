@@ -12,7 +12,7 @@
     </parent>
 
     <groupId>org.example.ai</groupId>
-    <artifactId>pgvector-langchain4j</artifactId>
+    <artifactId>pgvector-springai</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
