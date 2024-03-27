@@ -8,7 +8,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
-public class TestLlmRagWithSpringaiApplication {
+public class TestLlmRagWithSpringAiApplication {
 
 	@Bean
 	@ServiceConnection
@@ -17,7 +17,7 @@ public class TestLlmRagWithSpringaiApplication {
 	}
 
 	public static void main(String[] args) {
-		SpringApplication.from(LlmRagWithSpringaiApplication::main).with(TestLlmRagWithSpringaiApplication.class).run(args);
+		SpringApplication.from(LlmRagWithSpringAiApplication::main).with(TestLlmRagWithSpringAiApplication.class).run(args);
 	}
 
 }
