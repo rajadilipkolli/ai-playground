@@ -1,15 +1,19 @@
 package com.learning.ai.llmragwithspringai.controller;
 
 import com.learning.ai.llmragwithspringai.service.AIChatService;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import java.util.Map;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/ai")
+@Validated
 public class AiController {
 
     private final AIChatService aiChatService;
@@ -19,7 +23,12 @@ public class AiController {
     }
 
     @GetMapping("/chat")
-    Map<String, String> ragService(@RequestParam String question) {
+    Map<String, String> ragService(
+            @RequestParam
+                    @NotBlank(message = "Query cannot be empty")
+                    @Size(max = 255, message = "Query exceeds maximum length")
+                    @Pattern(regexp = "^[a-zA-Z0-9 ]*$", message = "Invalid characters in query")
+                    String question) {
         String chatResponse = aiChatService.chat(question);
         return Map.of("response", chatResponse);
     }

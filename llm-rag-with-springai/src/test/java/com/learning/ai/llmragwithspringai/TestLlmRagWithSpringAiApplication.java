@@ -10,14 +10,15 @@ import org.testcontainers.utility.DockerImageName;
 @TestConfiguration(proxyBeanMethods = false)
 public class TestLlmRagWithSpringAiApplication {
 
-	@Bean
-	@ServiceConnection
-	PostgreSQLContainer<?> pgvectorContainer() {
-		return new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg16"));
-	}
+    @Bean
+    @ServiceConnection
+    PostgreSQLContainer<?> pgvectorContainer() {
+        return new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg16"));
+    }
 
-	public static void main(String[] args) {
-		SpringApplication.from(LlmRagWithSpringAiApplication::main).with(TestLlmRagWithSpringAiApplication.class).run(args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.from(LlmRagWithSpringAiApplication::main)
+                .with(TestLlmRagWithSpringAiApplication.class)
+                .run(args);
+    }
 }

@@ -31,7 +31,8 @@ public class AppConfig {
         return args -> {
             log.info("Loading file(s) as Documents");
             PdfDocumentReaderConfig config = PdfDocumentReaderConfig.builder()
-                    .withPageExtractedTextFormatter(new ExtractedTextFormatter.Builder().withNumberOfBottomTextLinesToDelete(3)
+                    .withPageExtractedTextFormatter(new ExtractedTextFormatter.Builder()
+                            .withNumberOfBottomTextLinesToDelete(3)
                             .withNumberOfTopPagesToSkipBeforeDelete(1)
                             .build())
                     .withPagesPerDocument(1)
@@ -42,5 +43,4 @@ public class AppConfig {
             log.info("Loaded document to database.");
         };
     }
-
 }
