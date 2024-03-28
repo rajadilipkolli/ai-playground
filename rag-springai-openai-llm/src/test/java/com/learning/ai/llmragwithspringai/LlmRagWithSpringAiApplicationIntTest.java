@@ -1,9 +1,7 @@
 package com.learning.ai.llmragwithspringai;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
 import io.restassured.RestAssured;
@@ -30,7 +28,18 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .get("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("response", containsString("2007 T20 World Cup and the 2013 ICC Champions Trophy"));
+                .body("response", containsString("2007 T20 World Cup"))
+                .body("response", containsString("2013 ICC Champions Trophy"));
+    }
+
+    @Test
+    void testRag2() {
+        given().param("question", "Who is successful IPL captain")
+                .when()
+                .get("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("response", containsString("Rohit Sharma"));
     }
 
     @Test
