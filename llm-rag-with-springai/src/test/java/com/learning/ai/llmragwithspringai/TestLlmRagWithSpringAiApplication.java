@@ -1,7 +1,5 @@
 package com.learning.ai.llmragwithspringai;
 
-import java.io.IOException;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -14,14 +12,14 @@ import org.testcontainers.utility.DockerImageName;
 @TestConfiguration(proxyBeanMethods = false)
 public class TestLlmRagWithSpringAiApplication {
 
-
     @Bean
-    OllamaContainer ollama(DynamicPropertyRegistry properties) throws UnsupportedOperationException, IOException, InterruptedException {
-      OllamaContainer ollama = new OllamaContainer(DockerImageName.parse("ghcr.io/thomasvitale/ollama-llama2").asCompatibleSubstituteFor("ollama/ollama"));
-      properties.add("spring.ai.ollama.base-url", ollama::getEndpoint);
-      return ollama;
+    OllamaContainer ollama(DynamicPropertyRegistry properties) {
+        OllamaContainer ollama = new OllamaContainer(
+                DockerImageName.parse("ghcr.io/thomasvitale/ollama-llama2").asCompatibleSubstituteFor("ollama/ollama"));
+        properties.add("spring.ai.ollama.base-url", ollama::getEndpoint);
+        return ollama;
     }
-  
+
     @Bean
     @ServiceConnection
     PostgreSQLContainer<?> pgvectorContainer() {
