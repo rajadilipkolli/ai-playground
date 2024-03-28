@@ -25,7 +25,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
 
     @Test
     void testRag() {
-        given().param("question", "What trophies did Rohit won")
+        given().param("question", "Is Rohit Sharma batsman")
                 .when()
                 .get("/api/ai/chat")
                 .then()
