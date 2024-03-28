@@ -1,13 +1,13 @@
-name: llm-rag-with-springai CI Build
+name: rag-springai-openai-llm CI Build
 
 on:
   push:
     paths:
-      - "llm-rag-with-springai/**"
+      - "rag-springai-openai-llm/**"
     branches: [main]
   pull_request:
     paths:
-      - "llm-rag-with-springai/**"
+      - "rag-springai-openai-llm/**"
     types:
       - opened
       - synchronize
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: llm-rag-with-springai
+        working-directory: rag-springai-openai-llm
     strategy:
       matrix:
         distribution: [ 'temurin' ]
