@@ -1,5 +1,6 @@
 package com.learning.ai.llmragwithspringai.config;
 
+import jakarta.validation.ConstraintViolationException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +34,24 @@ public class GlobalExceptionHandler {
                             fieldError.getRejectedValue(),
                             Objects.requireNonNull(fieldError.getDefaultMessage(), ""));
                 })
+                .sorted(Comparator.comparing(ApiValidationError::field))
+                .toList();
+        problemDetail.setProperty("violations", validationErrorsList);
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    ProblemDetail onException(ConstraintViolationException constraintViolationException) {
+        ProblemDetail problemDetail =
+                ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(400), "Invalid request content.");
+        problemDetail.setTitle("Constraint Violation");
+        List<ApiValidationError> validationErrorsList = constraintViolationException.getConstraintViolations().stream()
+                .map(constraintViolation -> new ApiValidationError(
+                        constraintViolation.getMessage(),
+                        constraintViolation.getPropertyPath().toString(),
+                        constraintViolation.getInvalidValue(),
+                        constraintViolation.getMessage()))
                 .sorted(Comparator.comparing(ApiValidationError::field))
                 .toList();
         problemDetail.setProperty("violations", validationErrorsList);
