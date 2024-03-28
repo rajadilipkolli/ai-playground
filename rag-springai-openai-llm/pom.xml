@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.learning.ai</groupId>
-    <artifactId>llm-rag-with-springai</artifactId>
+    <artifactId>rag-springai-openai-llm</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>llm-rag-with-springai</name>
+    <name>rag-springai-openai-llm</name>
     <description>Demo project for Spring AI</description>
 
     <properties>
