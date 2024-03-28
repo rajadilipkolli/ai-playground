@@ -1,10 +1,11 @@
 package com.learning.ai;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.notNullValue;
 
+import com.learning.ai.domain.request.AIChatRequest;
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import io.restassured.http.Method;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,15 +27,22 @@ class LLMRagWithSpringBootTest {
     }
 
     @Test
-    void whenRequestGet_thenOK() {
-        when().request(Method.GET, "/api/chat").then().statusCode(HttpStatus.SC_OK);
+    void whenRequestPost_thenOK() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest(
+                        "what should I know about the transition to consumer direct care network washington?"))
+                .when()
+                .request(Method.POST, "/api/ai/chat")
+                .then()
+                .statusCode(HttpStatus.SC_OK);
     }
 
     @Test
     void whenRequestGetTime_thenOK() {
-        given().param("message", "What is the time now?")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("What is the time now?"))
                 .when()
-                .request(Method.GET, "/api/chat")
+                .request(Method.POST, "/api/ai/chat")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .body("response", notNullValue());

@@ -1,14 +1,18 @@
 package com.learning.ai.controller;
 
 import com.learning.ai.config.AICustomerSupportAgent;
-import com.learning.ai.domain.AICustomerSupportResponse;
-import org.springframework.web.bind.annotation.GetMapping;
+import com.learning.ai.domain.request.AIChatRequest;
+import com.learning.ai.domain.response.AICustomerSupportResponse;
+import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/ai")
+@Validated
 public class CustomerSupportController {
 
     private final AICustomerSupportAgent aiCustomerSupportAgent;
@@ -17,13 +21,8 @@ public class CustomerSupportController {
         this.aiCustomerSupportAgent = aiCustomerSupportAgent;
     }
 
-    @GetMapping("/chat")
-    public AICustomerSupportResponse customerSupportChat(
-            @RequestParam(
-                            value = "message",
-                            defaultValue =
-                                    "what should I know about the transition to consumer direct care network washington?")
-                    String message) {
-        return aiCustomerSupportAgent.chat(message);
+    @PostMapping("/chat")
+    public AICustomerSupportResponse customerSupportChat(@RequestBody @Valid AIChatRequest aiChatRequest) {
+        return aiCustomerSupportAgent.chat(aiChatRequest.question());
     }
 }
