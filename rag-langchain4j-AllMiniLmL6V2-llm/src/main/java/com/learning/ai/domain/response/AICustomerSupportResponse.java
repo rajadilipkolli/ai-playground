@@ -1,3 +1,5 @@
 package com.learning.ai.domain.response;
 
-public record AICustomerSupportResponse(String response) {}
+import java.util.List;
+
+public record AICustomerSupportResponse(String name, int age, List<String> records, List<String> trophiesWon) {}
