@@ -14,21 +14,23 @@ import org.testcontainers.utility.DockerImageName;
 @TestConfiguration(proxyBeanMethods = false)
 public class TestLlmRagWithSpringAiApplication {
 
-	@Bean
-	@ServiceConnection
-	PostgreSQLContainer<?> pgvectorContainer() {
-		return new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg16"));
-	}
 
-	@Bean
-	OllamaContainer ollama(DynamicPropertyRegistry properties) throws UnsupportedOperationException, IOException, InterruptedException {
-		OllamaContainer ollama = new OllamaContainer(DockerImageName.parse("ghcr.io/thomasvitale/ollama-llama2").asCompatibleSubstituteFor("ollama/ollama"));
-		properties.add("spring.ai.ollama.base-url", ollama::getEndpoint);
-		return ollama;
-	}
+    @Bean
+    OllamaContainer ollama(DynamicPropertyRegistry properties) throws UnsupportedOperationException, IOException, InterruptedException {
+      OllamaContainer ollama = new OllamaContainer(DockerImageName.parse("ghcr.io/thomasvitale/ollama-llama2").asCompatibleSubstituteFor("ollama/ollama"));
+      properties.add("spring.ai.ollama.base-url", ollama::getEndpoint);
+      return ollama;
+    }
+  
+    @Bean
+    @ServiceConnection
+    PostgreSQLContainer<?> pgvectorContainer() {
+        return new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg16"));
+    }
 
-	public static void main(String[] args) {
-		SpringApplication.from(LlmRagWithSpringAiApplication::main).with(TestLlmRagWithSpringAiApplication.class).run(args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.from(LlmRagWithSpringAiApplication::main)
+                .with(TestLlmRagWithSpringAiApplication.class)
+                .run(args);
+    }
 }
