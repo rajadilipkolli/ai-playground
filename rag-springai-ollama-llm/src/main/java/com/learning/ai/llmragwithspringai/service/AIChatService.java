@@ -3,6 +3,8 @@ package com.learning.ai.llmragwithspringai.service;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.messages.Message;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AIChatService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AIChatService.class);
 
     private static final String template =
             """
@@ -44,18 +48,22 @@ public class AIChatService {
         this.vectorStore = vectorStore;
     }
 
-    public String chat(String message) {
+    public String chat(String query) {
         // Querying the VectorStore using natural language looking for the information about info asked.
-        List<Document> listOfSimilarDocuments = this.vectorStore.similaritySearch(message);
+        LOGGER.info("Querying vector store with query :{}", query);
+        List<Document> listOfSimilarDocuments = this.vectorStore.similaritySearch(query);
         String documents = listOfSimilarDocuments.stream()
                 .map(Document::getContent)
                 .collect(Collectors.joining(System.lineSeparator()));
+        LOGGER.info("Response from vector store :{}", documents);
         // Constructing the systemMessage to indicate the AI model to use the passed information
         // to answer the question.
         Message systemMessage = new SystemPromptTemplate(template).createMessage(Map.of("documents", documents));
-        UserMessage userMessage = new UserMessage(message);
+        UserMessage userMessage = new UserMessage(query);
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
+        LOGGER.info("Calling ai with prompt :{}", prompt);
         ChatResponse aiResponse = aiClient.call(prompt);
+        LOGGER.info("Response received from call :{}", aiResponse);
         return aiResponse.getResult().getOutput().getContent();
     }
 }
