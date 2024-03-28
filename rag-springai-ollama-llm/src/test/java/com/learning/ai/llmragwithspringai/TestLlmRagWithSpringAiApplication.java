@@ -16,7 +16,7 @@ public class TestLlmRagWithSpringAiApplication {
 
     @Bean
     OllamaContainer ollama(DynamicPropertyRegistry properties) {
-        OllamaContainer ollama = new OllamaContainer(DockerImageName.parse("langchain4j/ollama-orca-mini:latest")
+        OllamaContainer ollama = new OllamaContainer(DockerImageName.parse("langchain4j/ollama-mistral:latest")
                 .asCompatibleSubstituteFor("ollama/ollama"));
         properties.add("spring.ai.ollama.base-url", ollama::getEndpoint);
         return ollama;
