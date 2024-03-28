@@ -85,8 +85,13 @@ public class AIConfig {
                 .build();
 
         // 2. Load an example document (medicaid-wa-faqs.pdf)
-        Resource pdfResource = resourceLoader.getResource("classpath:medicaid-wa-faqs.pdf");
+        Resource pdfResource = resourceLoader.getResource("classpath:Rohit.pdf");
         Document document = loadDocument(pdfResource.getFile().toPath(), new ApachePdfBoxDocumentParser());
+
+        //        URL url = new URL("https://en.wikipedia.org/wiki/MS_Dhoni");
+        //        Document htmlDocument = UrlDocumentLoader.load(url, new TextDocumentParser());
+        //        HtmlTextExtractor transformer = new HtmlTextExtractor(null, null, true);
+        //        Document dhoniDocument = transformer.transform(htmlDocument);
 
         // 3. Split the document into segments 500 tokens each
         // 4. Convert segments into embeddings
@@ -99,7 +104,7 @@ public class AIConfig {
                 .embeddingModel(embeddingModel)
                 .embeddingStore(embeddingStore)
                 .build();
-        ingestor.ingest(document);
+        ingestor.ingest(document /*, dhoniDocument*/);
 
         return embeddingStore;
     }
