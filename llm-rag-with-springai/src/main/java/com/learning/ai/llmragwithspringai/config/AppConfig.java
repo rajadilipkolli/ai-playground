@@ -18,7 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class AppConfig {
     private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
 
-    @Value("classpath:medicaid-wa-faqs.pdf")
+    @Value("classpath:Rohit_Gurunath_Sharma.pdf")
     private Resource resource;
 
     @Bean
@@ -39,6 +39,7 @@ public class AppConfig {
             PagePdfDocumentReader pagePdfDocumentReader = new PagePdfDocumentReader(resource, config);
             template.update("delete from vector_store");
             vectorStore.accept(tokenTextSplitter.apply(pagePdfDocumentReader.get()));
+            log.info("Loaded document to database.");
         };
     }
 

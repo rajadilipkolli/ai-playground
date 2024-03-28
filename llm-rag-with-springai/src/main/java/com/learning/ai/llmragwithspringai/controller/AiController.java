@@ -19,8 +19,8 @@ public class AiController {
     }
 
     @GetMapping("/chat")
-    Map<String, String> ragService(@RequestParam String message) {
-        String chatResponse = aiChatService.chat(message);
+    Map<String, String> ragService(@RequestParam String question) {
+        String chatResponse = aiChatService.chat(question);
         return Map.of("response", chatResponse);
     }
 }
