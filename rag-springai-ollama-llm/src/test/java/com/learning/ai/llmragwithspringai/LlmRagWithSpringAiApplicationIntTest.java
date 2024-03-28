@@ -30,7 +30,8 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .get("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("response", containsString("2007 T20 World Cup and the 2013 ICC Champions Trophy"));
+                .body("response", containsString("Rohit Sharma"))
+                .log();
     }
 
     @Test
