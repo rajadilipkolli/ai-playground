@@ -1,5 +1,8 @@
 package com.learning.ai.llmragwithspringai.config;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,10 +13,6 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(value = "spring.ai.openai.api-key", havingValue = "demo")
