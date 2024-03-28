@@ -1,6 +1,6 @@
 package com.learning.ai.config;
 
-import com.learning.ai.domain.AICustomerSupportResponse;
+import com.learning.ai.domain.response.AICustomerSupportResponse;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.V;
 

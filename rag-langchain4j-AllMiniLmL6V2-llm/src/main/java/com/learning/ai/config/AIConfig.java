@@ -2,7 +2,6 @@ package com.learning.ai.config;
 
 import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocument;
 
-import com.zaxxer.hikari.HikariDataSource;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
@@ -22,7 +21,7 @@ import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 import java.io.IOException;
 import java.net.URI;
-import javax.sql.DataSource;
+import org.springframework.boot.autoconfigure.jdbc.JdbcConnectionDetails;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -62,13 +61,13 @@ public class AIConfig {
 
     @Bean
     EmbeddingStore<TextSegment> embeddingStore(
-            EmbeddingModel embeddingModel, ResourceLoader resourceLoader, DataSource dataSource) throws IOException {
+            EmbeddingModel embeddingModel, ResourceLoader resourceLoader, JdbcConnectionDetails jdbcConnectionDetails)
+            throws IOException {
 
         // Normally, you would already have your embedding store filled with your data.
         // However, for the purpose of this demonstration, we will:
 
-        HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
-        String jdbcUrl = hikariDataSource.getJdbcUrl();
+        String jdbcUrl = jdbcConnectionDetails.getJdbcUrl();
         URI uri = URI.create(jdbcUrl.substring(5));
         String host = uri.getHost();
         int dbPort = uri.getPort();
@@ -78,8 +77,8 @@ public class AIConfig {
         EmbeddingStore<TextSegment> embeddingStore = PgVectorEmbeddingStore.builder()
                 .host(host)
                 .port(dbPort != -1 ? dbPort : 5432)
-                .user(hikariDataSource.getUsername())
-                .password(hikariDataSource.getPassword())
+                .user(jdbcConnectionDetails.getUsername())
+                .password(jdbcConnectionDetails.getPassword())
                 .database(path.substring(1))
                 .table("ai_vector_store")
                 .dimension(384)

@@ -4,11 +4,15 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
+import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.MediaType;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
@@ -23,30 +27,37 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
 
     @Test
     void testRag() {
-        given().param("question", "What trophies did Rohit won")
+        given().contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body(new AIChatRequest("What trophies did Rohit won?"))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .body("response", containsString("2007 T20 World Cup"))
-                .body("response", containsString("2013 ICC Champions Trophy"));
+                .body("response", containsString("2013 ICC Champions Trophy"))
+                .log()
+                .all();
     }
 
     @Test
     void testRag2() {
-        given().param("question", "Who is successful IPL captain")
+        given().contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body(new AIChatRequest("Who is successful IPL captain?"))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("response", containsString("Rohit Sharma"));
+                .body("response", containsString("Rohit Sharma"))
+                .log()
+                .all();
     }
 
     @Test
     void testEmptyQuery() {
-        given().param("question", "")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest(""))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
                 .statusCode(400)
                 .header("Content-Type", is("application/problem+json"))
@@ -54,16 +65,19 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body("instance", is("/api/ai/chat"))
                 .body("title", is("Constraint Violation"))
                 .body("violations", hasSize(1))
-                .body("violations[0].field", is("ragService.question"))
-                .body("violations[0].message", containsString("Query cannot be empty"));
+                .body("violations[0].field", is("question"))
+                .body("violations[0].message", containsString("Query cannot be empty"))
+                .log()
+                .all();
     }
 
     @Test
     void testLongQueryString() {
         String longQuery = "a".repeat(1000); // Example of a very long query string
-        given().param("question", longQuery)
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest(longQuery))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
                 .statusCode(400)
                 .header("Content-Type", is("application/problem+json"))
@@ -71,15 +85,18 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body("instance", is("/api/ai/chat"))
                 .body("title", is("Constraint Violation"))
                 .body("violations", hasSize(1))
-                .body("violations[0].field", is("ragService.question"))
-                .body("violations[0].message", containsString("Query exceeds maximum length"));
+                .body("violations[0].field", is("question"))
+                .body("violations[0].message", containsString("Query exceeds maximum length"))
+                .log()
+                .all();
     }
 
     @Test
     void testSpecialCharactersInQuery() {
-        given().param("question", "@#$%^&*()")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("@#$%^&*()"))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
                 .statusCode(400)
                 .header("Content-Type", is("application/problem+json"))
@@ -87,8 +104,9 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body("instance", is("/api/ai/chat"))
                 .body("title", is("Constraint Violation"))
                 .body("violations", hasSize(1))
-                .body("violations[0].field", is("ragService.question"))
+                .body("violations[0].field", is("question"))
                 .body("violations[0].message", containsString("Invalid characters in query"))
-                .log();
+                .log()
+                .all();
     }
 }

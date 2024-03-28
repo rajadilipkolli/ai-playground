@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.example.ai</groupId>
-    <artifactId>llm-rag-with-langchain4j-spring-boot</artifactId>
+    <artifactId>rag-langchain4j-AllMiniLmL6V2-llm</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>llm-rag-with-langchain4j-spring-boot</name>
+    <name>rag-langchain4j-AllMiniLmL6V2-llm</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
