@@ -12,7 +12,7 @@ public class ChatTools {
     /**
      * This tool is available to {@link AICustomerSupportAgent}
      */
-    @Tool("chatAssistantTools")
+    @Tool(name = "currentTime", value = "the current time is")
     String currentTime() {
         log.info("Inside ChatTools");
         return LocalTime.now().toString();

@@ -2,6 +2,7 @@ package com.learning.ai.config;
 
 import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocument;
 
+import com.learning.ai.service.AICustomerSupportAgent;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
@@ -60,8 +61,16 @@ public class AIConfig {
     }
 
     @Bean
+    OpenAiTokenizer openAiTokenizer() {
+        return new OpenAiTokenizer(OpenAiChatModelName.GPT_3_5_TURBO.toString());
+    }
+
+    @Bean
     EmbeddingStore<TextSegment> embeddingStore(
-            EmbeddingModel embeddingModel, ResourceLoader resourceLoader, JdbcConnectionDetails jdbcConnectionDetails)
+            EmbeddingModel embeddingModel,
+            ResourceLoader resourceLoader,
+            JdbcConnectionDetails jdbcConnectionDetails,
+            OpenAiTokenizer openAiTokenizer)
             throws IOException {
 
         // Normally, you would already have your embedding store filled with your data.
@@ -81,6 +90,7 @@ public class AIConfig {
                 .password(jdbcConnectionDetails.getPassword())
                 .database(path.substring(1))
                 .table("ai_vector_store")
+                .dropTableFirst(true)
                 .dimension(384)
                 .build();
 
@@ -97,8 +107,7 @@ public class AIConfig {
         // 4. Convert segments into embeddings
         // 5. Store embeddings into embedding store
         // All this can be done manually, but we will use EmbeddingStoreIngestor to automate this:
-        DocumentSplitter documentSplitter =
-                DocumentSplitters.recursive(500, 0, new OpenAiTokenizer(OpenAiChatModelName.GPT_3_5_TURBO.toString()));
+        DocumentSplitter documentSplitter = DocumentSplitters.recursive(500, 0, openAiTokenizer);
         EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
                 .documentSplitter(documentSplitter)
                 .embeddingModel(embeddingModel)

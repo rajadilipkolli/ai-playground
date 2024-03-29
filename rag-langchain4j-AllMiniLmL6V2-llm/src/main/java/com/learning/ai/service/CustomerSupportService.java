@@ -1,6 +1,5 @@
 package com.learning.ai.service;
 
-import com.learning.ai.config.AICustomerSupportAgent;
 import com.learning.ai.domain.response.AICustomerSupportResponse;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
