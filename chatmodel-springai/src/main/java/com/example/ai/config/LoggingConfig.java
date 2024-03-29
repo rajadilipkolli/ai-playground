@@ -21,7 +21,7 @@ import org.springframework.web.client.RestClient;
 @ConditionalOnProperty(value = "spring.ai.openai.api-key", havingValue = "demo")
 public class LoggingConfig {
 
-    private final Logger log = LoggerFactory.getLogger(LoggingConfig.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingConfig.class);
 
     @Bean
     RestClient.Builder restClientBuilder() {
@@ -40,21 +40,21 @@ public class LoggingConfig {
     }
 
     private void logResponse(ClientHttpResponse response) throws IOException {
-        log.info("============================response begin==========================================");
-        log.info("Status code  : {}", response.getStatusCode());
-        log.info("Status text  : {}", response.getStatusText());
-        log.info("Headers      : {}", response.getHeaders());
-        log.info("Response body: {}", StreamUtils.copyToString(response.getBody(), Charset.defaultCharset()));
-        log.info("=======================response end=================================================");
+        LOGGER.info("============================response begin==========================================");
+        LOGGER.info("Status code  : {}", response.getStatusCode());
+        LOGGER.info("Status text  : {}", response.getStatusText());
+        LOGGER.info("Headers      : {}", response.getHeaders());
+        LOGGER.info("Response body: {}", StreamUtils.copyToString(response.getBody(), Charset.defaultCharset()));
+        LOGGER.info("=======================response end=================================================");
     }
 
     private void logRequest(HttpRequest request, byte[] body) {
 
-        log.info("===========================request begin================================================");
-        log.info("URI         : {}", request.getURI());
-        log.info("Method      : {}", request.getMethod());
-        log.info("Headers     : {}", request.getHeaders());
-        log.info("Request body: {}", new String(body, StandardCharsets.UTF_8));
-        log.info("==========================request end================================================");
+        LOGGER.info("===========================request begin================================================");
+        LOGGER.info("URI         : {}", request.getURI());
+        LOGGER.info("Method      : {}", request.getMethod());
+        LOGGER.info("Headers     : {}", request.getHeaders());
+        LOGGER.info("Request body: {}", new String(body, StandardCharsets.UTF_8));
+        LOGGER.info("==========================request end================================================");
     }
 }
