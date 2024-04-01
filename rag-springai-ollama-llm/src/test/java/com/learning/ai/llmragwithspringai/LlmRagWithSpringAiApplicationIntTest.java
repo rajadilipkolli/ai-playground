@@ -6,7 +6,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
+import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -25,20 +27,23 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
 
     @Test
     void testRag() {
-        given().param("question", "Is Rohit Sharma batsman")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Is Rohit Sharma batsman?"))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("response", containsString("Yes"))
-                .log();
+                .body("queryResponse", containsString("Yes"))
+                .log()
+                .all();
     }
 
     @Test
     void testEmptyQuery() {
-        given().param("question", "")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest(""))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
                 .statusCode(400)
                 .header("Content-Type", is("application/problem+json"))
@@ -53,9 +58,10 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Test
     void testLongQueryString() {
         String longQuery = "a".repeat(1000); // Example of a very long query string
-        given().param("question", longQuery)
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest(longQuery))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
                 .statusCode(400)
                 .header("Content-Type", is("application/problem+json"))
@@ -69,9 +75,10 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
 
     @Test
     void testSpecialCharactersInQuery() {
-        given().param("question", "@#$%^&*()")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("@#$%^&*()"))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
                 .statusCode(400)
                 .header("Content-Type", is("application/problem+json"))

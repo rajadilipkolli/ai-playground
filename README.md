@@ -12,6 +12,6 @@ AI implementations using java, stores and either of Langchain4j or springai fram
 | [pgvector springai](./pgvector-springai)                             | Embeddings implementation using springai and pgvector                                 |
 | [playground](./playground)                                           | AI playground using Langchain4j                                                       |
 | [rag langchain4j AllMiniLmL6V2](./rag-langchain4j-AllMiniLmL6V2-llm) | RAG Implementation using Langchain4j, PGVector store and openai LLM                   |
-| [rag springai ollama llm](./rag-springai-ollama-llm)                 | RAG Implementation using springai, PGVector store and ollama LLM with orca-mini model |
+| [rag springai ollama llm](./rag-springai-ollama-llm)                 | RAG Implementation using springai, Redis store and ollama LLM with llama2 model |
 | [rag springai openai llm](./rag-springai-openai-llm)                 | RAG Implementation using springai, PGVector store and openai LLM                      |
 

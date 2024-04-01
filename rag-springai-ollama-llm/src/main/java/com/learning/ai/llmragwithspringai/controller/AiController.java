@@ -1,17 +1,13 @@
 package com.learning.ai.llmragwithspringai.controller;
 
+import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
+import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.service.AIChatService;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import java.util.Map;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/ai")
@@ -26,15 +22,10 @@ public class AiController {
         this.aiChatService = aiChatService;
     }
 
-    @GetMapping("/chat")
-    Map<String, String> ragService(
-            @RequestParam
-                    @NotBlank(message = "Query cannot be empty")
-                    @Size(max = 255, message = "Query exceeds maximum length")
-                    @Pattern(regexp = "^[a-zA-Z0-9 ]*$", message = "Invalid characters in query")
-                    String question) {
-        String chatResponse = aiChatService.chat(question);
+    @PostMapping("/chat")
+    AIChatResponse ragService(@RequestBody @Valid AIChatRequest aiChatRequest) {
+        String chatResponse = aiChatService.chat(aiChatRequest.question());
         LOGGER.info("chatResponse :{}", chatResponse);
-        return Map.of("response", chatResponse);
+        return new AIChatResponse(chatResponse);
     }
 }
