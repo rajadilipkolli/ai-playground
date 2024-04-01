@@ -3,11 +3,11 @@ name: pgvector-springai CI Build
 on:
   push:
     paths:
-      - "pgvector-springai/**"
+      - "embeddingstores/pgvector-springai/**"
     branches: [main]
   pull_request:
     paths:
-      - "pgvector-springai/**"
+      - "embeddingstores/pgvector-springai/**"
     types:
       - opened
       - synchronize
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: pgvector-springai
+        working-directory: embeddingstores/pgvector-springai
     strategy:
       matrix:
         distribution: [ 'temurin' ]

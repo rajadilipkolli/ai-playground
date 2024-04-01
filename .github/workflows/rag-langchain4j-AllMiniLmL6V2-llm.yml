@@ -3,11 +3,11 @@ name: rag-langchain4j-AllMiniLmL6V2-llm CI Build
 on:
   push:
     paths:
-      - "rag-langchain4j-AllMiniLmL6V2-llm/**"
+      - "rag/rag-langchain4j-AllMiniLmL6V2-llm/**"
     branches: [main]
   pull_request:
     paths:
-      - "rag-langchain4j-AllMiniLmL6V2-llm/**"
+      - "rag/rag-langchain4j-AllMiniLmL6V2-llm/**"
     types:
       - opened
       - synchronize
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: rag-langchain4j-AllMiniLmL6V2-llm
+        working-directory: rag/rag-langchain4j-AllMiniLmL6V2-llm
     strategy:
       matrix:
         distribution: [ 'temurin' ]
