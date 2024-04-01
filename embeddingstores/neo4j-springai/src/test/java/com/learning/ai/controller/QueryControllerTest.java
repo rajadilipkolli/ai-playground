@@ -4,7 +4,9 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
 import com.learning.ai.TestNeo4jVectorEmbeddingStoreExample;
+import com.learning.ai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -27,9 +29,10 @@ class QueryControllerTest {
 
     @Test
     void queryEmbeddedStore() {
-        given().param("question", "What is your favourite sport")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("What is your favourite sport?"))
                 .when()
-                .get("/api/ai/query")
+                .post("/api/ai/query")
                 .then()
                 .statusCode(200)
                 .body("answer", equalTo("I like football."));
