@@ -29,13 +29,27 @@ public class Neo4jVectorStoreService {
     }
 
     public AIChatResponse queryEmbeddingStore(String question) {
-        // Retrieve embeddings
-        SearchRequest query = SearchRequest.query(question).withTopK(1);
-        List<Document> similarDocuments = vectorStore.similaritySearch(query);
-        String relevantData =
-                similarDocuments.stream().map(Document::getContent).collect(Collectors.joining(System.lineSeparator()));
+        try {
+            // Retrieve embeddings
+            SearchRequest query = SearchRequest.query(question).withTopK(1);
+            List<Document> similarDocuments = vectorStore.similaritySearch(query);
 
-        LOGGER.info("response from vectorStore : {} ", relevantData);
-        return new AIChatResponse(relevantData);
+            if (similarDocuments.isEmpty()) {
+                // Handle case where no similar documents are found
+                LOGGER.info("No similar documents found for the question: {}", question);
+                return new AIChatResponse("No similar documents found.");
+            }
+
+            String relevantData = similarDocuments.stream()
+                    .map(Document::getContent)
+                    .collect(Collectors.joining(System.lineSeparator()));
+
+            LOGGER.info("Response from vectorStore: {}", relevantData);
+            return new AIChatResponse(relevantData);
+        } catch (Exception e) {
+            // Handle potential exceptions from the similarity search
+            LOGGER.error("An error occurred during the similarity search: ", e);
+            return new AIChatResponse("An error occurred while processing your request. Please try again later.");
+        }
     }
 }
