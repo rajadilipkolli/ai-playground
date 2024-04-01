@@ -17,4 +17,4 @@ AI implementations using java, stores and either of Langchain4j or springai fram
 | [rag springai openai llm](./rag-springai-openai-llm)                      | RAG Implementation using springai, PGVector store, Tika document reader and openai LLM               |
 
 ### Credits
-- Thanks for langchain4j for providing an openAI compatable API for learning and demo purposes.
+Thanks to langchain4j for providing an openAI compatible API for learning and demo purposes.
