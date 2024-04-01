@@ -29,6 +29,26 @@
             "projectName": "pgvector-langchain4j",
             "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-Application<chatmodel-springai>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.ai.Application",
+            "projectName": "chatmodel-springai",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-Neo4jVectorEmbeddingStoreExample<neo4j-springai>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.learning.ai.Neo4jVectorEmbeddingStoreExample",
+            "projectName": "neo4j-springai",
+            "args": "--spring.profiles.active=local",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }
