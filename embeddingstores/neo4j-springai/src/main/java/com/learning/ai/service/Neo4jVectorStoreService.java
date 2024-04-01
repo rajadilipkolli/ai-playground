@@ -26,6 +26,7 @@ public class Neo4jVectorStoreService {
         List<Document> documents =
                 List.of(new Document("I like football."), new Document("The weather is good today."));
         vectorStore.add(documents);
+        LOGGER.info("Added initial documents");
     }
 
     public AIChatResponse queryEmbeddingStore(String question) {
