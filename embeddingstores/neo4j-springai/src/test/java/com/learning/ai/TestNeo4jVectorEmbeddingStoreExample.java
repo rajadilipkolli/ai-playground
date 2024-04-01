@@ -13,7 +13,9 @@ public class TestNeo4jVectorEmbeddingStoreExample {
     @Bean
     @ServiceConnection
     Neo4jContainer<?> neo4jContainer() {
-        return new Neo4jContainer<>(DockerImageName.parse("neo4j:5"));
+        return new Neo4jContainer<>(DockerImageName.parse("neo4j:5"))
+                .withoutAuthentication()
+                .withLabsPlugins("apoc");
     }
 
     public static void main(String[] args) {
