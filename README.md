@@ -6,7 +6,7 @@ AI implementations using java, stores and either of Langchain4j or springai fram
 
 | **_Module Name_**                                                         | **_Description_**                                                                                    |
 |---------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| [playground](./playground)                                                | AI playground using Langchain4j                                                                      |
+| [playground using langchain4j](./playground-langchain4j)                  | AI playground using Langchain4j                                                                      |
 | [chatmodel springai](./chatmodel-springai)                                | AI chat playground using springai                                                                    |
 | [pgvector lanchain4j](./embeddingstores/pgvector-langchain4j)             | Embeddings implementation using langchain4j and pgvector                                             |
 | [pgvector springai](./embeddingstores/pgvector-springai)                  | Embeddings implementation using springai and pgvector                                                |
