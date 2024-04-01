@@ -3,11 +3,11 @@ name: pgvector-langchain4j CI Build
 on:
   push:
     paths:
-      - "pgvector-langchain4j/**"
+      - "embeddingstores/pgvector-langchain4j/**"
     branches: [main]
   pull_request:
     paths:
-      - "pgvector-langchain4j/**"
+      - "embeddingstores/pgvector-langchain4j/**"
     types:
       - opened
       - synchronize
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: pgvector-langchain4j
+        working-directory: embeddingstores/pgvector-langchain4j
     strategy:
       matrix:
         distribution: [ 'temurin' ]
