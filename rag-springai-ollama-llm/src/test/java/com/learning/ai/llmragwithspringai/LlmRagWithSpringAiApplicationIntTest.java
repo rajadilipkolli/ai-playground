@@ -51,7 +51,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body("instance", is("/api/ai/chat"))
                 .body("title", is("Constraint Violation"))
                 .body("violations", hasSize(1))
-                .body("violations[0].field", is("ragService.question"))
+                .body("violations[0].field", is("question"))
                 .body("violations[0].message", containsString("Query cannot be empty"));
     }
 
@@ -69,7 +69,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body("instance", is("/api/ai/chat"))
                 .body("title", is("Constraint Violation"))
                 .body("violations", hasSize(1))
-                .body("violations[0].field", is("ragService.question"))
+                .body("violations[0].field", is("question"))
                 .body("violations[0].message", containsString("Query exceeds maximum length"));
     }
 
@@ -86,7 +86,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body("instance", is("/api/ai/chat"))
                 .body("title", is("Constraint Violation"))
                 .body("violations", hasSize(1))
-                .body("violations[0].field", is("ragService.question"))
+                .body("violations[0].field", is("question"))
                 .body("violations[0].message", containsString("Invalid characters in query"))
                 .log();
     }
