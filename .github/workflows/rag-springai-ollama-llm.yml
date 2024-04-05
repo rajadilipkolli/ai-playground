@@ -21,6 +21,7 @@ jobs:
       run:
         working-directory: rag/rag-springai-ollama-llm
     strategy:
+      fail-fast: false
       matrix:
         distribution: [ 'temurin' ]
         java: [ '21' ]
