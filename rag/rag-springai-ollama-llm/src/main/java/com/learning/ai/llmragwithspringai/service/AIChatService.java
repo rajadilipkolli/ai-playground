@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
+import org.springframework.ai.chat.Generation;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -64,6 +65,7 @@ public class AIChatService {
         LOGGER.info("Calling ai with prompt :{}", prompt);
         ChatResponse aiResponse = aiClient.call(prompt);
         LOGGER.info("Response received from call :{}", aiResponse);
-        return aiResponse.getResult().getOutput().getContent();
+        Generation generation = aiResponse.getResult();
+        return (generation != null) ? generation.getOutput().getContent() : "";
     }
 }
