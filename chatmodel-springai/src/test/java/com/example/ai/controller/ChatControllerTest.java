@@ -2,9 +2,10 @@ package com.example.ai.controller;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.containsStringIgnoringCase;
 
+import com.example.ai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -25,20 +26,21 @@ class ChatControllerTest {
 
     @Test
     void testChat() {
-        given().param("question", "Hello?")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Hello?"))
                 .when()
-                .get("/api/ai/chat")
+                .post("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("question", containsStringIgnoringCase("Hello?"))
                 .body("answer", containsString("Hello!"));
     }
 
     @Test
     void chatWithPrompt() {
-        given().param("subject", "java")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("java"))
                 .when()
-                .get("/api/ai/chat-with-prompt")
+                .post("/api/ai/chat-with-prompt")
                 .then()
                 .statusCode(200)
                 .body("answer", containsString("Java"));
@@ -46,9 +48,10 @@ class ChatControllerTest {
 
     @Test
     void chatWithSystemPrompt() {
-        given().param("subject", "cricket")
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("cricket"))
                 .when()
-                .get("/api/ai/chat-with-system-prompt")
+                .post("/api/ai/chat-with-system-prompt")
                 .then()
                 .statusCode(200)
                 .body("answer", containsString("cricket"));

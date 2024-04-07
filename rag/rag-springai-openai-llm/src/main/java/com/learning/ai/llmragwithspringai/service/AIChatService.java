@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
+import org.springframework.ai.chat.Generation;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -55,6 +56,7 @@ public class AIChatService {
         UserMessage userMessage = new UserMessage(searchQuery);
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
         ChatResponse aiResponse = aiClient.call(prompt);
-        return aiResponse.getResult().getOutput().getContent();
+        Generation generation = aiResponse.getResult();
+        return (generation != null) ? generation.getOutput().getContent() : "";
     }
 }

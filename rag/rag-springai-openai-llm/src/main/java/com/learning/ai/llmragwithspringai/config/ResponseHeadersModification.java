@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.web.client.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -12,15 +13,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClient;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(value = "spring.ai.openai.api-key", havingValue = "demo")
 public class ResponseHeadersModification {
 
     @Bean
-    RestClient.Builder restClientBuilder() {
-        return RestClient.builder().requestInterceptor((request, body, execution) -> {
+    public RestClientCustomizer restClientCustomizer() {
+        return restClientBuilder -> restClientBuilder.requestInterceptor((request, body, execution) -> {
             ClientHttpResponse response = execution.execute(request, body);
             return new CustomClientHttpResponse(response);
         });

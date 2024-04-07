@@ -1,23 +1,20 @@
 package com.learning.ai.llmragwithspringai.config;
 
 import java.time.Duration;
+import org.springframework.boot.web.client.ClientHttpRequestFactories;
+import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
+import org.springframework.boot.web.client.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
-import org.springframework.web.client.RestClient;
 
 @Configuration(proxyBeanMethods = false)
 public class RestClientBuilderConfig {
 
     @Bean
-    RestClient.Builder restClientBuilder(JdkClientHttpRequestFactory jdkClientHttpRequestFactory) {
-        return RestClient.builder().requestFactory(jdkClientHttpRequestFactory);
-    }
-
-    @Bean
-    JdkClientHttpRequestFactory jdkClientHttpRequestFactory() {
-        JdkClientHttpRequestFactory jdkClientHttpRequestFactory = new JdkClientHttpRequestFactory();
-        jdkClientHttpRequestFactory.setReadTimeout(Duration.ofMinutes(5));
-        return jdkClientHttpRequestFactory;
+    public RestClientCustomizer restClientCustomizer() {
+        return restClientBuilder -> restClientBuilder.requestFactory(
+                ClientHttpRequestFactories.get(ClientHttpRequestFactorySettings.DEFAULTS
+                        .withConnectTimeout(Duration.ofSeconds(60))
+                        .withReadTimeout(Duration.ofMinutes(5))));
     }
 }
