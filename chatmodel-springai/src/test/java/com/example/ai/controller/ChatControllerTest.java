@@ -35,7 +35,8 @@ class ChatControllerTest {
                 .when()
                 .post("/api/ai/chat")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
                 .body("answer", containsString("Hello!"));
     }
 
@@ -46,7 +47,8 @@ class ChatControllerTest {
                 .when()
                 .post("/api/ai/chat-with-prompt")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
                 .body("answer", containsString("Java"));
     }
 
@@ -57,7 +59,8 @@ class ChatControllerTest {
                 .when()
                 .post("/api/ai/chat-with-system-prompt")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
                 .body("answer", containsString("cricket"));
     }
 
@@ -71,5 +74,17 @@ class ChatControllerTest {
                 .contentType(ContentType.JSON)
                 .body("actor", is("Jr NTR"))
                 .body("movies", hasSize(greaterThanOrEqualTo(25)));
+    }
+
+    @Test
+    void ragWithSimpleStore() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("which is the restaurant with highest grade that has cuisine as American ?"))
+                .when()
+                .post("/api/ai/rag")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
+                .body("answer", containsString("American cuisine is \"Regina Caterers\""));
     }
 }
