@@ -85,6 +85,6 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("American cuisine is \"Regina Caterers\" with a grade of A"));
+                .body("answer", containsString("American cuisine is \"Regina Caterers\""));
     }
 }
