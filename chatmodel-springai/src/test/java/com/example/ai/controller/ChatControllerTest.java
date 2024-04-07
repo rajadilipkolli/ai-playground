@@ -2,10 +2,14 @@ package com.example.ai.controller;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 
 import com.example.ai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -55,5 +59,17 @@ class ChatControllerTest {
                 .then()
                 .statusCode(200)
                 .body("answer", containsString("cricket"));
+    }
+
+    @Test
+    void outputParser() {
+        given().param("actor", "Jr NTR")
+                .when()
+                .get("/api/ai/output")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
+                .body("actor", is("Jr NTR"))
+                .body("movies", hasSize(greaterThanOrEqualTo(25)));
     }
 }
