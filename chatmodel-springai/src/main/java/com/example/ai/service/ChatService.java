@@ -69,12 +69,9 @@ public class ChatService {
         return new AIChatResponse(answer);
     }
 
+    private static final String SENTIMENT_ANALYSIS_TEMPLATE = "{query}, You must answer strictly in the following format: one of [POSITIVE, NEGATIVE, SARCASTIC]";
     public AIChatResponse analyzeSentiment(String query) {
-        String template =
-                """
-                {query}, You must answer strictly in the following format: one of [POSITIVE, NEGATIVE, SARCASTIC]
-                """;
-        AssistantPromptTemplate promptTemplate = new AssistantPromptTemplate(template);
+        AssistantPromptTemplate promptTemplate = new AssistantPromptTemplate(SENTIMENT_ANALYSIS_TEMPLATE);
         Prompt prompt = promptTemplate.create(Map.of("query", query));
         ChatResponse response = chatClient.call(prompt);
         Generation generation = response.getResult();
