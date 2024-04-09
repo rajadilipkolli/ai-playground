@@ -15,6 +15,7 @@ import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.Generation;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.AssistantPromptTemplate;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
@@ -65,6 +66,19 @@ public class ChatService {
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
         ChatResponse response = chatClient.call(prompt);
         String answer = response.getResult().getOutput().getContent();
+        return new AIChatResponse(answer);
+    }
+
+    public AIChatResponse analyzeSentiment(String query) {
+        String template =
+                """
+                {query}, You must answer strictly in the following format: one of [POSITIVE, NEGATIVE, SARCASTIC]
+                """;
+        AssistantPromptTemplate promptTemplate = new AssistantPromptTemplate(template);
+        Prompt prompt = promptTemplate.create(Map.of("query", query));
+        ChatResponse response = chatClient.call(prompt);
+        Generation generation = response.getResult();
+        String answer = (generation != null) ? generation.getOutput().getContent() : "";
         return new AIChatResponse(answer);
     }
 

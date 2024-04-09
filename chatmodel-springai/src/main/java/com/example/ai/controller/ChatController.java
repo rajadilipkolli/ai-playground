@@ -37,6 +37,11 @@ public class ChatController {
         return chatService.chatWithSystemPrompt(aiChatRequest.query());
     }
 
+    @PostMapping("/sentiment/analyze")
+    AIChatResponse sentimentAnalyzer(@RequestBody AIChatRequest aiChatRequest) {
+        return chatService.analyzeSentiment(aiChatRequest.query());
+    }
+
     @PostMapping("/emebedding-client-conversion")
     AIChatResponse chatWithEmbeddingClient(@RequestBody AIChatRequest aiChatRequest) {
         return chatService.getEmbeddings(aiChatRequest.query());
