@@ -65,6 +65,18 @@ class ChatControllerTest {
     }
 
     @Test
+    void sentimentAnalyzer() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Why did the Python programmer go broke? Because he couldn't C#"))
+                .when()
+                .post("/api/ai/sentiment/analyze")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
+                .body("answer", is("SARCASTIC"));
+    }
+
+    @Test
     void outputParser() {
         given().param("actor", "Jr NTR")
                 .when()
