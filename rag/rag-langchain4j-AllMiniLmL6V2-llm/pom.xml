@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <langchain4j.version>0.29.1</langchain4j.version>
+        <langchain4j.version>0.30.0</langchain4j.version>
         <spotless.version>2.43.0</spotless.version>
     </properties>
 
