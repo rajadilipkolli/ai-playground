@@ -28,7 +28,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Test
     void testRag() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Records held by Rohit Sharma ?"))
+                .body(new AIChatRequest("Did Rohit Sharma won ICC Mens T20 World Cup 2007 ?"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
