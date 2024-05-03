@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "com.example.learning.Main",
+            "projectName": "java-openai"
+        },
+        {
+            "type": "java",
             "name": "Spring Boot-TestPgVectorEmbeddingStoreExample<pgvector-springai>",
             "request": "launch",
             "cwd": "${workspaceFolder}",
