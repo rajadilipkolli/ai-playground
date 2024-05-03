@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.Generation;
+import org.springframework.ai.chat.StreamingChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.AssistantPromptTemplate;
@@ -26,6 +27,7 @@ import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 @Service
 public class ChatService {
@@ -42,10 +44,13 @@ public class ChatService {
 
     private final EmbeddingClient embeddingClient;
     private final ChatClient chatClient;
+    private final StreamingChatClient streamingChatClient;
 
-    public ChatService(EmbeddingClient embeddingClient, ChatClient chatClient) {
+    public ChatService(
+            EmbeddingClient embeddingClient, ChatClient chatClient, StreamingChatClient streamingChatClient) {
         this.embeddingClient = embeddingClient;
         this.chatClient = chatClient;
+        this.streamingChatClient = streamingChatClient;
     }
 
     public AIChatResponse chat(String query) {
@@ -136,5 +141,9 @@ public class ChatService {
         String answer = (generation != null) ? generation.getOutput().getContent() : "";
         simpleVectorStore.delete(linesDocuments.stream().map(Document::getId).toList());
         return new AIChatResponse(answer);
+    }
+
+    public Flux<String> streamChat(String query) {
+        return streamingChatClient.stream(query);
     }
 }

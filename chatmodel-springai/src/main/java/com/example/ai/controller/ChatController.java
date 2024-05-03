@@ -2,6 +2,7 @@ package com.example.ai.controller;
 
 import com.example.ai.model.request.AIChatRequest;
 import com.example.ai.model.response.AIChatResponse;
+import com.example.ai.model.response.AIStreamChatResponse;
 import com.example.ai.model.response.ActorsFilms;
 import com.example.ai.service.ChatService;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/ai")
@@ -55,5 +57,11 @@ public class ChatController {
     @PostMapping("/rag")
     AIChatResponse chatUsingRag(@RequestBody AIChatRequest aiChatRequest) throws IOException {
         return chatService.ragGenerate(aiChatRequest.query());
+    }
+
+    @PostMapping("/chat/stream")
+    AIStreamChatResponse streamChat(@RequestBody AIChatRequest aiChatRequest) {
+        Flux<String> streamChat = chatService.streamChat(aiChatRequest.query());
+        return new AIStreamChatResponse(streamChat);
     }
 }
