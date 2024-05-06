@@ -18,8 +18,8 @@ public class TestLlmRagWithSpringAiApplication {
     OllamaContainer ollama(DynamicPropertyRegistry properties) {
         // The model name to use (e.g., "orca-mini", "mistral", "llama2", "codellama", "phi", or
         // "tinyllama")
-        OllamaContainer ollama = new OllamaContainer(DockerImageName.parse("langchain4j/ollama-orca-mini:latest")
-                .asCompatibleSubstituteFor("ollama/ollama"));
+        OllamaContainer ollama = new OllamaContainer(
+                DockerImageName.parse("langchain4j/ollama-llama2:latest").asCompatibleSubstituteFor("ollama/ollama"));
         properties.add("spring.ai.ollama.base-url", ollama::getEndpoint);
         return ollama;
     }

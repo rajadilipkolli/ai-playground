@@ -13,7 +13,6 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
@@ -43,9 +42,8 @@ public class AIChatService {
 
     public String chat(String query) {
         // Querying the VectorStore using natural language looking for the information about info asked.
-        LOGGER.info("Querying vector store with query :{}", query);
-        List<Document> listOfSimilarDocuments = this.vectorStore.similaritySearch(
-                SearchRequest.query(query).withTopK(2).withSimilarityThreshold(0.8d));
+        LOGGER.debug("Querying vector store with query :{}", query);
+        List<Document> listOfSimilarDocuments = this.vectorStore.similaritySearch(query);
         String documents = listOfSimilarDocuments.stream()
                 .map(Document::getContent)
                 .collect(Collectors.joining(System.lineSeparator()));

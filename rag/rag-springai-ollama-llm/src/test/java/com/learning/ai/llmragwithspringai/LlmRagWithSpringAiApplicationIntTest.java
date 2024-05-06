@@ -9,12 +9,19 @@ import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
 import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import java.io.File;
+import java.io.IOException;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.io.ClassPathResource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestMethodOrder(value = MethodOrderer.OrderAnnotation.class)
 class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
 
     @LocalServerPort
@@ -26,9 +33,24 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(1)
+    void uploadPdfContent() throws IOException {
+        given().multiPart("file", getFile("/Rohit_Gurunath_Sharma.pdf"))
+                .when()
+                .post("/api/data/v1/upload")
+                .then()
+                .statusCode(200);
+    }
+
+    private File getFile(String fileName) throws IOException {
+        return new ClassPathResource(fileName).getFile();
+    }
+
+    @Test
+    @Order(101)
     void testRag() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Did Rohit Sharma won ICC Mens T20 World Cup 2007 ?"))
+                .body(new AIChatRequest("Is Rohit Sharma batsman?"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -39,6 +61,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(111)
     void testEmptyQuery() {
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(""))
@@ -56,6 +79,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(112)
     void testLongQueryString() {
         String longQuery = "a".repeat(1000); // Example of a very long query string
         given().contentType(ContentType.JSON)
@@ -74,6 +98,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(113)
     void testSpecialCharactersInQuery() {
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest("@#$%^&*()"))
