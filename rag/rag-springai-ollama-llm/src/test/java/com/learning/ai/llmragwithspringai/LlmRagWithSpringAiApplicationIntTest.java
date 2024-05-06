@@ -9,13 +9,11 @@ import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
 import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -158,7 +156,8 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .statusCode(400)
                 .header(HttpHeaders.CONTENT_TYPE, is(MediaType.APPLICATION_PROBLEM_JSON_VALUE))
                 .body("detail", is("Failed to read request"))
-                .body("instance", is("/api/ai/chat")).body("title", is("Bad Request"))
+                .body("instance", is("/api/ai/chat"))
+                .body("title", is("Bad Request"))
                 .log();
     }
 
@@ -194,7 +193,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body("violations", hasSize(1))
                 .body("violations[0].field", is("question"))
                 .body("violations[0].message", containsString("Query cannot be empty"))
-                .log();;
+                .log();
     }
 
     @Test
@@ -210,7 +209,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body("detail", is("Failed to read request"))
                 .body("instance", is("/api/ai/chat"))
                 .body("title", is("Bad Request"))
-                .log();;
+                .log();
     }
 
     private Path getPath(String fileName) throws URISyntaxException, IOException {
