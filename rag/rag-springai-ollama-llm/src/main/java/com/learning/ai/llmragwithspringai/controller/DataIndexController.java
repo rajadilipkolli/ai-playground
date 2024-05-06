@@ -1,6 +1,7 @@
 package com.learning.ai.llmragwithspringai.controller;
 
 import com.learning.ai.llmragwithspringai.service.DataIndexerService;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +30,7 @@ public class DataIndexController {
     }
 
     @GetMapping("count")
-    public long count() {
-        return dataIndexerService.count();
+    public Map<String, Long> count() {
+        return Map.of("count", dataIndexerService.count());
     }
 }

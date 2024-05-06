@@ -39,11 +39,21 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .when()
                 .post("/api/data/v1/upload")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .log()
+                .all();
     }
 
-    private File getFile(String fileName) throws IOException {
-        return new ClassPathResource(fileName).getFile();
+    @Test
+    @Order(2)
+    void uploadPdfContentCount() {
+        given().when()
+                .get("/api/data/v1/count")
+                .then()
+                .statusCode(200)
+                .body("count", is(1))
+                .log()
+                .all();
     }
 
     @Test
@@ -51,6 +61,20 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
     void testRag() {
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest("Is Rohit Sharma batsman?"))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("queryResponse", containsString("Yes"))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(102)
+    void testRag2() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Did Rohit Sharma won ICC Mens T20 World Cup 2007 ?"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -114,5 +138,9 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body("violations[0].field", is("question"))
                 .body("violations[0].message", containsString("Invalid characters in query"))
                 .log();
+    }
+
+    private File getFile(String fileName) throws IOException {
+        return new ClassPathResource(fileName).getFile();
     }
 }
