@@ -33,9 +33,9 @@ public class AppConfig {
                     .withNumberOfBottomTextLinesToDelete(3)
                     .withNumberOfTopPagesToSkipBeforeDelete(1)
                     .build();
-            TikaDocumentReader pagePdfDocumentReader = new TikaDocumentReader(resource, textFormatter);
+            TikaDocumentReader documentReader = new TikaDocumentReader(resource, textFormatter);
             template.update("delete from vector_store");
-            vectorStore.accept(tokenTextSplitter.apply(pagePdfDocumentReader.get()));
+            vectorStore.accept(tokenTextSplitter.apply(documentReader.get()));
             log.info("Loaded document to database.");
         };
     }
