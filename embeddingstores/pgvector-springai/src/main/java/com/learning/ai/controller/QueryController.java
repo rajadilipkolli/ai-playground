@@ -18,7 +18,7 @@ public class QueryController {
     }
 
     @GetMapping("/query")
-    AIChatResponse queryEmbeddedStore(@RequestParam String question) {
-        return pgVectorStoreService.queryEmbeddingStore(question);
+    AIChatResponse queryEmbeddedStore(@RequestParam String question, @RequestParam(required = false) Integer userId) {
+        return pgVectorStoreService.queryEmbeddingStore(question, userId);
     }
 }

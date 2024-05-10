@@ -2,6 +2,7 @@ package com.learning.ai.service;
 
 import com.learning.ai.model.response.AIChatResponse;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,14 +24,19 @@ public class PgVectorStoreService {
 
     public void storeEmbeddings() {
         // Store embeddings
-        List<Document> documents =
-                List.of(new Document("I like football."), new Document("The weather is good today."));
+        List<Document> documents = List.of(
+                new Document("I like football.", Map.of("userId", 1)),
+                new Document("I like cricket.", Map.of("userId", 2)),
+                new Document("The weather is good today."));
         vectorStore.add(documents);
     }
 
-    public AIChatResponse queryEmbeddingStore(String question) {
+    public AIChatResponse queryEmbeddingStore(String question, Integer userId) {
         // Retrieve embeddings
         SearchRequest query = SearchRequest.query(question).withTopK(1);
+        if (userId != null) {
+            query.withFilterExpression("userId == " + userId);
+        }
         List<Document> similarDocuments = vectorStore.similaritySearch(query);
         String relevantData =
                 similarDocuments.stream().map(Document::getContent).collect(Collectors.joining(System.lineSeparator()));
