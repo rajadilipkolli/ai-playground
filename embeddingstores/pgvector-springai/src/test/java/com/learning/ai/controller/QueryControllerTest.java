@@ -28,10 +28,32 @@ class QueryControllerTest {
     @Test
     void queryEmbeddedStore() {
         given().param("question", "What is your favourite sport")
+                .param("userId", 1)
                 .when()
                 .get("/api/ai/query")
                 .then()
                 .statusCode(200)
                 .body("answer", equalTo("I like football."));
+    }
+
+    @Test
+    void queryEmbeddedStoreWithMetadata() {
+        given().param("question", "What is your favourite sport")
+                .param("userId", 2)
+                .when()
+                .get("/api/ai/query")
+                .then()
+                .statusCode(200)
+                .body("answer", equalTo("I like cricket."));
+    }
+
+    @Test
+    void queryEmbeddedStoreWithOutMetadata() {
+        given().param("question", "What is weather today")
+                .when()
+                .get("/api/ai/query")
+                .then()
+                .statusCode(200)
+                .body("answer", equalTo("The weather is good today."));
     }
 }
