@@ -1,7 +1,7 @@
 version: '3.7'
 services:
     ollama:
-        image: langchain4j/ollama-llama2:latest
+        image: langchain4j/ollama-llama3:latest
         ports:
           - '11434:11434'
     redis-stack:
