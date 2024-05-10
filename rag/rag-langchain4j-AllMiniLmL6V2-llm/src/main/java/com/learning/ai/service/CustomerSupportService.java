@@ -5,8 +5,9 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -28,8 +29,12 @@ public class CustomerSupportService {
     public AICustomerSupportResponse chat(String question) {
 
         Embedding queryEmbedding = embeddingModel.embed(question).content();
-        List<EmbeddingMatch<TextSegment>> relevant = embeddingStore.findRelevant(queryEmbedding, 1);
-        EmbeddingMatch<TextSegment> embeddingMatch = relevant.get(0);
+        EmbeddingSearchRequest embeddingSearchRequest = EmbeddingSearchRequest.builder()
+                .queryEmbedding(queryEmbedding)
+                .maxResults(1)
+                .build();
+        EmbeddingSearchResult<TextSegment> relevant = embeddingStore.search(embeddingSearchRequest);
+        EmbeddingMatch<TextSegment> embeddingMatch = relevant.matches().get(0);
 
         String embeddedText = embeddingMatch.embedded().text();
         return aiCustomerSupportAgent.chat(question, embeddedText);
