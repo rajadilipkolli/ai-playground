@@ -24,7 +24,7 @@ public class LoggingConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingConfig.class);
 
     @Bean
-    public RestClientCustomizer restClientCustomizer() {
+    RestClientCustomizer restClientCustomizer() {
         return restClientBuilder -> restClientBuilder
                 .requestFactory(new BufferingClientHttpRequestFactory(new HttpComponentsClientHttpRequestFactory()))
                 .requestInterceptor((request, body, execution) -> {

@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class RestClientBuilderConfig {
 
     @Bean
-    public RestClientCustomizer restClientCustomizer() {
+    RestClientCustomizer restClientCustomizer() {
         return restClientBuilder -> restClientBuilder.requestFactory(
                 ClientHttpRequestFactories.get(ClientHttpRequestFactorySettings.DEFAULTS
                         .withConnectTimeout(Duration.ofSeconds(60))

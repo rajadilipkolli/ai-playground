@@ -19,7 +19,7 @@ import org.springframework.util.MultiValueMap;
 public class ResponseHeadersModification {
 
     @Bean
-    public RestClientCustomizer restClientCustomizer() {
+    RestClientCustomizer restClientCustomizer() {
         return restClientBuilder -> restClientBuilder.requestInterceptor((request, body, execution) -> {
             ClientHttpResponse response = execution.execute(request, body);
             return new CustomClientHttpResponse(response);
