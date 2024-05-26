@@ -1,5 +1,6 @@
 package com.example.chatbot.service;
 
+import com.example.chatbot.model.response.AIChatResponse;
 import java.util.List;
 import org.springframework.ai.chat.memory.*;
 import org.springframework.ai.chat.messages.UserMessage;
@@ -25,9 +26,10 @@ public class ChatbotService {
                 .build();
     }
 
-    public String chat(String message) {
-        var prompt = new Prompt(new UserMessage(message));
+    public AIChatResponse chat(String message) {
+        Prompt prompt = new Prompt(new UserMessage(message));
         var chatServiceResponse = this.chatService.call(new ChatServiceContext(prompt));
-        return chatServiceResponse.getChatResponse().getResult().getOutput().getContent();
+        return new AIChatResponse(
+                chatServiceResponse.getChatResponse().getResult().getOutput().getContent());
     }
 }
