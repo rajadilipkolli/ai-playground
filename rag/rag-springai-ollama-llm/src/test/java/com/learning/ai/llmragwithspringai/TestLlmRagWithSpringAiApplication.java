@@ -6,6 +6,7 @@ import static com.redis.testcontainers.RedisStackContainer.DEFAULT_TAG;
 import com.redis.testcontainers.RedisStackContainer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.testcontainers.ollama.OllamaContainer;
@@ -15,13 +16,12 @@ import org.testcontainers.utility.DockerImageName;
 public class TestLlmRagWithSpringAiApplication {
 
     @Bean
+    @ServiceConnection
     OllamaContainer ollama(DynamicPropertyRegistry properties) {
         // The model name to use (e.g., "orca-mini", "mistral", "llama2", "codellama", "phi", or
         // "tinyllama")
-        OllamaContainer ollama = new OllamaContainer(
+        return new OllamaContainer(
                 DockerImageName.parse("langchain4j/ollama-llama3:latest").asCompatibleSubstituteFor("ollama/ollama"));
-        properties.add("spring.ai.ollama.base-url", ollama::getEndpoint);
-        return ollama;
     }
 
     @Bean
