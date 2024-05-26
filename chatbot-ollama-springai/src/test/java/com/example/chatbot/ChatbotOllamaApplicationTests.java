@@ -49,5 +49,14 @@ class ChatbotOllamaApplicationTests {
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
                 .body("answer", containsString("100"));
+
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("What is his age ?"))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
+                .body("answer", containsString("50"));
     }
 }
