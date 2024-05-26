@@ -1,13 +1,13 @@
-name: chatbot-ollama3-springai CI Build
+name: chatbot-ollama-springai CI Build
 
 on:
   push:
     paths:
-      - "chatbot-ollama3-springai/**"
+      - "chatbot-ollama-springai/**"
     branches: [main]
   pull_request:
     paths:
-      - "chatbot-ollama3-springai/**"
+      - "chatbot-ollama-springai/**"
     types:
       - opened
       - synchronize
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: chatbot-ollama3-springai
+        working-directory: chatbot-ollama-springai
     strategy:
       matrix:
         distribution: [ 'temurin' ]

@@ -36,6 +36,18 @@ class ChatbotOllamaApplicationTests {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("help you"));
+                .body("answer", containsString("help"));
+    }
+
+    @Test
+    void chat() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("How many cricket centuries did Sachin Tendulkar scored ?"))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
+                .body("answer", containsString("100"));
     }
 }

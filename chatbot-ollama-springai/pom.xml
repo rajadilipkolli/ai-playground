@@ -10,7 +10,7 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example.chatbot</groupId>
-	<artifactId>chatbot</artifactId>
+	<artifactId>chatbot-ollama-lamma3</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>chatbot-ollama</name>
 	<description>Demo project for Chatbot using Ollama</description>

@@ -8,6 +8,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.transformer.ChatServiceContext;
 import org.springframework.ai.chat.service.ChatService;
+import org.springframework.ai.chat.service.ChatServiceResponse;
 import org.springframework.ai.chat.service.PromptTransformingChatService;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,7 @@ public class ChatbotService {
 
     public AIChatResponse chat(String message) {
         Prompt prompt = new Prompt(new UserMessage(message));
-        var chatServiceResponse = this.chatService.call(new ChatServiceContext(prompt));
+        ChatServiceResponse chatServiceResponse = this.chatService.call(new ChatServiceContext(prompt));
         return new AIChatResponse(
                 chatServiceResponse.getChatResponse().getResult().getOutput().getContent());
     }
