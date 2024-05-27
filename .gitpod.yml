@@ -1,5 +1,5 @@
 
-image: gitpod/workspace-java-17
+image: gitpod/workspace-java-21
 
 ports:
   - port: 9200
