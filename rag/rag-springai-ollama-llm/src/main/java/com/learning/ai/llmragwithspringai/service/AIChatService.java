@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.ChatClient;
-import org.springframework.ai.chat.ChatResponse;
-import org.springframework.ai.chat.Generation;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.document.Document;
@@ -35,8 +35,8 @@ public class AIChatService {
     private final ChatClient aiClient;
     private final VectorStore vectorStore;
 
-    public AIChatService(ChatClient aiClient, VectorStore vectorStore) {
-        this.aiClient = aiClient;
+    public AIChatService(ChatClient.Builder builder, VectorStore vectorStore) {
+        this.aiClient = builder.build();
         this.vectorStore = vectorStore;
     }
 
@@ -54,7 +54,7 @@ public class AIChatService {
         UserMessage userMessage = new UserMessage(query);
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
         LOGGER.info("Calling ai with prompt :{}", prompt);
-        ChatResponse aiResponse = aiClient.call(prompt);
+        ChatResponse aiResponse = aiClient.prompt(prompt).call().chatResponse();
         LOGGER.info("Response received from call :{}", aiResponse);
         Generation generation = aiResponse.getResult();
         return (generation != null) ? generation.getOutput().getContent() : "";
