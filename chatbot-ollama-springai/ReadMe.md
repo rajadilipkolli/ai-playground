@@ -20,6 +20,7 @@ participant ChatMemory
     ChatbotService->>ChatMemory: saveInteraction(message, response)
     ChatbotService-->>ChatbotController: response
     ChatbotController-->>User: response
+
 ```
 
 After Vector Store
@@ -43,4 +44,5 @@ sequenceDiagram
     ChatService-->>ChatbotService: Processed Response
     ChatbotService-->>ChatbotController: response
     ChatbotController-->>User: response
+
 ```
