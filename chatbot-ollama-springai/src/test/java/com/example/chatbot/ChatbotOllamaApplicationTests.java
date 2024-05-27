@@ -56,8 +56,8 @@ class ChatbotOllamaApplicationTests {
                 .response();
 
         AIChatResponse aiChatResponse = objectMapper.readValue(response.asByteArray(), AIChatResponse.class);
-        System.out.println("conversationalId"+ aiChatResponse.conversationId());
-        
+        System.out.println("conversationalId :: " + aiChatResponse.conversationId());
+
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(
                         "How many One Day International (ODI) centuries did he scored ?",

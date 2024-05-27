@@ -26,7 +26,7 @@ public class ChatbotService {
         Prompt prompt = new Prompt(new UserMessage(request.query()));
         String conversationId = request.conversationId() == null ? "default" : request.conversationId();
         ChatServiceResponse chatServiceResponse = this.chatService.call(new ChatServiceContext(prompt, conversationId));
-        LOGGER.info("Response :{}", chatServiceResponse.getChatResponse());
+        LOGGER.info("Response :{}", chatServiceResponse.getChatResponse().getResult());
         return new AIChatResponse(
                 chatServiceResponse.getChatResponse().getResult().getOutput().getContent(),
                 chatServiceResponse.getPromptContext().getConversationId());
