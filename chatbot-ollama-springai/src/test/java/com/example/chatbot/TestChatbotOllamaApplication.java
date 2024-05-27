@@ -21,7 +21,7 @@ public class TestChatbotOllamaApplication {
     @Bean
     @ServiceConnection
     ChromaDBContainer chromadb() {
-        return new ChromaDBContainer(DockerImageName.parse("chromadb/chroma:0.5.0"));
+        return new ChromaDBContainer(DockerImageName.parse("chromadb/chroma").withTag("0.5.0"));
     }
 
     public static void main(String[] args) {

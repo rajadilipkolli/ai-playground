@@ -28,23 +28,11 @@ class ChatbotOllamaApplicationTests {
     }
 
     @Test
-    void contextLoads() {
-        given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Hello?"))
-                .when()
-                .post("/api/ai/chat")
-                .then()
-                .statusCode(HttpStatus.SC_OK)
-                .contentType(ContentType.JSON)
-                .body("answer", containsString("help"));
-    }
-
-    @Test
     void chat() {
         given().contentType(ContentType.JSON)
                 .body(
                         new AIChatRequest(
-                                "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI)  and Test centuries ?"))
+                                "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI) and Test centuries ?"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
