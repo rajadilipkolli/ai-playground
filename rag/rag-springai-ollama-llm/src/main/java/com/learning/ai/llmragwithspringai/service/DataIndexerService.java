@@ -1,11 +1,9 @@
 package com.learning.ai.llmragwithspringai.service;
 
-import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.prompt.transformer.TransformerContentType;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.document.DocumentReader;
 import org.springframework.ai.document.DocumentTransformer;
 import org.springframework.ai.reader.ExtractedTextFormatter;
@@ -53,15 +51,12 @@ public class DataIndexerService {
         }
         if (documentReader != null) {
             LOGGER.info("Loading text document to redis vector database");
-            var metadataEnricher = new DocumentTransformer() {
-                @Override
-                public List<Document> apply(List<Document> documents) {
-                    documents.forEach(d -> {
-                        Map<String, Object> metadata = d.getMetadata();
-                        metadata.put(TransformerContentType.EXTERNAL_KNOWLEDGE, "true");
-                    });
-                    return documents;
-                }
+            DocumentTransformer metadataEnricher = documents -> {
+                documents.forEach(d -> {
+                    Map<String, Object> metadata = d.getMetadata();
+                    metadata.put(TransformerContentType.EXTERNAL_KNOWLEDGE, "true");
+                });
+                return documents;
             };
             vectorStore.accept(metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get())));
             LOGGER.info("Loaded document to redis vector database.");
