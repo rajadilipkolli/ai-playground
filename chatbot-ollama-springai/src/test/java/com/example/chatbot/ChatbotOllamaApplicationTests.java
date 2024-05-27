@@ -42,7 +42,9 @@ class ChatbotOllamaApplicationTests {
     @Test
     void chat() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("How many cricket centuries did Sachin Tendulkar scored ?"))
+                .body(
+                        new AIChatRequest(
+                                "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI)  and Test centuries ?"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -51,12 +53,12 @@ class ChatbotOllamaApplicationTests {
                 .body("answer", containsString("100"));
 
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("What is his age ?"))
+                .body(new AIChatRequest("How many One Day International (ODI) centuries did he scored ?"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("50"));
+                .body("answer", containsString("49"));
     }
 }
