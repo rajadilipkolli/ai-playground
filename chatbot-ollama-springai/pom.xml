@@ -10,7 +10,7 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example.chatbot</groupId>
-	<artifactId>chatbot-ollama-lamma3</artifactId>
+	<artifactId>chatbot-ollama-springai</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>chatbot-ollama</name>
 	<description>Demo project for Chatbot using Ollama</description>
@@ -34,6 +34,10 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-chroma-store-spring-boot-starter</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -43,11 +47,6 @@
 		<dependency>
 			<groupId>io.rest-assured</groupId>
 			<artifactId>rest-assured</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-testcontainers</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -63,6 +62,11 @@
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>ollama</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>chromadb</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -92,7 +96,7 @@
                 <configuration>
                     <java>
                         <palantirJavaFormat>
-                            <version>2.41.0</version>
+                            <version>2.47.0</version>
                         </palantirJavaFormat>
                         <importOrder />
                         <removeUnusedImports />

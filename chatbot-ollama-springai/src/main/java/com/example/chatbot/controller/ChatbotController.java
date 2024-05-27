@@ -20,6 +20,6 @@ class ChatbotController {
 
     @PostMapping("/chat")
     AIChatResponse chat(@RequestBody AIChatRequest request) {
-        return chatbotService.chat(request.query());
+        return chatbotService.chat(request);
     }
 }
