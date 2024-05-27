@@ -5,7 +5,6 @@ import com.example.ai.model.response.AIChatResponse;
 import com.example.ai.model.response.AIStreamChatResponse;
 import com.example.ai.model.response.ActorsFilms;
 import com.example.ai.service.ChatService;
-import java.io.IOException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -55,7 +54,7 @@ public class ChatController {
     }
 
     @PostMapping("/rag")
-    AIChatResponse chatUsingRag(@RequestBody AIChatRequest aiChatRequest) throws IOException {
+    AIChatResponse chatUsingRag(@RequestBody AIChatRequest aiChatRequest) {
         return chatService.ragGenerate(aiChatRequest.query());
     }
 

@@ -2,9 +2,6 @@ package com.example.ai.service;
 
 import com.example.ai.model.response.AIChatResponse;
 import com.example.ai.model.response.ActorsFilms;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +19,7 @@ import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingClient;
 import org.springframework.ai.parser.BeanOutputParser;
+import org.springframework.ai.reader.JsonReader;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.beans.factory.annotation.Value;
@@ -106,19 +104,19 @@ public class ChatService {
         return outputParser.parse(generation.getOutput().getContent());
     }
 
-    public AIChatResponse ragGenerate(String query) throws IOException {
+    public AIChatResponse ragGenerate(String query) {
 
         // Step 1 - Load JSON document as Documents and save
         logger.info("Loading JSON as Documents and save");
         SimpleVectorStore simpleVectorStore = new SimpleVectorStore(embeddingClient);
-        List<Document> linesDocuments = new ArrayList<>();
 
+        List<Document> documents = List.of();
         if (restaurantsResource.exists()) { // load existing vector store if exists
-            String contentAsString = restaurantsResource.getContentAsString(StandardCharsets.UTF_8);
-            // Convert lines to Documents in parallel
-            linesDocuments =
-                    contentAsString.lines().parallel().map(Document::new).toList();
-            simpleVectorStore.accept(linesDocuments);
+
+            JsonReader documentReader = new JsonReader(
+                    restaurantsResource, "address", "borough", "cuisine", "grades", "name", "restaurant_id");
+            documents = documentReader.get();
+            simpleVectorStore.accept(documents);
         }
 
         // Step 2 retrieve related documents to query
@@ -139,7 +137,7 @@ public class ChatService {
         ChatResponse response = chatClient.call(prompt);
         Generation generation = response.getResult();
         String answer = (generation != null) ? generation.getOutput().getContent() : "";
-        simpleVectorStore.delete(linesDocuments.stream().map(Document::getId).toList());
+        simpleVectorStore.delete(documents.stream().map(Document::getId).toList());
         return new AIChatResponse(answer);
     }
 

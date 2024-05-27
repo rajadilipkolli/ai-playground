@@ -91,12 +91,13 @@ class ChatControllerTest {
     @Test
     void ragWithSimpleStore() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("which is the restaurant with highest grade that has cuisine as American ?"))
+                .body(new AIChatRequest(
+                        "Which is the restaurant with the highest grade that has a cuisine as American ?"))
                 .when()
                 .post("/api/ai/rag")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("American cuisine is \"Regina Caterers\""));
+                .body("answer", containsString("American cuisine is Regina Caterers"));
     }
 }
