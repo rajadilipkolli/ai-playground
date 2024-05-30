@@ -3,11 +3,11 @@ package com.learning.ai.llmragwithspringai.service;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.springframework.ai.chat.ChatClient;
-import org.springframework.ai.chat.ChatResponse;
-import org.springframework.ai.chat.Generation;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.document.Document;
@@ -40,8 +40,8 @@ public class AIChatService {
     private final ChatClient aiClient;
     private final VectorStore vectorStore;
 
-    public AIChatService(ChatClient aiClient, VectorStore vectorStore) {
-        this.aiClient = aiClient;
+    public AIChatService(ChatClient.Builder chatClientBuilder, VectorStore vectorStore) {
+        this.aiClient = chatClientBuilder.build();
         this.vectorStore = vectorStore;
     }
 
@@ -58,7 +58,7 @@ public class AIChatService {
         OpenAiChatOptions chatOptions =
                 OpenAiChatOptions.builder().withFunction("currentDateFunction").build();
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage), chatOptions);
-        ChatResponse aiResponse = aiClient.call(prompt);
+        ChatResponse aiResponse = aiClient.prompt(prompt).call().chatResponse();
         Generation generation = aiResponse.getResult();
         return (generation != null) ? generation.getOutput().getContent() : "";
     }
