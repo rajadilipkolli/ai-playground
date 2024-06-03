@@ -28,8 +28,8 @@ public class ChatbotService {
         ChatClient.ChatClientRequest.CallResponseSpec call = this.chatClient
                 .prompt()
                 .user(request.query())
-                .advisors(
-                        a -> a.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId).param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
+                .advisors(a -> a.param(CHAT_MEMORY_CONVERSATION_ID_KEY, conversationId)
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
                 .call();
         ChatResponse chatResponse = call.chatResponse();
         LOGGER.info("Response :{}", chatResponse.getResult());
