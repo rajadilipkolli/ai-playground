@@ -23,16 +23,15 @@ public class ChatbotService {
     }
 
     public AIChatResponse chat(AIChatRequest request) {
-        String conversationId = request.conversationId() == null ? "default" : request.conversationId();
 
-        ChatClient.ChatClientRequest.CallResponseSpec call = this.chatClient
+        ChatResponse chatResponse = this.chatClient
                 .prompt()
                 .user(request.query())
-                .advisors(a -> a.param(CHAT_MEMORY_CONVERSATION_ID_KEY, conversationId)
+                .advisors(a -> a.param(CHAT_MEMORY_CONVERSATION_ID_KEY, request.conversationId())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
-                .call();
-        ChatResponse chatResponse = call.chatResponse();
+                .call()
+                .chatResponse();
         LOGGER.info("Response :{}", chatResponse.getResult());
-        return new AIChatResponse(chatResponse.getResult().getOutput().getContent(), null);
+        return new AIChatResponse(chatResponse.getResult().getOutput().getContent(), request.conversationId());
     }
 }

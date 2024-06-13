@@ -43,7 +43,7 @@ class ChatbotOllamaApplicationTests {
         Response response = given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(
                         "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI) and Test centuries ?",
-                        null))
+                        "junit1"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
