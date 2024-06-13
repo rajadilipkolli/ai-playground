@@ -3,7 +3,6 @@ package com.learning.ai.llmragwithspringai.service;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.prompt.transformer.TransformerContentType;
 import org.springframework.ai.document.DocumentReader;
 import org.springframework.ai.document.DocumentTransformer;
 import org.springframework.ai.reader.ExtractedTextFormatter;
@@ -54,7 +53,7 @@ public class DataIndexerService {
             DocumentTransformer metadataEnricher = documents -> {
                 documents.forEach(d -> {
                     Map<String, Object> metadata = d.getMetadata();
-                    metadata.put(TransformerContentType.EXTERNAL_KNOWLEDGE, "true");
+                    metadata.put("EXTERNAL_KNOWLEDGE", "true");
                 });
                 return documents;
             };

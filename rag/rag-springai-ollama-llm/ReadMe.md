@@ -10,14 +10,17 @@ As LLMs need heavy computational power, they need GPU to be enabled for quick pr
 sequenceDiagram
     participant User
     participant AIChatService
-    participant ChatClient.Builder
-    participant Redis
+    participant QuestionAnswerAdvisor
+    participant RedisVectorStore
+    participant AIApiClient
 
-    User->>AIChatService: Send chat request
-    AIChatService->>ChatClient.Builder: Initialize chat client
-    ChatClient.Builder-->>AIChatService: Return chat client instance
-    AIChatService->>Redis: Enrich and load document metadata
-    Redis-->>AIChatService: Confirm metadata loaded
+    User->>AIChatService: Initiate chat request
+    AIChatService->>QuestionAnswerAdvisor: Generate advisory request
+    QuestionAnswerAdvisor->>RedisVectorStore: Query relevant information
+    RedisVectorStore-->>QuestionAnswerAdvisor: Return search results
+    QuestionAnswerAdvisor->>AIChatService: Provide advisory response
+    AIChatService->>AIApiClient: Forward chat input and advisory response
+    AIApiClient-->>AIChatService: Chat outcome
     AIChatService-->>User: Return chat response
 ```
 

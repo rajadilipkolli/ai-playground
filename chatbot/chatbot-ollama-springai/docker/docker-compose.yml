@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+    chroma:
+        container_name: chroma
+        image: chromadb/chroma:0.5.0
+        extra_hosts: [ 'host.docker.internal:host-gateway' ]
+        restart: always
+        ports:
+          - "8000:8000"
+        healthcheck:
+          # Adjust below to match your container port
+          test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat" ]
+          interval: 30s
+          timeout: 10s
+          retries: 3
