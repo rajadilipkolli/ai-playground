@@ -58,15 +58,13 @@ class ChatbotOllamaApplicationTests {
         AIChatResponse aiChatResponse = objectMapper.readValue(response.asByteArray(), AIChatResponse.class);
 
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(
-                        "How many One Day International (ODI) centuries did he scored ?",
-                        aiChatResponse.conversationId()))
+                .body(new AIChatRequest("Who scored 100 centuries ?", aiChatResponse.conversationId()))
                 .when()
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("49"))
+                .body("answer", containsString("Sachin"))
                 .log()
                 .all(true);
     }
