@@ -19,10 +19,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 @SpringBootTest(
-        classes = {TestChatbotOllamaApplication.class},
+        classes = {TestChatbotOpenaiApplication.class},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ChatbotOllamaApplicationTests {
+class ChatbotOpenaiApplicationTests {
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -41,7 +41,7 @@ class ChatbotOllamaApplicationTests {
         Response response = given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(
                         "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI) and Test centuries ?",
-                        "junit1"))
+                        "junitId"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -56,13 +56,15 @@ class ChatbotOllamaApplicationTests {
         AIChatResponse aiChatResponse = objectMapper.readValue(response.asByteArray(), AIChatResponse.class);
 
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Who scored 100 centuries ?", aiChatResponse.conversationId()))
+                .body(new AIChatRequest(
+                        "How many One Day International (ODI) centuries did he scored ?",
+                        aiChatResponse.conversationId()))
                 .when()
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("Sachin"))
+                .body("answer", containsString("49"))
                 .log()
                 .all(true);
     }
