@@ -56,6 +56,26 @@
             "projectName": "neo4j-springai",
             "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-TestLlmRagWithSpringAiApplication<rag-springai-openai-llm>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.learning.ai.llmragwithspringai.TestLlmRagWithSpringAiApplication",
+            "projectName": "rag-springai-openai-llm",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-LlmRagWithSpringAiApplication<rag-springai-openai-llm>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.learning.ai.llmragwithspringai.LlmRagWithSpringAiApplication",
+            "projectName": "rag-springai-openai-llm",
+            "args": "--spring.profiles.active=local",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }
