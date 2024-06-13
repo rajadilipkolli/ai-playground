@@ -5,8 +5,6 @@ import static org.hamcrest.Matchers.containsString;
 
 import com.example.chatbot.model.request.AIChatRequest;
 import com.example.chatbot.model.response.AIChatResponse;
-import com.fasterxml.jackson.core.exc.StreamReadException;
-import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -38,7 +36,7 @@ class ChatbotOllamaApplicationTests {
     }
 
     @Test
-    void chat() throws StreamReadException, DatabindException, IOException {
+    void chat() throws IOException {
 
         Response response = given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(

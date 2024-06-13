@@ -5,8 +5,6 @@ import static org.hamcrest.Matchers.containsString;
 
 import com.example.chatbot.model.request.AIChatRequest;
 import com.example.chatbot.model.response.AIChatResponse;
-import com.fasterxml.jackson.core.exc.StreamReadException;
-import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -38,12 +36,12 @@ class ChatbotOpenaiApplicationTests {
     }
 
     @Test
-    void chat() throws StreamReadException, DatabindException, IOException {
+    void chat() throws IOException {
 
         Response response = given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(
                         "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI) and Test centuries ?",
-                        null))
+                        "junitId"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -56,7 +54,6 @@ class ChatbotOpenaiApplicationTests {
                 .response();
 
         AIChatResponse aiChatResponse = objectMapper.readValue(response.asByteArray(), AIChatResponse.class);
-        System.out.println("conversationalId :: " + aiChatResponse.conversationId());
 
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(
