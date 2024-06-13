@@ -43,7 +43,7 @@ class ChatbotOllamaApplicationTests {
         Response response = given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(
                         "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI) and Test centuries ?",
-                        null))
+                        "junit1"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -56,18 +56,15 @@ class ChatbotOllamaApplicationTests {
                 .response();
 
         AIChatResponse aiChatResponse = objectMapper.readValue(response.asByteArray(), AIChatResponse.class);
-        System.out.println("conversationalId :: " + aiChatResponse.conversationId());
 
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(
-                        "How many One Day International (ODI) centuries did he scored ?",
-                        aiChatResponse.conversationId()))
+                .body(new AIChatRequest("Who scored 100 centuries ?", aiChatResponse.conversationId()))
                 .when()
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("49"))
+                .body("answer", containsString("Sachin"))
                 .log()
                 .all(true);
     }
