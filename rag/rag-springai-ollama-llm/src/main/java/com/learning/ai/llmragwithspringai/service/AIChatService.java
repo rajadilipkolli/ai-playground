@@ -22,21 +22,24 @@ public class AIChatService {
             isn't found in the DOCUMENTS section, simply state that you don't know the answer.
 
             DOCUMENTS:
-            {documents}
+            {question_answer_context}
 
             """;
 
     private final ChatClient aiClient;
+    private final VectorStore vectorStore;
 
     public AIChatService(ChatClient.Builder builder, VectorStore vectorStore) {
-        this.aiClient = builder.defaultSystem(template)
-                .defaultAdvisors(new QuestionAnswerAdvisor(
-                        vectorStore, SearchRequest.defaults().withTopK(5))) // RAG
-                .build();
+        this.aiClient = builder.build();
+        this.vectorStore = vectorStore;
     }
 
     public String chat(String query) {
-        ChatResponse aiResponse = aiClient.prompt().user(query).call().chatResponse();
+        ChatResponse aiResponse = aiClient.prompt()
+                .advisors(new QuestionAnswerAdvisor(vectorStore, SearchRequest.query(query), template))
+                .user(query)
+                .call()
+                .chatResponse();
         LOGGER.info("Response received from call :{}", aiResponse);
         Generation generation = aiResponse.getResult();
         return (generation != null) ? generation.getOutput().getContent() : "";
