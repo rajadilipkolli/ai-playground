@@ -3,11 +3,11 @@ name: chatbot-ollama-springai CI Build
 on:
   push:
     paths:
-      - "chatbot-ollama-springai/**"
+      - "chatbot/chatbot-ollama-springai/**"
     branches: [main]
   pull_request:
     paths:
-      - "chatbot-ollama-springai/**"
+      - "chatbot/chatbot-ollama-springai/**"
     types:
       - opened
       - synchronize
@@ -19,10 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: chatbot-ollama-springai
+        working-directory: chatbot/chatbot-ollama-springai
     strategy:
       matrix:
-        distribution: [ 'temurin' ]
         java: [ '21' ]
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +32,7 @@ jobs:
         uses: actions/setup-java@v4.2.1
         with:
           java-version: ${{ matrix.java }}
-          distribution: ${{ matrix.distribution }}
+          distribution: temurin
           cache: 'maven'
       - name: Build and analyze
         run: ./mvnw clean verify

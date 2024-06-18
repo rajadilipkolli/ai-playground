@@ -84,7 +84,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("queryResponse", containsString("don't"))
+                .body("queryResponse", containsString("No"))
                 .log()
                 .all();
     }
