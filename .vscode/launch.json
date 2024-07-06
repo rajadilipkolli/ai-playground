@@ -86,6 +86,16 @@
             "projectName": "rag-langchain4j-AllMiniLmL6V2-llm",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-LlmRagWithSpringAiApplication<rag-springai-ollama-llm>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.learning.ai.llmragwithspringai.LlmRagWithSpringAiApplication",
+            "projectName": "rag-springai-ollama-llm",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }
