@@ -76,6 +76,16 @@
             "projectName": "rag-springai-openai-llm",
             "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-LLMRagWithSpringBoot<rag-langchain4j-AllMiniLmL6V2-llm>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.learning.ai.LLMRagWithSpringBoot",
+            "projectName": "rag-langchain4j-AllMiniLmL6V2-llm",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

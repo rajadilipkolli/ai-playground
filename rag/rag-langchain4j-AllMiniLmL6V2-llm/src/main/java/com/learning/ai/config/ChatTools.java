@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class ChatTools {
+class ChatTools {
 
     /**
      * This tool is available to {@link AICustomerSupportAgent}

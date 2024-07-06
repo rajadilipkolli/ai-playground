@@ -9,4 +9,4 @@ import org.springframework.context.annotation.Configuration;
 @OpenAPIDefinition(
         info = @Info(title = "rag-langchain4j-AllMiniLmL6V2-llm", version = "v1.0.0"),
         servers = @Server(url = "/"))
-public class SwaggerConfig {}
+class SwaggerConfig {}

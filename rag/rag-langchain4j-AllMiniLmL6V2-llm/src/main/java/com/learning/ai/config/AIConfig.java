@@ -29,7 +29,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 @Configuration(proxyBeanMethods = false)
-public class AIConfig {
+class AIConfig {
 
     @Bean
     AICustomerSupportAgent customerSupportAgent(
