@@ -7,4 +7,4 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration(proxyBeanMethods = false)
 @OpenAPIDefinition(info = @Info(title = "rag-springai-openai-llm", version = "v1.0.0"), servers = @Server(url = "/"))
-public class SwaggerConfig {}
+class SwaggerConfig {}

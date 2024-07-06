@@ -14,7 +14,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 @Configuration(proxyBeanMethods = false)
-public class AppConfig {
+class AppConfig {
     private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
 
     @Value("classpath:Rohit_Gurunath_Sharma.docx")
