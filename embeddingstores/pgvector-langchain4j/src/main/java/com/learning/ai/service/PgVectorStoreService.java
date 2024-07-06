@@ -37,7 +37,7 @@ public class PgVectorStoreService {
         }
         EmbeddingSearchRequest embeddingSearchRequest = embeddingSearchRequestBuilder.build();
         EmbeddingSearchResult<TextSegment> relevant = embeddingStore.search(embeddingSearchRequest);
-        EmbeddingMatch<TextSegment> embeddingMatch = relevant.matches().get(0);
+        EmbeddingMatch<TextSegment> embeddingMatch = relevant.matches().getFirst();
 
         LOGGER.info("Score : {}", embeddingMatch.score()); // 0.8144288608390052
         String answer = embeddingMatch.embedded().text();

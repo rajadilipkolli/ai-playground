@@ -34,7 +34,7 @@ public class CustomerSupportService {
                 .maxResults(1)
                 .build();
         EmbeddingSearchResult<TextSegment> relevant = embeddingStore.search(embeddingSearchRequest);
-        EmbeddingMatch<TextSegment> embeddingMatch = relevant.matches().get(0);
+        EmbeddingMatch<TextSegment> embeddingMatch = relevant.matches().getFirst();
 
         String embeddedText = embeddingMatch.embedded().text();
         return aiCustomerSupportAgent.chat(question, embeddedText);

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/ai")
 @Validated
-public class CustomerSupportController {
+class CustomerSupportController {
 
     private final CustomerSupportService customerSupportService;
 
@@ -22,7 +22,7 @@ public class CustomerSupportController {
     }
 
     @PostMapping("/chat")
-    public AICustomerSupportResponse customerSupportChat(@RequestBody @Valid AIChatRequest aiChatRequest) {
+    AICustomerSupportResponse customerSupportChat(@RequestBody @Valid AIChatRequest aiChatRequest) {
         return customerSupportService.chat(aiChatRequest.question());
     }
 }

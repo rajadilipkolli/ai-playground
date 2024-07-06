@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/data/v1/")
-public class DataIndexController {
+class DataIndexController {
 
     private final DataIndexerService dataIndexerService;
 
@@ -19,7 +19,7 @@ public class DataIndexController {
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> load(@RequestPart("file") MultipartFile multipartFile) {
+    ResponseEntity<String> load(@RequestPart("file") MultipartFile multipartFile) {
         try {
             this.dataIndexerService.loadData(multipartFile.getResource());
             return ResponseEntity.ok("Data indexed successfully!");
@@ -30,7 +30,7 @@ public class DataIndexController {
     }
 
     @GetMapping("count")
-    public Map<String, Long> count() {
+    Map<String, Long> count() {
         return Map.of("count", dataIndexerService.count());
     }
 }

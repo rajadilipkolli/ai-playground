@@ -1,4 +1,3 @@
-version: '3.7'
 services:
     ollama:
         image: langchain4j/ollama-llama3:latest

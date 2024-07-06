@@ -5,6 +5,8 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.opensearch.OpenSearchEmbeddingStore;
 
@@ -57,12 +59,12 @@ public class OpenSearchExample {
 //        DocumentSplitter splitter = DocumentSplitters.recursive(600, 0);
 //        List<TextSegment> segments = splitter.split(document);
 
-             // Read lines from the file in parallel
-             List<String> lines = Files.lines(path).parallel().toList();
+            // Read lines from the file in parallel
+            List<String> lines = Files.lines(path).parallel().toList();
 
-             // Convert lines to text segments in parallel
-             List<TextSegment> segments = lines.parallelStream().map(TextSegment::from).toList();
- 
+            // Convert lines to text segments in parallel
+            List<TextSegment> segments = lines.parallelStream().map(TextSegment::from).toList();
+
             // Split the data into batches
             List<List<TextSegment>> batches = splitIntoBatches(segments, batchSize);
             // Process and save each batch
@@ -76,22 +78,25 @@ public class OpenSearchExample {
         }
 
         Embedding queryEmbedding = embeddingModel.embed("What is your favourite sport?").content();
-        List<EmbeddingMatch<TextSegment>> relevant = embeddingStore.findRelevant(queryEmbedding, 1);
-        EmbeddingMatch<TextSegment> embeddingMatch = relevant.get(0);
+        EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder().queryEmbedding(queryEmbedding).maxResults(1).build();
+        EmbeddingSearchResult<TextSegment> embeddingSearchResult = embeddingStore.search(searchRequest);
+        EmbeddingMatch<TextSegment> embeddingMatch = embeddingSearchResult.matches().get(0);
 
         System.out.println(embeddingMatch.score()); // 0.8805834
         System.out.println(embeddingMatch.embedded().text()); // Cricket is my favourite sport.
 
         queryEmbedding = embeddingModel.embed("Which sport do you love?").content();
-        relevant = embeddingStore.findRelevant(queryEmbedding, 1);
-        embeddingMatch = relevant.get(0);
+        searchRequest = EmbeddingSearchRequest.builder().queryEmbedding(queryEmbedding).maxResults(1).build();
+        embeddingSearchResult = embeddingStore.search(searchRequest);
+        embeddingMatch = embeddingSearchResult.matches().get(0);
 
         System.out.println(embeddingMatch.score()); // 0.8376416
         System.out.println(embeddingMatch.embedded().text()); // Cricket is my favourite sport.
 
         queryEmbedding = embeddingModel.embed("Which is the restaurant with highest rating?").content();
-        relevant = embeddingStore.findRelevant(queryEmbedding, 1);
-        embeddingMatch = relevant.get(0);
+        searchRequest = EmbeddingSearchRequest.builder().queryEmbedding(queryEmbedding).maxResults(1).build();
+        embeddingSearchResult = embeddingStore.search(searchRequest);
+        embeddingMatch = embeddingSearchResult.matches().get(0);
 
         System.out.println(embeddingMatch.score()); // 0.64560163
         System.out.println(embeddingMatch.embedded().text()); // "restaurant_id": "40371727"

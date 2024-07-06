@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/ai")
 @Validated
-public class AiController {
+class AiController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AiController.class);
 

@@ -43,6 +43,6 @@ public class Main {
 
         String body = response.body();
         ChatResponse chatResponse = mapper.readValue(body, ChatResponse.class);
-        System.out.println(chatResponse.choices().get(0).message().content());
+        System.out.println(chatResponse.choices().getFirst().message().content());
     }
 }

@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.learning.ai.config.AbstractIntegrationTest;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class TestQueryController extends AbstractIntegrationTest {
@@ -21,7 +20,6 @@ class TestQueryController extends AbstractIntegrationTest {
     }
 
     @Test
-    @Disabled("Fixed in later version of langchain4j > 0.30.0")
     void queryEmbeddedStoreWithMetadata() throws Exception {
         mockMvc.perform(get("/api/ai/query")
                         .param("question", "What is your favourite sport")
