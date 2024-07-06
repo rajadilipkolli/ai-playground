@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/ai")
-public class QueryController {
+class QueryController {
 
     private final Neo4jVectorStoreService neo4jVectorStoreService;
 

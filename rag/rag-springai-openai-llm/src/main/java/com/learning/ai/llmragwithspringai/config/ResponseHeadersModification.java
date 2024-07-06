@@ -26,7 +26,7 @@ import org.springframework.util.StreamUtils;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(value = "spring.ai.openai.api-key", havingValue = "demo")
-public class ResponseHeadersModification {
+class ResponseHeadersModification {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ResponseHeadersModification.class);
 
