@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/ai")
-public class QueryController {
+class QueryController {
 
     private final PgVectorStoreService pgVectorStoreService;
 

@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Description;
 
 @Configuration(proxyBeanMethods = false)
-public class FunctionConfiguration {
+class FunctionConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionConfiguration.class);
 

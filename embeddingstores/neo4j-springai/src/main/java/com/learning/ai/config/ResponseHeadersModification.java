@@ -16,7 +16,7 @@ import org.springframework.web.client.RestClient;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(value = "spring.ai.openai.api-key", havingValue = "demo")
-public class ResponseHeadersModification {
+class ResponseHeadersModification {
 
     @Bean
     RestClient.Builder restClientBuilder() {

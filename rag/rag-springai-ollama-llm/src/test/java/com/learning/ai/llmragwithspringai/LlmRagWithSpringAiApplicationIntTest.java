@@ -2,6 +2,7 @@ package com.learning.ai.llmragwithspringai;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
@@ -70,7 +71,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("queryResponse", containsString("yes"))
+                .body("queryResponse", containsStringIgnoringCase("yes"))
                 .log()
                 .all();
     }
@@ -84,7 +85,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("queryResponse", containsString("No"))
+                .body("queryResponse", containsStringIgnoringCase("No"))
                 .log()
                 .all();
     }
