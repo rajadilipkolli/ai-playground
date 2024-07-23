@@ -2,7 +2,7 @@ version: '3.7'
 services:
     chroma:
         container_name: chroma
-        image: chromadb/chroma:0.5.4
+        image: chromadb/chroma:0.5.5
         extra_hosts: [ 'host.docker.internal:host-gateway' ]
         restart: always
         ports:
