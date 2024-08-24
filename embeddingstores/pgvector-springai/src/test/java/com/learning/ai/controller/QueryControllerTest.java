@@ -3,7 +3,7 @@ package com.learning.ai.controller;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
-import com.learning.ai.TestPgVectorEmbeddingStoreExample;
+import com.learning.ai.TestPgVectorOpenAIEmbeddingStoreExample;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        classes = TestPgVectorEmbeddingStoreExample.class)
+        classes = TestPgVectorOpenAIEmbeddingStoreExample.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class QueryControllerTest {
 
