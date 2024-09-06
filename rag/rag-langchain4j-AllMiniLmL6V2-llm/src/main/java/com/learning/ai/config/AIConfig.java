@@ -32,7 +32,7 @@ import org.springframework.core.io.ResourceLoader;
 class AIConfig {
 
     @Bean
-    AICustomerSupportAgent customerSupportAgent(
+    AICustomerSupportAgent aiCustomerSupportAgent(
             ChatLanguageModel chatLanguageModel,
             ChatTools chatAssistantTools,
             ContentRetriever contentRetriever,
