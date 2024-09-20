@@ -19,7 +19,7 @@ public class Main {
     // "https://api.openai.com/v1/chat/completions";
     public static final String OPENAI_API_KEY = "demo";
     public static final String CHAT_URL = "http://langchain4j.dev/demo/openai/v1/chat/completions";
-    public final static String MODEL = "gpt-3.5-turbo";
+    public final static String MODEL = "gpt-4o-mini";
     public final static double TEMPERATURE = 0.7;
 
     static HttpClient client = HttpClient.newHttpClient();
