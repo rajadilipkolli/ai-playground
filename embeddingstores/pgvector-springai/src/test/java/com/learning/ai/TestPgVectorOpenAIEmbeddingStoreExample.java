@@ -7,11 +7,11 @@ import org.springframework.boot.testcontainers.context.ImportTestcontainers;
 
 @TestConfiguration(proxyBeanMethods = false)
 @ImportTestcontainers(ContainersConfig.class)
-public class TestPgVectorEmbeddingStoreExample {
+public class TestPgVectorOpenAIEmbeddingStoreExample {
 
     public static void main(String[] args) {
-        SpringApplication.from(PgVectorEmbeddingStoreExample::main)
-                .with(TestPgVectorEmbeddingStoreExample.class)
+        SpringApplication.from(PgVectorOpenAIEmbeddingStoreExample::main)
+                .with(TestPgVectorOpenAIEmbeddingStoreExample.class)
                 .run(args);
     }
 }

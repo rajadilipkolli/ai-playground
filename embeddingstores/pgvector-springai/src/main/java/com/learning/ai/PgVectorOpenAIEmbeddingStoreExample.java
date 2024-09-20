@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PgVectorEmbeddingStoreExample {
+public class PgVectorOpenAIEmbeddingStoreExample {
 
     public static void main(String[] args) {
-        SpringApplication.run(PgVectorEmbeddingStoreExample.class, args);
+        SpringApplication.run(PgVectorOpenAIEmbeddingStoreExample.class, args);
     }
 }
