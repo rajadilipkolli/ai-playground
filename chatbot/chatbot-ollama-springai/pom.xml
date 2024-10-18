@@ -18,7 +18,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<spotless.version>2.43.0</spotless.version>
-		<spring-ai.version>1.0.0-M1</spring-ai.version>
+		<spring-ai.version>1.0.0-M3</spring-ai.version>
 	</properties>
 
 	<dependencies>
@@ -96,7 +96,7 @@
 				<configuration>
 					<java>
 						<palantirJavaFormat>
-							<version>2.47.0</version>
+							<version>2.50.0</version>
 						</palantirJavaFormat>
 						<importOrder />
 						<removeUnusedImports />
