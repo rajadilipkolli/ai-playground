@@ -8,7 +8,7 @@ services:
         ports:
           - '6379:6379'
     lgtm-stack:
-        image: grafana/otel-lgtm:0.7.5
+        image: grafana/otel-lgtm:0.7.6
         extra_hosts: ['host.docker.internal:host-gateway']
         container_name: lgtm-stack
         environment:
