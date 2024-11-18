@@ -2,7 +2,7 @@ version: '3.7'
 services:
     postgresqldb:
         container_name: postgresqldb
-        image: pgvector/pgvector:pg16
+        image: pgvector/pgvector:pg17
         extra_hosts: [ 'host.docker.internal:host-gateway' ]
         restart: always
         environment:
