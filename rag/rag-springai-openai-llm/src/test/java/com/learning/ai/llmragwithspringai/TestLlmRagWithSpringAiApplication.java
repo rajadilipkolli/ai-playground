@@ -13,7 +13,7 @@ public class TestLlmRagWithSpringAiApplication {
     @Bean
     @ServiceConnection
     PostgreSQLContainer<?> pgvectorContainer() {
-        return new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg16"));
+        return new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg17"));
     }
 
     public static void main(String[] args) {
