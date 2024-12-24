@@ -59,7 +59,7 @@ public class DataIndexerService {
                 return documents;
             };
             vectorStore.accept(metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get())));
-            LOGGER.info("Loaded document to redis vector database.");
+            LOGGER.info("Loaded document to vector database.");
         }
     }
 
