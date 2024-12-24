@@ -2,6 +2,27 @@
     "configurations": [
         {
             "type": "java",
+            "name": "LangChain4JObservabilityDemo",
+            "request": "launch",
+            "mainClass": "com.learning.openai.LangChain4JObservabilityDemo",
+            "projectName": "playground-langchain4j"
+        },
+        {
+            "type": "java",
+            "name": "LangChain4JOpenAIDemo",
+            "request": "launch",
+            "mainClass": "com.learning.openai.LangChain4JOpenAIDemo",
+            "projectName": "playground-langchain4j"
+        },
+        {
+            "type": "java",
+            "name": "LangChain4JSentimentAnalyzer",
+            "request": "launch",
+            "mainClass": "com.learning.openai.LangChain4JSentimentAnalyzer",
+            "projectName": "playground-langchain4j"
+        },
+        {
+            "type": "java",
             "name": "Main",
             "request": "launch",
             "mainClass": "com.example.learning.Main",
@@ -94,6 +115,16 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "com.learning.ai.llmragwithspringai.LlmRagWithSpringAiApplication",
             "projectName": "rag-springai-ollama-llm",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ChatbotOllamaApplication<chatbot-ollama-springai>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.chatbot.ChatbotOllamaApplication",
+            "projectName": "chatbot-ollama-springai",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
         }

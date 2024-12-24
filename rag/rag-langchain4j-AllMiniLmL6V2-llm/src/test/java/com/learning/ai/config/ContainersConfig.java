@@ -8,5 +8,5 @@ public interface ContainersConfig {
 
     @ServiceConnection
     PostgreSQLContainer<?> postgreSQLContainer =
-            new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg16"));
+            new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg17"));
 }
