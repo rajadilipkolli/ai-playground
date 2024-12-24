@@ -3,9 +3,7 @@ package com.learning.ai.llmragwithspringai.service;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.springframework.ai.chat.ChatClient;
-import org.springframework.ai.chat.ChatResponse;
-import org.springframework.ai.chat.Generation;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -40,8 +38,8 @@ public class AIChatService {
     private final ChatClient aiClient;
     private final VectorStore vectorStore;
 
-    public AIChatService(ChatClient aiClient, VectorStore vectorStore) {
-        this.aiClient = aiClient;
+    public AIChatService(ChatClient.Builder chatClientBuilder, VectorStore vectorStore) {
+        this.aiClient = chatClientBuilder.clone().build();
         this.vectorStore = vectorStore;
     }
 
@@ -49,17 +47,15 @@ public class AIChatService {
         // Querying the VectorStore using natural language looking for the information about info asked.
         List<Document> listOfSimilarDocuments = this.vectorStore.similaritySearch(searchQuery);
         String documents = listOfSimilarDocuments.stream()
-                .map(Document::getContent)
+                .map(Document::getText)
                 .collect(Collectors.joining(System.lineSeparator()));
         // Constructing the systemMessage to indicate the AI model to use the passed information
         // to answer the question.
         Message systemMessage = new SystemPromptTemplate(template).createMessage(Map.of("documents", documents));
         UserMessage userMessage = new UserMessage(searchQuery);
         OpenAiChatOptions chatOptions =
-                OpenAiChatOptions.builder().withFunction("currentDateFunction").build();
+                OpenAiChatOptions.builder().function("currentDateFunction").build();
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage), chatOptions);
-        ChatResponse aiResponse = aiClient.call(prompt);
-        Generation generation = aiResponse.getResult();
-        return (generation != null) ? generation.getOutput().getContent() : "";
+        return aiClient.prompt(prompt).call().content();
     }
 }
