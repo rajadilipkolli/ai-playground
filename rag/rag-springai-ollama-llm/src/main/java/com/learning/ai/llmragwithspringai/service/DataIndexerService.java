@@ -1,6 +1,7 @@
 package com.learning.ai.llmragwithspringai.service;
 
 import java.util.Map;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.DocumentReader;
@@ -58,11 +59,11 @@ public class DataIndexerService {
                 return documents;
             };
             vectorStore.accept(metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get())));
-            LOGGER.info("Loaded document to redis vector database.");
+            LOGGER.info("Loaded document to vector database.");
         }
     }
 
     public long count() {
-        return this.vectorStore.similaritySearch("*").size();
+        return Objects.requireNonNull(this.vectorStore.similaritySearch("*")).size();
     }
 }
