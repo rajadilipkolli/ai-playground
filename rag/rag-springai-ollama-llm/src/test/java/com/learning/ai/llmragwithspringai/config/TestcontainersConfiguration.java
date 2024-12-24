@@ -1,6 +1,5 @@
 package com.learning.ai.llmragwithspringai.config;
 
-import java.io.IOException;
 import java.time.Duration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -15,14 +14,8 @@ public class TestcontainersConfiguration {
 
     @Bean
     @ServiceConnection
-    OllamaContainer ollama() throws IOException, InterruptedException {
-        // The model name to use (e.g., "orca-mini", "mistral", "llama2", "codellama", "phi", or
-        // "tinyllama")
-        OllamaContainer ollamaContainer = new OllamaContainer(
-                DockerImageName.parse("langchain4j/ollama-mistral:latest").asCompatibleSubstituteFor("ollama/ollama"));
-        ollamaContainer.start();
-        ollamaContainer.execInContainer("ollama", "pull", "nomic-embed-text");
-        return ollamaContainer;
+    OllamaContainer ollama() {
+        return new OllamaContainer(DockerImageName.parse("ollama/ollama"));
     }
 
     @Bean
