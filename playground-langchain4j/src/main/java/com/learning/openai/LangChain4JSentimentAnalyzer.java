@@ -2,6 +2,7 @@ package com.learning.openai;
 
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.service.AiServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,13 +13,11 @@ public class LangChain4JSentimentAnalyzer {
 
     public static void main(String[] args) {
 
-        OpenAiChatModel openAiChatModel = OpenAiChatModel.withApiKey("demo");
-
-        //        OpenAiChatModel openAiChatModel = OpenAiChatModel.builder().apiKey("demo")
-        //                .modelName(OpenAiChatModelName.GPT_3_5_TURBO)
-        //                .logRequests(true)
-        //                .logResponses(true)
-        //                .build();
+               OpenAiChatModel openAiChatModel = OpenAiChatModel.builder().apiKey("demo")
+                       .modelName(OpenAiChatModelName.GPT_4_O_MINI)
+                       .logRequests(true)
+                       .logResponses(true)
+                       .build();
 
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(20);
 

@@ -17,7 +17,7 @@ public class LangChain4JAIServicesDemo {
         //        OpenAiChatModel openAiChatModel = OpenAiChatModel.withApiKey("demo");
         OpenAiChatModel openAiChatModel = OpenAiChatModel.builder()
                 .apiKey("demo")
-                .modelName(OpenAiChatModelName.GPT_3_5_TURBO)
+                .modelName(OpenAiChatModelName.GPT_4_O_MINI)
                 .logRequests(false)
                 .logResponses(false)
                 .build();

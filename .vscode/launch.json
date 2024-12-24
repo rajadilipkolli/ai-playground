@@ -2,6 +2,27 @@
     "configurations": [
         {
             "type": "java",
+            "name": "LangChain4JObservabilityDemo",
+            "request": "launch",
+            "mainClass": "com.learning.openai.LangChain4JObservabilityDemo",
+            "projectName": "playground-langchain4j"
+        },
+        {
+            "type": "java",
+            "name": "LangChain4JOpenAIDemo",
+            "request": "launch",
+            "mainClass": "com.learning.openai.LangChain4JOpenAIDemo",
+            "projectName": "playground-langchain4j"
+        },
+        {
+            "type": "java",
+            "name": "LangChain4JSentimentAnalyzer",
+            "request": "launch",
+            "mainClass": "com.learning.openai.LangChain4JSentimentAnalyzer",
+            "projectName": "playground-langchain4j"
+        },
+        {
+            "type": "java",
             "name": "Main",
             "request": "launch",
             "mainClass": "com.example.learning.Main",
