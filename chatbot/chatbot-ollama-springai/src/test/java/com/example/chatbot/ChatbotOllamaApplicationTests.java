@@ -3,6 +3,7 @@ package com.example.chatbot;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 
+import com.example.chatbot.common.ContainerConfig;
 import com.example.chatbot.model.request.AIChatRequest;
 import com.example.chatbot.model.response.AIChatResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,7 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 @SpringBootTest(
-        classes = {TestChatbotOllamaApplication.class},
+        classes = {ContainerConfig.class},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ChatbotOllamaApplicationTests {
@@ -39,11 +40,11 @@ class ChatbotOllamaApplicationTests {
     void chat() throws IOException {
 
         Response response = given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(
-                        "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI) and Test centuries ?",
-                        "junit1"))
+                .body(
+                        new AIChatRequest(
+                                "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI) and Test centuries ?"))
                 .when()
-                .post("/api/ai/chat")
+                .post("/api/ai/chat/{conversationId}", "junit1")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
@@ -56,9 +57,9 @@ class ChatbotOllamaApplicationTests {
         AIChatResponse aiChatResponse = objectMapper.readValue(response.asByteArray(), AIChatResponse.class);
 
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Who scored 100 centuries ?", aiChatResponse.conversationId()))
+                .body(new AIChatRequest("Who scored 100 centuries ?"))
                 .when()
-                .post("/api/ai/chat")
+                .post("/api/ai/chat/{conversationId}", aiChatResponse.conversationId())
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
