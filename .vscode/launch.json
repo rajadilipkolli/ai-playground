@@ -96,6 +96,16 @@
             "projectName": "rag-springai-ollama-llm",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ChatbotOllamaApplication<chatbot-ollama-springai>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.chatbot.ChatbotOllamaApplication",
+            "projectName": "chatbot-ollama-springai",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

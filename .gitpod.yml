@@ -9,6 +9,10 @@ ports:
     onOpen: open-browser
   - port: 5050
     visibility: public
+  - port: 3000
+    visibility: public
+    onOpen: open-browser
+
 vscode:
   extensions:
     - vscjava.vscode-java-pack

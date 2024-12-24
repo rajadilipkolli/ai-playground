@@ -1,5 +1,11 @@
-version: '3.7'
 services:
+
+    ollama:
+      container_name: ollama
+      image: ollama/ollama:latest
+      ports:
+        - '11434:11434'
+
     postgresqldb:
         container_name: postgresqldb
         image: pgvector/pgvector:pg17
@@ -41,3 +47,15 @@ services:
           - "/bin/sh"
           - "-c"
           - "/bin/echo 'postgresqldb:5432:*:appuser:secret' > /tmp/pgpassfile && chmod 600 /tmp/pgpassfile && /entrypoint.sh"
+
+    lgtm-stack:
+      image: grafana/otel-lgtm:0.8.1
+      extra_hosts: [ 'host.docker.internal:host-gateway' ]
+      container_name: lgtm-stack
+      environment:
+        - OTEL_METRIC_EXPORT_INTERVAL=500
+      ports:
+        - "3000:3000"
+        - "4317:4317"
+        - "4318:4318"
+        - "9090:9090"
