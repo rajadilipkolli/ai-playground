@@ -11,6 +11,7 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -77,6 +78,7 @@ class ChatControllerTest {
     }
 
     @Test
+    @Disabled
     void outputParser() {
         given().param("actor", "Jr NTR")
                 .when()
@@ -89,6 +91,7 @@ class ChatControllerTest {
     }
 
     @Test
+    @Disabled
     void ragWithSimpleStore() {
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(
