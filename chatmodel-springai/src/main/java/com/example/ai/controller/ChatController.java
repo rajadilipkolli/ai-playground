@@ -50,12 +50,12 @@ public class ChatController {
     public ActorsFilms generate(@RequestParam(value = "actor", defaultValue = "Jr NTR") String actor) {
         return chatService.generateAsBean(actor);
     }
-    //
-    //    @PostMapping("/rag")
-    //    AIChatResponse chatUsingRag(@RequestBody AIChatRequest aiChatRequest) {
-    //        return chatService.ragGenerate(aiChatRequest.query());
-    //    }
-    //
+
+    @PostMapping("/rag")
+    AIChatResponse chatUsingRag(@RequestBody AIChatRequest aiChatRequest) {
+        return chatService.ragGenerate(aiChatRequest.query());
+    }
+
     //    @PostMapping("/chat/stream")
     //    AIStreamChatResponse streamChat(@RequestBody AIChatRequest aiChatRequest) {
     //        Flux<String> streamChat = chatService.streamChat(aiChatRequest.query());

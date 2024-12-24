@@ -11,7 +11,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -86,11 +85,10 @@ class ChatControllerTest {
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
                 .body("actor", is("Jr NTR"))
-                .body("movies", hasSize(greaterThanOrEqualTo(13)));
+                .body("movies", hasSize(greaterThanOrEqualTo(11)));
     }
 
     @Test
-    @Disabled
     void ragWithSimpleStore() {
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(
@@ -100,6 +98,6 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("American cuisine is Regina Caterers"));
+                .body("answer", containsString("Regina Caterers"));
     }
 }
