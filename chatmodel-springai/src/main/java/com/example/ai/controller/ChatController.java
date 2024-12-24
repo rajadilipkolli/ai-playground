@@ -2,10 +2,13 @@ package com.example.ai.controller;
 
 import com.example.ai.model.request.AIChatRequest;
 import com.example.ai.model.response.AIChatResponse;
+import com.example.ai.model.response.ActorsFilms;
 import com.example.ai.service.ChatService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -43,10 +46,10 @@ public class ChatController {
     //        return chatService.getEmbeddings(aiChatRequest.query());
     //    }
     //
-    //    @GetMapping("/output")
-    //    public ActorsFilms generate(@RequestParam(value = "actor", defaultValue = "Jr NTR") String actor) {
-    //        return chatService.generateAsBean(actor);
-    //    }
+    @GetMapping("/output")
+    public ActorsFilms generate(@RequestParam(value = "actor", defaultValue = "Jr NTR") String actor) {
+        return chatService.generateAsBean(actor);
+    }
     //
     //    @PostMapping("/rag")
     //    AIChatResponse chatUsingRag(@RequestBody AIChatRequest aiChatRequest) {

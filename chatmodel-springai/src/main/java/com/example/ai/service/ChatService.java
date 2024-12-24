@@ -1,6 +1,7 @@
 package com.example.ai.service;
 
 import com.example.ai.model.response.AIChatResponse;
+import com.example.ai.model.response.ActorsFilms;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.AssistantPromptTemplate;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -73,22 +75,21 @@ public class ChatService {
     //        List<Double> embed = embeddingClient.embed(query);
     //        return new AIChatResponse(embed.toString());
     //    }
-    //
-    //    public ActorsFilms generateAsBean(String actor) {
-    //        BeanOutputParser<ActorsFilms> outputParser = new BeanOutputParser<>(ActorsFilms.class);
-    //
-    //        String format = outputParser.getFormat();
-    //        String template = """
-    //				Generate the filmography for the actor {actor}.
-    //				{format}
-    //				""";
-    //        PromptTemplate promptTemplate = new PromptTemplate(template, Map.of("actor", actor, "format", format));
-    //        Prompt prompt = new Prompt(promptTemplate.createMessage());
-    //        ChatResponse response = chatClient.call(prompt);
-    //        Generation generation = response.getResult();
-    //
-    //        return outputParser.parse(generation.getOutput().getContent());
-    //    }
+
+    public ActorsFilms generateAsBean(String actor) {
+        BeanOutputConverter<ActorsFilms> outputParser = new BeanOutputConverter<>(ActorsFilms.class);
+
+        String format = outputParser.getFormat();
+        String template = """
+    				Generate the filmography for the actor {actor}.
+    				{format}
+    				""";
+        PromptTemplate promptTemplate = new PromptTemplate(template, Map.of("actor", actor, "format", format));
+        Prompt prompt = new Prompt(promptTemplate.createMessage());
+        String response = chatClient.prompt(prompt).call().content();
+
+        return outputParser.convert(response);
+    }
 
     //    public AIChatResponse ragGenerate(String query) {
     //

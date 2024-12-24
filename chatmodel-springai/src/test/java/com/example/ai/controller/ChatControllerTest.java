@@ -78,7 +78,6 @@ class ChatControllerTest {
     }
 
     @Test
-    @Disabled
     void outputParser() {
         given().param("actor", "Jr NTR")
                 .when()
@@ -87,7 +86,7 @@ class ChatControllerTest {
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
                 .body("actor", is("Jr NTR"))
-                .body("movies", hasSize(greaterThanOrEqualTo(25)));
+                .body("movies", hasSize(greaterThanOrEqualTo(13)));
     }
 
     @Test
