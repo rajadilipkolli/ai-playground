@@ -3,10 +3,10 @@ package com.learning.ai.llmragwithspringai.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.model.Generation;
-import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.chat.client.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.chat.prompt.AssistantPromptTemplate;
+import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
+import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
@@ -22,26 +22,35 @@ public class AIChatService {
             isn't found in the DOCUMENTS section, simply state that you don't know the answer.
 
             DOCUMENTS:
-            {question_answer_context}
+            {query}
 
             """;
 
     private final ChatClient aiClient;
-    private final VectorStore vectorStore;
 
     public AIChatService(ChatClient.Builder builder, VectorStore vectorStore) {
-        this.aiClient = builder.build();
-        this.vectorStore = vectorStore;
+
+        var documentRetriever = VectorStoreDocumentRetriever.builder()
+                .vectorStore(vectorStore)
+                .similarityThreshold(0.50)
+                .build();
+
+        var queryAugmenter = ContextualQueryAugmenter.builder()
+                .promptTemplate(new AssistantPromptTemplate(template))
+                .allowEmptyContext(true)
+                .build();
+
+        RetrievalAugmentationAdvisor retrievalAugmentationAdvisor = RetrievalAugmentationAdvisor.builder()
+                .documentRetriever(documentRetriever)
+                .queryAugmenter(queryAugmenter)
+                .build();
+        this.aiClient =
+                builder.clone().defaultAdvisors(retrievalAugmentationAdvisor).build();
     }
 
     public String chat(String query) {
-        ChatResponse aiResponse = aiClient.prompt()
-                .advisors(new QuestionAnswerAdvisor(vectorStore, SearchRequest.query(query), template))
-                .user(query)
-                .call()
-                .chatResponse();
+        String aiResponse = aiClient.prompt().user(query).call().content();
         LOGGER.info("Response received from call :{}", aiResponse);
-        Generation generation = aiResponse.getResult();
-        return (generation != null) ? generation.getOutput().getContent() : "";
+        return aiResponse;
     }
 }

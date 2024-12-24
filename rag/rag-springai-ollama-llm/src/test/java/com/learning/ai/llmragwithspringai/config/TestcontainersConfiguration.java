@@ -1,13 +1,11 @@
 package com.learning.ai.llmragwithspringai.config;
 
-import com.redis.testcontainers.RedisStackContainer;
 import java.io.IOException;
 import java.time.Duration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Scope;
-import org.springframework.test.context.DynamicPropertyRegistry;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.grafana.LgtmStackContainer;
 import org.testcontainers.ollama.OllamaContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -28,19 +26,15 @@ public class TestcontainersConfiguration {
     }
 
     @Bean
-    RedisStackContainer redisContainer(DynamicPropertyRegistry properties) {
-        RedisStackContainer redis = new RedisStackContainer(
-                RedisStackContainer.DEFAULT_IMAGE_NAME.withTag(RedisStackContainer.DEFAULT_TAG));
-        properties.add("spring.ai.vectorstore.redis.uri", () -> "redis://%s:%d"
-                .formatted(redis.getHost(), redis.getMappedPort(6379)));
-        return redis;
+    @ServiceConnection
+    PostgreSQLContainer<?> postgreSQLContainer() {
+        return new PostgreSQLContainer<>(DockerImageName.parse("pgvector/pgvector:pg17"));
     }
 
     @Bean
-    @Scope("singleton")
-    @ServiceConnection("otel/opentelemetry-collector-contrib")
+    @ServiceConnection
     LgtmStackContainer lgtmStackContainer() {
-        return new LgtmStackContainer(DockerImageName.parse("grafana/otel-lgtm").withTag("0.7.1"))
+        return new LgtmStackContainer(DockerImageName.parse("grafana/otel-lgtm").withTag("0.8.1"))
                 .withStartupTimeout(Duration.ofMinutes(2));
     }
 }
