@@ -1,14 +1,33 @@
 services:
     ollama:
-        image: langchain4j/ollama-llama3:latest
+        image: langchain4j/ollama-mistral:latest
         ports:
           - '11434:11434'
-    redis-stack:
-        image: redis/redis-stack-server
-        ports:
-          - '6379:6379'
+
+    postgresqldb:
+      container_name: postgresqldb
+      image: pgvector/pgvector:pg17
+      extra_hosts: [ 'host.docker.internal:host-gateway' ]
+      restart: always
+      environment:
+        - POSTGRES_USER=appuser
+        - POSTGRES_PASSWORD=secret
+        - POSTGRES_DB=appdb
+        - PGPASSWORD=secret
+      logging:
+        options:
+          max-size: 10m
+          max-file: "3"
+      ports:
+        - '5432:5432'
+      healthcheck:
+        test: "pg_isready -U appuser -d appdb"
+        interval: 2s
+        timeout: 20s
+        retries: 10
+
     lgtm-stack:
-        image: grafana/otel-lgtm:0.8.0
+        image: grafana/otel-lgtm:0.8.1
         extra_hosts: ['host.docker.internal:host-gateway']
         container_name: lgtm-stack
         environment:
