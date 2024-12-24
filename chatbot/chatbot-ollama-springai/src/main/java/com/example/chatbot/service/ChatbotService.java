@@ -8,7 +8,6 @@ import com.example.chatbot.model.response.AIChatResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,16 +21,18 @@ public class ChatbotService {
         this.chatClient = chatClient;
     }
 
-    public AIChatResponse chat(AIChatRequest request) {
+    public AIChatResponse chat(String conversationId, AIChatRequest request) {
 
-        ChatResponse chatResponse = this.chatClient
+        String chatResponse = this.chatClient
                 .prompt()
                 .user(request.query())
-                .advisors(a -> a.param(CHAT_MEMORY_CONVERSATION_ID_KEY, request.conversationId())
-                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
+                .advisors(a -> {
+                    a.param(CHAT_MEMORY_CONVERSATION_ID_KEY, conversationId);
+                    a.param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100);
+                })
                 .call()
-                .chatResponse();
-        LOGGER.info("Response :{}", chatResponse.getResult());
-        return new AIChatResponse(chatResponse.getResult().getOutput().getContent(), request.conversationId());
+                .content();
+        LOGGER.info("Response :{}", chatResponse);
+        return new AIChatResponse(chatResponse, conversationId);
     }
 }
