@@ -32,6 +32,7 @@ class AppConfig {
             ExtractedTextFormatter textFormatter = ExtractedTextFormatter.builder()
                     .withNumberOfBottomTextLinesToDelete(3)
                     .withNumberOfTopPagesToSkipBeforeDelete(1)
+                    .withNumberOfTopTextLinesToDelete(1)
                     .build();
             TikaDocumentReader documentReader = new TikaDocumentReader(resource, textFormatter);
             template.update("delete from vector_store");
