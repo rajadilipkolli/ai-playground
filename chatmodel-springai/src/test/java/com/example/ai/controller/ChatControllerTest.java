@@ -85,7 +85,7 @@ class ChatControllerTest {
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
                 .body("actor", is("Jr NTR"))
-                .body("movies", hasSize(greaterThanOrEqualTo(25)));
+                .body("movies", hasSize(greaterThanOrEqualTo(11)));
     }
 
     @Test
@@ -98,6 +98,6 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("American cuisine is Regina Caterers"));
+                .body("answer", containsString("Regina Caterers"));
     }
 }

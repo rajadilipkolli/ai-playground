@@ -2,7 +2,6 @@ package com.example.ai.controller;
 
 import com.example.ai.model.request.AIChatRequest;
 import com.example.ai.model.response.AIChatResponse;
-import com.example.ai.model.response.AIStreamChatResponse;
 import com.example.ai.model.response.ActorsFilms;
 import com.example.ai.service.ChatService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/ai")
@@ -43,11 +41,11 @@ public class ChatController {
         return chatService.analyzeSentiment(aiChatRequest.query());
     }
 
-    @PostMapping("/emebedding-client-conversion")
-    AIChatResponse chatWithEmbeddingClient(@RequestBody AIChatRequest aiChatRequest) {
-        return chatService.getEmbeddings(aiChatRequest.query());
-    }
-
+    //    @PostMapping("/emebedding-client-conversion")
+    //    AIChatResponse chatWithEmbeddingClient(@RequestBody AIChatRequest aiChatRequest) {
+    //        return chatService.getEmbeddings(aiChatRequest.query());
+    //    }
+    //
     @GetMapping("/output")
     public ActorsFilms generate(@RequestParam(value = "actor", defaultValue = "Jr NTR") String actor) {
         return chatService.generateAsBean(actor);
@@ -58,9 +56,9 @@ public class ChatController {
         return chatService.ragGenerate(aiChatRequest.query());
     }
 
-    @PostMapping("/chat/stream")
-    AIStreamChatResponse streamChat(@RequestBody AIChatRequest aiChatRequest) {
-        Flux<String> streamChat = chatService.streamChat(aiChatRequest.query());
-        return new AIStreamChatResponse(streamChat);
-    }
+    //    @PostMapping("/chat/stream")
+    //    AIStreamChatResponse streamChat(@RequestBody AIChatRequest aiChatRequest) {
+    //        Flux<String> streamChat = chatService.streamChat(aiChatRequest.query());
+    //        return new AIStreamChatResponse(streamChat);
+    //    }
 }

@@ -7,25 +7,25 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.ChatClient;
-import org.springframework.ai.chat.ChatResponse;
-import org.springframework.ai.chat.Generation;
-import org.springframework.ai.chat.StreamingChatClient;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.AssistantPromptTemplate;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.embedding.EmbeddingClient;
-import org.springframework.ai.parser.BeanOutputParser;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.JsonReader;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
+import org.springframework.util.Assert;
 
 @Service
 public class ChatService {
@@ -40,26 +40,24 @@ public class ChatService {
     @Value("classpath:/rag-prompt-template.st")
     private Resource ragPromptTemplate;
 
-    private final EmbeddingClient embeddingClient;
     private final ChatClient chatClient;
-    private final StreamingChatClient streamingChatClient;
+    private final EmbeddingModel embeddingModel;
 
     public ChatService(
-            EmbeddingClient embeddingClient, ChatClient chatClient, StreamingChatClient streamingChatClient) {
-        this.embeddingClient = embeddingClient;
-        this.chatClient = chatClient;
-        this.streamingChatClient = streamingChatClient;
+            ChatClient.Builder chatClientBuilder, @Qualifier("openAiEmbeddingModel") EmbeddingModel embeddingModel) {
+        this.chatClient = chatClientBuilder.build();
+        this.embeddingModel = embeddingModel;
     }
 
     public AIChatResponse chat(String query) {
-        String answer = chatClient.call(query);
+        String answer = chatClient.prompt(query).call().content();
         return new AIChatResponse(answer);
     }
 
     public AIChatResponse chatWithPrompt(String query) {
         PromptTemplate promptTemplate = new PromptTemplate("Tell me a joke about {subject}");
         Prompt prompt = promptTemplate.create(Map.of("subject", query));
-        ChatResponse response = chatClient.call(prompt);
+        ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
         Generation generation = response.getResult();
         String answer = (generation != null) ? generation.getOutput().getContent() : "";
         return new AIChatResponse(answer);
@@ -69,7 +67,7 @@ public class ChatService {
         SystemMessage systemMessage = new SystemMessage("You are a sarcastic and funny chatbot");
         UserMessage userMessage = new UserMessage("Tell me a joke about " + query);
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
-        ChatResponse response = chatClient.call(prompt);
+        ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
         String answer = response.getResult().getOutput().getContent();
         return new AIChatResponse(answer);
     }
@@ -77,19 +75,19 @@ public class ChatService {
     public AIChatResponse analyzeSentiment(String query) {
         AssistantPromptTemplate promptTemplate = new AssistantPromptTemplate(SENTIMENT_ANALYSIS_TEMPLATE);
         Prompt prompt = promptTemplate.create(Map.of("query", query));
-        ChatResponse response = chatClient.call(prompt);
+        ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
         Generation generation = response.getResult();
         String answer = (generation != null) ? generation.getOutput().getContent() : "";
         return new AIChatResponse(answer);
     }
 
-    public AIChatResponse getEmbeddings(String query) {
-        List<Double> embed = embeddingClient.embed(query);
-        return new AIChatResponse(embed.toString());
-    }
-
+    //    public AIChatResponse getEmbeddings(String query) {
+    //        List<Double> embed = embeddingClient.embed(query);
+    //        return new AIChatResponse(embed.toString());
+    //    }
+    //
     public ActorsFilms generateAsBean(String actor) {
-        BeanOutputParser<ActorsFilms> outputParser = new BeanOutputParser<>(ActorsFilms.class);
+        BeanOutputConverter<ActorsFilms> outputParser = new BeanOutputConverter<>(ActorsFilms.class);
 
         String format = outputParser.getFormat();
         String template = """
@@ -98,17 +96,17 @@ public class ChatService {
 				""";
         PromptTemplate promptTemplate = new PromptTemplate(template, Map.of("actor", actor, "format", format));
         Prompt prompt = new Prompt(promptTemplate.createMessage());
-        ChatResponse response = chatClient.call(prompt);
-        Generation generation = response.getResult();
+        String response = chatClient.prompt(prompt).call().content();
 
-        return outputParser.parse(generation.getOutput().getContent());
+        return outputParser.convert(response);
     }
 
     public AIChatResponse ragGenerate(String query) {
 
         // Step 1 - Load JSON document as Documents and save
         logger.info("Loading JSON as Documents and save");
-        SimpleVectorStore simpleVectorStore = new SimpleVectorStore(embeddingClient);
+        SimpleVectorStore simpleVectorStore =
+                SimpleVectorStore.builder(embeddingModel).build();
 
         List<Document> documents = List.of();
         if (restaurantsResource.exists()) { // load existing vector store if exists
@@ -121,12 +119,13 @@ public class ChatService {
 
         // Step 2 retrieve related documents to query
         logger.info("Retrieving relevant documents");
-        List<Document> similarDocuments =
-                simpleVectorStore.similaritySearch(SearchRequest.query(query).withTopK(2));
-        logger.info(String.format("Found %s relevant documents.", similarDocuments.size()));
+        List<Document> similarDocuments = simpleVectorStore.similaritySearch(
+                SearchRequest.builder().query(query).topK(2).build());
+        Assert.notEmpty(similarDocuments, () -> "No relevant documents found.");
+        logger.info("Found {} relevant documents.", similarDocuments.size());
 
         List<String> contentList =
-                similarDocuments.stream().map(Document::getContent).toList();
+                similarDocuments.stream().map(Document::getText).toList();
         PromptTemplate promptTemplate = new PromptTemplate(ragPromptTemplate);
         Map<String, Object> promptParameters = new HashMap<>();
 
@@ -134,14 +133,12 @@ public class ChatService {
         promptParameters.put("documents", String.join("\n", contentList));
         Prompt prompt = promptTemplate.create(promptParameters);
 
-        ChatResponse response = chatClient.call(prompt);
-        Generation generation = response.getResult();
-        String answer = (generation != null) ? generation.getOutput().getContent() : "";
+        String response = chatClient.prompt(prompt).call().content();
         simpleVectorStore.delete(documents.stream().map(Document::getId).toList());
-        return new AIChatResponse(answer);
+        return new AIChatResponse(response);
     }
 
-    public Flux<String> streamChat(String query) {
-        return streamingChatClient.stream(query);
-    }
+    //    public Flux<String> streamChat(String query) {
+    //        return streamingChatClient.stream(query);
+    //    }
 }
