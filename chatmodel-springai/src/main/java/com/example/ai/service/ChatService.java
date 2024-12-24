@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.AssistantPromptTemplate;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -26,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import reactor.core.publisher.Flux;
 
 @Service
 public class ChatService {
@@ -57,9 +56,7 @@ public class ChatService {
     public AIChatResponse chatWithPrompt(String query) {
         PromptTemplate promptTemplate = new PromptTemplate("Tell me a joke about {subject}");
         Prompt prompt = promptTemplate.create(Map.of("subject", query));
-        ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
-        Generation generation = response.getResult();
-        String answer = (generation != null) ? generation.getOutput().getContent() : "";
+        String answer = chatClient.prompt(prompt).call().content();
         return new AIChatResponse(answer);
     }
 
@@ -67,17 +64,14 @@ public class ChatService {
         SystemMessage systemMessage = new SystemMessage("You are a sarcastic and funny chatbot");
         UserMessage userMessage = new UserMessage("Tell me a joke about " + query);
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
-        ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
-        String answer = response.getResult().getOutput().getContent();
+        String answer = chatClient.prompt(prompt).call().content();
         return new AIChatResponse(answer);
     }
 
     public AIChatResponse analyzeSentiment(String query) {
         AssistantPromptTemplate promptTemplate = new AssistantPromptTemplate(SENTIMENT_ANALYSIS_TEMPLATE);
         Prompt prompt = promptTemplate.create(Map.of("query", query));
-        ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
-        Generation generation = response.getResult();
-        String answer = (generation != null) ? generation.getOutput().getContent() : "";
+        String answer = chatClient.prompt(prompt).call().content();
         return new AIChatResponse(answer);
     }
 
@@ -138,7 +132,7 @@ public class ChatService {
         return new AIChatResponse(response);
     }
 
-    //    public Flux<String> streamChat(String query) {
-    //        return streamingChatClient.stream(query);
-    //    }
+    public Flux<String> streamChat(String query) {
+        return chatClient.prompt(query).stream().content();
+    }
 }
