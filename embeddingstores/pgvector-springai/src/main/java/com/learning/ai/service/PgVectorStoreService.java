@@ -33,13 +33,13 @@ public class PgVectorStoreService {
 
     public AIChatResponse queryEmbeddingStore(String question, Integer userId) {
         // Retrieve embeddings
-        SearchRequest query = SearchRequest.query(question).withTopK(1);
+        var queryBuilder = SearchRequest.builder().query(question).topK(1);
         if (userId != null) {
-            query.withFilterExpression("userId == " + userId);
+            queryBuilder.filterExpression("userId == " + userId);
         }
-        List<Document> similarDocuments = vectorStore.similaritySearch(query);
+        List<Document> similarDocuments = vectorStore.similaritySearch(queryBuilder.build());
         String relevantData =
-                similarDocuments.stream().map(Document::getContent).collect(Collectors.joining(System.lineSeparator()));
+                similarDocuments.stream().map(Document::getText).collect(Collectors.joining(System.lineSeparator()));
 
         LOGGER.info("response from vectorStore : {} ", relevantData);
         return new AIChatResponse(relevantData);

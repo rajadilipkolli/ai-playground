@@ -43,11 +43,11 @@ public class ChatController {
         return chatService.analyzeSentiment(aiChatRequest.query());
     }
 
-    //    @PostMapping("/emebedding-client-conversion")
-    //    AIChatResponse chatWithEmbeddingClient(@RequestBody AIChatRequest aiChatRequest) {
-    //        return chatService.getEmbeddings(aiChatRequest.query());
-    //    }
-    //
+    @PostMapping("/emebedding-client-conversion")
+    AIChatResponse chatWithEmbeddingClient(@RequestBody AIChatRequest aiChatRequest) {
+        return chatService.getEmbeddings(aiChatRequest.query());
+    }
+
     @GetMapping("/output")
     public ActorsFilms generate(@RequestParam(value = "actor", defaultValue = "Jr NTR") String actor) {
         return chatService.generateAsBean(actor);

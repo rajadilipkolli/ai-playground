@@ -2,6 +2,7 @@ package com.example.ai.service;
 
 import com.example.ai.model.response.AIChatResponse;
 import com.example.ai.model.response.ActorsFilms;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,11 +76,11 @@ public class ChatService {
         return new AIChatResponse(answer);
     }
 
-    //    public AIChatResponse getEmbeddings(String query) {
-    //        List<Double> embed = embeddingClient.embed(query);
-    //        return new AIChatResponse(embed.toString());
-    //    }
-    //
+    public AIChatResponse getEmbeddings(String query) {
+        float[] embedded = embeddingModel.embed(query);
+        return new AIChatResponse(Arrays.toString(embedded));
+    }
+
     public ActorsFilms generateAsBean(String actor) {
         BeanOutputConverter<ActorsFilms> outputParser = new BeanOutputConverter<>(ActorsFilms.class);
 
