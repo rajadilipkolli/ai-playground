@@ -91,11 +91,11 @@ class ChatControllerTest {
                 .jsonPath()
                 .get("answer");
 
-        double[] floatArray = Arrays.stream(response.replaceAll("[\\[\\]]", "").split(","))
+        double[] doubles = Arrays.stream(response.replaceAll("[\\[\\]]", "").split(","))
                 .mapToDouble(Double::parseDouble)
                 .toArray();
 
-        assertThat(floatArray.length).isEqualTo(1536);
+        assertThat(doubles.length).isEqualTo(1536).as("Dimensions for openai model is 1536");
     }
 
     @Test
