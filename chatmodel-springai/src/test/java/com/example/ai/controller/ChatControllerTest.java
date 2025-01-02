@@ -40,7 +40,7 @@ class ChatControllerTest {
     @Test
     void testChat() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Hello?"))
+                .body(defaultChatRequest("Hello?"))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -59,15 +59,11 @@ class ChatControllerTest {
                 .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
-    static Stream<String> chatPrompts() {
-        return Stream.of("java", "spring boot", "ai");
-    }
-
     @ParameterizedTest
     @MethodSource("chatPrompts")
     void shouldChatWithMultiplePrompts(String prompt) {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(prompt))
+                .body(defaultChatRequest(prompt))
                 .when()
                 .post("/api/ai/chat-with-prompt")
                 .then()
@@ -79,7 +75,7 @@ class ChatControllerTest {
     @Test
     void chatWithSystemPrompt() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("cricket"))
+                .body(defaultChatRequest("cricket"))
                 .when()
                 .post("/api/ai/chat-with-system-prompt")
                 .then()
@@ -91,7 +87,7 @@ class ChatControllerTest {
     @Test
     void shouldAnalyzeSentimentAsSarcastic() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Why did the Python programmer go broke? Because he couldn't C#"))
+                .body(defaultChatRequest("Why did the Python programmer go broke? Because he couldn't C#"))
                 .when()
                 .post("/api/ai/sentiment/analyze")
                 .then()
@@ -104,7 +100,7 @@ class ChatControllerTest {
     @ValueSource(strings = {"This is a test sentence.", "Another different sentence.", "A third unique test case."})
     void shouldGenerateValidEmbeddingsWithinExpectedRange(String input) {
         String response = given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(input))
+                .body(defaultChatRequest(input))
                 .when()
                 .post("/api/ai/embedding-client-conversion")
                 .then()
@@ -132,7 +128,7 @@ class ChatControllerTest {
     @Test
     void shouldHandleErrorCasesGracefully() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(""))
+                .body(defaultChatRequest(""))
                 .when()
                 .post("/api/ai/embedding-client-conversion")
                 .then()
@@ -154,7 +150,7 @@ class ChatControllerTest {
     @Test
     void ragWithSimpleStore() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(
+                .body(defaultChatRequest(
                         "Which is the restaurant with the highest grade that has a cuisine as American ?"))
                 .when()
                 .post("/api/ai/rag")
@@ -162,5 +158,13 @@ class ChatControllerTest {
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
                 .body("answer", containsString("Regina Caterers"));
+    }
+
+    static Stream<String> chatPrompts() {
+        return Stream.of("java", "spring boot", "ai");
+    }
+
+    private AIChatRequest defaultChatRequest(String message) {
+        return new AIChatRequest(message);
     }
 }
