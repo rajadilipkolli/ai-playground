@@ -159,7 +159,7 @@ class ChatControllerTest {
     }
 
     @Test
-    void ragWithSimpleStore() {
+    void testRagWithSimpleStoreProvidesValidResponse() {
         given().contentType(ContentType.JSON)
                 .body(defaultChatRequest(
                         "Which is the restaurant with the highest grade that has a cuisine as American ?"))
