@@ -85,8 +85,9 @@ public class ChatService {
         BeanOutputConverter<ActorsFilms> outputParser = new BeanOutputConverter<>(ActorsFilms.class);
 
         String format = outputParser.getFormat();
-        String template = """
-				Generate the filmography for the actor {actor}.
+        String template =
+                """
+				Generate the filmography for the Indian actor {actor} as of today.
 				{format}
 				""";
         PromptTemplate promptTemplate = new PromptTemplate(template, Map.of("actor", actor, "format", format));

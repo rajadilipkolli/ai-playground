@@ -5,6 +5,8 @@ import com.example.ai.model.response.AIChatResponse;
 import com.example.ai.model.response.AIStreamChatResponse;
 import com.example.ai.model.response.ActorsFilms;
 import com.example.ai.service.ChatService;
+import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +17,7 @@ import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/ai")
+@Validated
 public class ChatController {
 
     private final ChatService chatService;
@@ -24,27 +27,27 @@ public class ChatController {
     }
 
     @PostMapping("/chat")
-    AIChatResponse chat(@RequestBody AIChatRequest aiChatRequest) {
+    AIChatResponse chat(@RequestBody @Valid AIChatRequest aiChatRequest) {
         return chatService.chat(aiChatRequest.query());
     }
 
     @PostMapping("/chat-with-prompt")
-    AIChatResponse chatWithPrompt(@RequestBody AIChatRequest aiChatRequest) {
+    AIChatResponse chatWithPrompt(@RequestBody @Valid AIChatRequest aiChatRequest) {
         return chatService.chatWithPrompt(aiChatRequest.query());
     }
 
     @PostMapping("/chat-with-system-prompt")
-    AIChatResponse chatWithSystemPrompt(@RequestBody AIChatRequest aiChatRequest) {
+    AIChatResponse chatWithSystemPrompt(@RequestBody @Valid AIChatRequest aiChatRequest) {
         return chatService.chatWithSystemPrompt(aiChatRequest.query());
     }
 
     @PostMapping("/sentiment/analyze")
-    AIChatResponse sentimentAnalyzer(@RequestBody AIChatRequest aiChatRequest) {
+    AIChatResponse sentimentAnalyzer(@RequestBody @Valid AIChatRequest aiChatRequest) {
         return chatService.analyzeSentiment(aiChatRequest.query());
     }
 
-    @PostMapping("/emebedding-client-conversion")
-    AIChatResponse chatWithEmbeddingClient(@RequestBody AIChatRequest aiChatRequest) {
+    @PostMapping("/embedding-client-conversion")
+    AIChatResponse chatWithEmbeddingClient(@RequestBody @Valid AIChatRequest aiChatRequest) {
         return chatService.getEmbeddings(aiChatRequest.query());
     }
 
@@ -54,12 +57,12 @@ public class ChatController {
     }
 
     @PostMapping("/rag")
-    AIChatResponse chatUsingRag(@RequestBody AIChatRequest aiChatRequest) {
+    AIChatResponse chatUsingRag(@RequestBody @Valid AIChatRequest aiChatRequest) {
         return chatService.ragGenerate(aiChatRequest.query());
     }
 
     @PostMapping("/chat/stream")
-    AIStreamChatResponse streamChat(@RequestBody AIChatRequest aiChatRequest) {
+    AIStreamChatResponse streamChat(@RequestBody @Valid AIChatRequest aiChatRequest) {
         Flux<String> streamChat = chatService.streamChat(aiChatRequest.query());
         return new AIStreamChatResponse(streamChat);
     }

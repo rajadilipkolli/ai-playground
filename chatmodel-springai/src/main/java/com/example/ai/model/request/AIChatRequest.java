@@ -1,3 +1,5 @@
 package com.example.ai.model.request;
 
-public record AIChatRequest(String query) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record AIChatRequest(@NotBlank(message = "Query cant be Blank") String query) {}
