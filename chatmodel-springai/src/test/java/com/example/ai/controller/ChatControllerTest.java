@@ -85,6 +85,16 @@ class ChatControllerTest {
     }
 
     @Test
+    void shouldHandleErrorGracefullyForSystemPrompt() {
+        given().contentType(ContentType.JSON)
+                .body(defaultChatRequest(""))
+                .when()
+                .post("/api/ai/chat-with-system-prompt")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
     void shouldAnalyzeSentimentAsSarcastic() {
         given().contentType(ContentType.JSON)
                 .body(defaultChatRequest("Why did the Python programmer go broke? Because he couldn't C#"))
