@@ -22,6 +22,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ChatControllerTest {
 
+    private static final int OPENAI_EMBEDDING_DIMENSION = 1536;
+
     @LocalServerPort
     private int localServerPort;
 
@@ -81,7 +83,7 @@ class ChatControllerTest {
     @Test
     void embeddingClientConversion() {
         String response = given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Why did the Python programmer go broke? Because he couldn't C#"))
+                .body(new AIChatRequest("This is a test sentence for embedding conversion."))
                 .when()
                 .post("/api/ai/embedding-client-conversion")
                 .then()
@@ -91,11 +93,19 @@ class ChatControllerTest {
                 .jsonPath()
                 .get("answer");
 
+        assertThat(response).isNotNull().startsWith("[").endsWith("]");
+
         double[] doubles = Arrays.stream(response.replaceAll("[\\[\\]]", "").split(","))
                 .mapToDouble(Double::parseDouble)
                 .toArray();
 
-        assertThat(doubles.length).isEqualTo(1536).as("Dimensions for openai model is 1536");
+        assertThat(doubles.length)
+                .isEqualTo(OPENAI_EMBEDDING_DIMENSION)
+                .as("Dimensions for openai model is %d", OPENAI_EMBEDDING_DIMENSION);
+
+        assertThat(Arrays.stream(doubles).allMatch(value -> value >= -1.0 && value <= 1.0))
+                .isTrue()
+                .as("All embedding values should be between -1.0 and 1.0");
     }
 
     @Test
