@@ -43,7 +43,7 @@ public class ChatController {
         return chatService.analyzeSentiment(aiChatRequest.query());
     }
 
-    @PostMapping("/emebedding-client-conversion")
+    @PostMapping("/embedding-client-conversion")
     AIChatResponse chatWithEmbeddingClient(@RequestBody AIChatRequest aiChatRequest) {
         return chatService.getEmbeddings(aiChatRequest.query());
     }

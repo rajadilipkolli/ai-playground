@@ -1,6 +1,7 @@
 package com.example.ai.controller;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -9,6 +10,7 @@ import static org.hamcrest.Matchers.is;
 import com.example.ai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import java.util.Arrays;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -74,6 +76,26 @@ class ChatControllerTest {
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
                 .body("answer", is("SARCASTIC"));
+    }
+
+    @Test
+    void embeddingClientConversion() {
+        String response = given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Why did the Python programmer go broke? Because he couldn't C#"))
+                .when()
+                .post("/api/ai/embedding-client-conversion")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
+                .extract()
+                .jsonPath()
+                .get("answer");
+
+        double[] floatArray = Arrays.stream(response.replaceAll("[\\[\\]]", "").split(","))
+                .mapToDouble(Double::parseDouble)
+                .toArray();
+
+        assertThat(floatArray.length).isEqualTo(1536);
     }
 
     @Test
