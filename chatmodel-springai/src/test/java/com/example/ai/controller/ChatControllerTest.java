@@ -136,9 +136,20 @@ class ChatControllerTest {
     }
 
     @Test
-    void outputParser() {
-        given().param("actor", "Jr NTR")
+    void outputParserWithParam() {
+        given().param("actor", "BalaKrishna")
                 .when()
+                .get("/api/ai/output")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
+                .body("actor", is("BalaKrishna"))
+                .body("movies", hasSize(greaterThanOrEqualTo(10)));
+    }
+
+    @Test
+    void outputParserDefaultParam() {
+        given().when()
                 .get("/api/ai/output")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
