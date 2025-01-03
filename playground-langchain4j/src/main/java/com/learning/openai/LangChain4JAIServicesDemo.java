@@ -8,15 +8,16 @@ import dev.langchain4j.service.AiServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 public class LangChain4JAIServicesDemo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LangChain4JAIServicesDemo.class);
 
     public static void main(String[] args) {
-        //        String openAIKey = System.getenv("OPEN_AI_KEY");
-        //        OpenAiChatModel openAiChatModel = OpenAiChatModel.withApiKey("demo");
+        String openAIKey = System.getenv("OPEN_AI_KEY");
         OpenAiChatModel openAiChatModel = OpenAiChatModel.builder()
-                .apiKey("demo")
+                .apiKey(Optional.ofNullable(openAIKey).orElse("demo"))
                 .modelName(OpenAiChatModelName.GPT_4_O_MINI)
                 .logRequests(false)
                 .logResponses(false)
