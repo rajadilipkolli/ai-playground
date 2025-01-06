@@ -7,6 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.web.client.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +15,6 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.util.StreamUtils;
 
 @Configuration(proxyBeanMethods = false)
@@ -26,7 +26,8 @@ public class LoggingConfig {
     @Bean
     RestClientCustomizer restClientCustomizer() {
         return restClientBuilder -> restClientBuilder
-                .requestFactory(new BufferingClientHttpRequestFactory(new HttpComponentsClientHttpRequestFactory()))
+                .requestFactory(new BufferingClientHttpRequestFactory(
+                        ClientHttpRequestFactoryBuilder.httpComponents().build()))
                 .requestInterceptor((request, body, execution) -> {
                     logRequest(request, body);
                     ClientHttpResponse response = execution.execute(request, body);

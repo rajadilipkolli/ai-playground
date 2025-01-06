@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "LangChain4JAIServicesDemo",
+            "request": "launch",
+            "mainClass": "com.learning.openai.LangChain4JAIServicesDemo",
+            "projectName": "playground-langchain4j"
+        },
+        {
+            "type": "java",
             "name": "LangChain4JObservabilityDemo",
             "request": "launch",
             "mainClass": "com.learning.openai.LangChain4JObservabilityDemo",
