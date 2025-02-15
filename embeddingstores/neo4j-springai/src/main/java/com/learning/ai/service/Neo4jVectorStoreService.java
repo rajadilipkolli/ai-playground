@@ -43,13 +43,13 @@ public class Neo4jVectorStoreService {
             }
 
             String relevantData = similarDocuments.stream()
-                    .map(Document::getContent)
+                    .map(Document::getText)
                     .collect(Collectors.joining(System.lineSeparator()));
 
             LOGGER.info("Response from vectorStore: {}", relevantData);
             return new AIChatResponse(relevantData);
         } catch (Exception e) {
-            // Handle potential exceptions from the similarity search
+            // Handling potential exceptions from the similarity search
             LOGGER.error("An error occurred during the similarity search: ", e);
             return new AIChatResponse("An error occurred while processing your request. Please try again later.");
         }
