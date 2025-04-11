@@ -2,8 +2,8 @@ package com.example.chatbot.config;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
-import org.springframework.ai.chat.client.advisor.VectorStoreChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.VectorStoreChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -24,8 +24,9 @@ public class ChatConfig {
                 .clone()
                 .defaultAdvisors(
                         new MessageChatMemoryAdvisor(chatMemory),
-                        new QuestionAnswerAdvisor(vectorStore), // RAG
-                        new VectorStoreChatMemoryAdvisor(vectorStore))
+                        VectorStoreChatMemoryAdvisor.builder(vectorStore).build(),
+                        new QuestionAnswerAdvisor(vectorStore) // RAG advisor
+                        )
                 .build();
     }
 }

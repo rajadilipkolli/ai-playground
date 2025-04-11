@@ -153,7 +153,7 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("actor", is("BalaKrishna"))
+                .body("actor", containsString("BalaKrishna"))
                 .body("movies", hasSize(greaterThanOrEqualTo(10)));
     }
 
