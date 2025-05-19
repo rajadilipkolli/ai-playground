@@ -1,0 +1,38 @@
+name: chatbot-ollama-springai CI Build
+
+on:
+  push:
+    paths:
+      - "playground-langchain4j/**"
+    branches: [main]
+  pull_request:
+    paths:
+      - "playground-langchain4j/**"
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  build:
+    name: Run Unit & Integration Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: playground-langchain4j
+    strategy:
+      matrix:
+        java: [ '21' ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4.7.1
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: temurin
+          cache: 'maven'
+      - name: Build and analyze
+        run: ./mvnw clean verify
