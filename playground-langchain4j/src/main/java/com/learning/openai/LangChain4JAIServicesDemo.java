@@ -26,7 +26,7 @@ public class LangChain4JAIServicesDemo {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(20);
 
         ChatAssistant chatAssistant = AiServices.builder(ChatAssistant.class)
-                .chatLanguageModel(openAiChatModel)
+                .chatModel(openAiChatModel)
                 .chatMemory(chatMemory)
                 .build();
 
@@ -35,7 +35,7 @@ public class LangChain4JAIServicesDemo {
         LOGGER.info("response :: {}", answer);
 
         JokeAssistant jokeAssistant = AiServices.builder(JokeAssistant.class)
-                .chatLanguageModel(openAiChatModel)
+                .chatModel(openAiChatModel)
                 .chatMemory(chatMemory)
                 .build();
 

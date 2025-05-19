@@ -22,7 +22,7 @@ public class LangChain4JSentimentAnalyzer {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(20);
 
         SentimentAssistant sentimentAssistant = AiServices.builder(SentimentAssistant.class)
-                .chatLanguageModel(openAiChatModel)
+                .chatModel(openAiChatModel)
                 .chatMemory(chatMemory)
                 .build();
 
