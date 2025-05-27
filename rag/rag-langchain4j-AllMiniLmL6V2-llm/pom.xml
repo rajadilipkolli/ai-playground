@@ -18,7 +18,7 @@
         <java.version>21</java.version>
         <langchain4j.version>0.36.2</langchain4j.version>
         <langchain4j.springboot.version>0.36.2</langchain4j.springboot.version>
-        <spotless.version>2.44.4</spotless.version>
+        <spotless.version>2.44.5</spotless.version>
     </properties>
 
     <dependencies>
