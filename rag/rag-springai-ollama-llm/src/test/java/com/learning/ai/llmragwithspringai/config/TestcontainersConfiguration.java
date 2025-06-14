@@ -28,7 +28,7 @@ public class TestcontainersConfiguration {
     @Bean
     @ServiceConnection
     LgtmStackContainer lgtmStackContainer() {
-        return new LgtmStackContainer(DockerImageName.parse("grafana/otel-lgtm").withTag("0.8.1"))
+        return new LgtmStackContainer(DockerImageName.parse("grafana/otel-lgtm").withTag("0.11.4"))
                 .withStartupTimeout(Duration.ofMinutes(2));
     }
 }
