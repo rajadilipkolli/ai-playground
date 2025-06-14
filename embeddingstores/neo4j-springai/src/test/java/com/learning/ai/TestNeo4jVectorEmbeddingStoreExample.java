@@ -13,7 +13,7 @@ public class TestNeo4jVectorEmbeddingStoreExample {
     @Bean
     @ServiceConnection
     Neo4jContainer<?> neo4jContainer() {
-        return new Neo4jContainer<>(DockerImageName.parse("neo4j:5")).withPlugins("apoc");
+        return new Neo4jContainer<>(DockerImageName.parse("neo4j:5-bullseye")).withPlugins("apoc");
     }
 
     public static void main(String[] args) {
