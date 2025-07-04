@@ -18,7 +18,7 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.StreamUtils;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(value = "spring.ai.openai.api-key", havingValue = "demo")
+@ConditionalOnProperty(value = "spring.ai.azure.openai.api-key", havingValue = "demo")
 public class LoggingConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingConfig.class);

@@ -20,7 +20,6 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.JsonReader;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -43,8 +42,7 @@ public class ChatService {
     private final ChatClient chatClient;
     private final EmbeddingModel embeddingModel;
 
-    public ChatService(
-            ChatClient.Builder chatClientBuilder, @Qualifier("openAiEmbeddingModel") EmbeddingModel embeddingModel) {
+    public ChatService(ChatClient.Builder chatClientBuilder, EmbeddingModel embeddingModel) {
         this.chatClient = chatClientBuilder.build();
         this.embeddingModel = embeddingModel;
     }
@@ -90,7 +88,11 @@ public class ChatService {
 				Generate the filmography for the Indian actor {actor} as of today.
 				{format}
 				""";
-        PromptTemplate promptTemplate = new PromptTemplate(template, Map.of("actor", actor, "format", format));
+
+        PromptTemplate promptTemplate = PromptTemplate.builder()
+                .template(template)
+                .variables(Map.of("actor", actor, "format", format))
+                .build();
         Prompt prompt = new Prompt(promptTemplate.createMessage());
         String response = chatClient.prompt(prompt).call().content();
 

@@ -15,7 +15,7 @@
 
     <properties>
         <java.version>21</java.version>
-        <spring-ai.version>1.0.0-M7</spring-ai.version>
+        <spring-ai.version>1.0.0</spring-ai.version>
         <spotless.version>2.44.5</spotless.version>
     </properties>
 
@@ -38,7 +38,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-openai</artifactId>
+            <artifactId>spring-ai-starter-model-azure-openai</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -92,7 +92,7 @@
                 <configuration>
                     <java>
                         <palantirJavaFormat>
-                            <version>2.51.0</version>
+                            <version>2.67.0</version>
                         </palantirJavaFormat>
                         <importOrder />
                         <removeUnusedImports />
