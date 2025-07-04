@@ -17,6 +17,7 @@ public class LangChain4JAIServicesDemo {
     public static void main(String[] args) {
         String openAIKey = System.getenv("OPEN_AI_KEY");
         OpenAiChatModel openAiChatModel = OpenAiChatModel.builder()
+                .baseUrl("http://langchain4j.dev/demo/openai/v1")
                 .apiKey(Optional.ofNullable(openAIKey).orElse("demo"))
                 .modelName(OpenAiChatModelName.GPT_4_O_MINI)
                 .logRequests(false)
@@ -26,7 +27,7 @@ public class LangChain4JAIServicesDemo {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(20);
 
         ChatAssistant chatAssistant = AiServices.builder(ChatAssistant.class)
-                .chatLanguageModel(openAiChatModel)
+                .chatModel(openAiChatModel)
                 .chatMemory(chatMemory)
                 .build();
 
@@ -35,7 +36,7 @@ public class LangChain4JAIServicesDemo {
         LOGGER.info("response :: {}", answer);
 
         JokeAssistant jokeAssistant = AiServices.builder(JokeAssistant.class)
-                .chatLanguageModel(openAiChatModel)
+                .chatModel(openAiChatModel)
                 .chatMemory(chatMemory)
                 .build();
 

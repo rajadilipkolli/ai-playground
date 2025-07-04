@@ -1,6 +1,5 @@
 package com.learning.openai;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.listener.ChatModelErrorContext;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
@@ -17,12 +16,12 @@ public class LangChain4JObservabilityDemo {
         ChatModelListener modelListener = new ChatModelListener() {
             @Override
             public void onRequest(ChatModelRequestContext requestContext) {
-                System.out.println("Request: " + requestContext.request().messages());
+                System.out.println("Request: " + requestContext.chatRequest().messages());
             }
 
             @Override
             public void onResponse(ChatModelResponseContext responseContext) {
-                System.out.println("Response: " + responseContext.response().aiMessage());
+                System.out.println("Response: " + responseContext.chatRequest().messages());
             }
 
             @Override
@@ -30,13 +29,15 @@ public class LangChain4JObservabilityDemo {
                 errorContext.error().printStackTrace();
             }
         };
-        ChatLanguageModel model = OpenAiChatModel.builder()
+
+        OpenAiChatModel model = OpenAiChatModel.builder()
+                .baseUrl("http://langchain4j.dev/demo/openai/v1")
                 .apiKey("demo")
                 .modelName(OpenAiChatModelName.GPT_4_O_MINI)
                 .listeners(singletonList(modelListener))
                 .build();
 
-        model.generate("Tell me a joke about Java");
+        model.chat("Tell me a joke about Java");
     }
 
 }
