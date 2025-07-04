@@ -31,6 +31,7 @@ public class LangChain4JObservabilityDemo {
         };
 
         OpenAiChatModel model = OpenAiChatModel.builder()
+                .baseUrl("http://langchain4j.dev/demo/openai/v1")
                 .apiKey("demo")
                 .modelName(OpenAiChatModelName.GPT_4_O_MINI)
                 .listeners(singletonList(modelListener))

@@ -13,11 +13,13 @@ public class LangChain4JSentimentAnalyzer {
 
     public static void main(String[] args) {
 
-               OpenAiChatModel openAiChatModel = OpenAiChatModel.builder().apiKey("demo")
-                       .modelName(OpenAiChatModelName.GPT_4_O_MINI)
-                       .logRequests(true)
-                       .logResponses(true)
-                       .build();
+               OpenAiChatModel openAiChatModel = OpenAiChatModel.builder()
+                    .baseUrl("http://langchain4j.dev/demo/openai/v1")         
+                    .apiKey("demo")
+                    .modelName(OpenAiChatModelName.GPT_4_O_MINI)
+                    .logRequests(true)
+                    .logResponses(true)
+                    .build();
 
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(20);
 
