@@ -5,7 +5,6 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.VectorStoreChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,16 +13,11 @@ import org.springframework.context.annotation.Configuration;
 public class ChatConfig {
 
     @Bean
-    ChatMemory chatMemory() {
-        return new InMemoryChatMemory();
-    }
-
-    @Bean
     ChatClient chatClient(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory, VectorStore vectorStore) {
         return chatClientBuilder
                 .clone()
                 .defaultAdvisors(
-                        new MessageChatMemoryAdvisor(chatMemory),
+                        MessageChatMemoryAdvisor.builder(chatMemory).build(),
                         VectorStoreChatMemoryAdvisor.builder(vectorStore).build(),
                         new QuestionAnswerAdvisor(vectorStore) // RAG advisor
                         )
