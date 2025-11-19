@@ -17,7 +17,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-ai.version>1.0.0-M6</spring-ai.version>
-        <spotless.version>3.0.0</spotless.version>
+        <spotless.version>3.1.0</spotless.version>
     </properties>
 
     <dependencies>
