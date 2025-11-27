@@ -9,8 +9,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.web.client.ClientHttpRequestFactories;
-import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.web.client.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,7 +33,7 @@ class ResponseHeadersModification {
     RestClientCustomizer restClientCustomizer() {
         return restClientBuilder -> restClientBuilder
                 .requestFactory(new BufferingClientHttpRequestFactory(
-                        ClientHttpRequestFactories.get(ClientHttpRequestFactorySettings.DEFAULTS)))
+                        ClientHttpRequestFactoryBuilder.detect().build()))
                 .requestInterceptor((request, body, execution) -> {
                     logRequest(request, body);
                     ClientHttpResponse response = execution.execute(request, body);
