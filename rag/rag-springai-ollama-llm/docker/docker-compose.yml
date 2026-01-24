@@ -50,7 +50,7 @@ services:
       - "/bin/echo 'postgresqldb:5432:*:appuser:secret' > /tmp/pgpassfile && chmod 600 /tmp/pgpassfile && /entrypoint.sh"
 
   lgtm-stack:
-    image: grafana/otel-lgtm:0.11.10
+    image: grafana/otel-lgtm:0.16.0
     extra_hosts: [ 'host.docker.internal:host-gateway' ]
     container_name: lgtm-stack
     environment:
