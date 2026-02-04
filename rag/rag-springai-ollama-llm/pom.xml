@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>21</java.version>
-        <spring-ai.version>1.0.1</spring-ai.version>
+        <spring-ai.version>1.1.2</spring-ai.version>
         <otelInstrumentation.version>2.10.0-alpha</otelInstrumentation.version>
         <spotless.version>3.2.0</spotless.version>
     </properties>
