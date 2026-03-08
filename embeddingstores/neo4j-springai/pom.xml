@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.11</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -19,7 +19,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>21</java.version>
         <spring-ai.version>1.0.0</spring-ai.version>
-        <spotless.version>3.2.0</spotless.version>
+        <spotless.version>3.3.0</spotless.version>
     </properties>
 
     <dependencies>
@@ -98,11 +98,10 @@
                 <configuration>
                     <java>
                         <palantirJavaFormat>
-                            <version>2.51.0</version>
+                            <version>2.83.0</version>
                         </palantirJavaFormat>
                         <importOrder />
                         <removeUnusedImports />
-                        <formatAnnotations />
                     </java>
                 </configuration>
                 <executions>
