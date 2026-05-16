@@ -12,9 +12,6 @@ import dev.langchain4j.store.embedding.opensearch.OpenSearchEmbeddingStore;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -51,15 +48,14 @@ public class OpenSearchExample {
             Embedding embedding4 = embeddingModel.embed(segment4).content();
             embeddingStore.add(embedding4, segment4);
 
-            URL fileUrl = OpenSearchExample.class.getResource("/restaurants.json");
-            Path path = Path.of(fileUrl.toURI());
-
-//        Document document = FileSystemDocumentLoader.loadDocument(path, new TextDocumentParser());
-//        DocumentSplitter splitter = DocumentSplitters.recursive(600, 0);
-//        List<TextSegment> segments = splitter.split(document);
-
-            // Read lines from the file in parallel
-            List<String> lines = Files.lines(path).parallel().toList();
+            // Read lines from the resource file
+            List<String> lines;
+            try (var inputStream = OpenSearchExample.class.getResourceAsStream("/restaurants.json")) {
+                if (inputStream == null) {
+                    throw new IOException("restaurants.json not found in classpath");
+                }
+                lines = new String(inputStream.readAllBytes()).lines().parallel().toList();
+            }
 
             // Convert lines to text segments in parallel
             List<TextSegment> segments = lines.parallelStream().map(TextSegment::from).toList();
