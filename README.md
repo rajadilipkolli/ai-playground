@@ -1,5 +1,3 @@
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/rajadilipkolli/ai-playground)
-
 # ai-playground
 
 AI implementations using java, stores and either of Langchain4j or springai framework
@@ -11,7 +9,7 @@ AI implementations using java, stores and either of Langchain4j or springai fram
 - Document - information that is required for AI to process
 
 ## Pre-requisite
-- Java 17+
+- Java 21+
 - Docker Engine
 
 ## Implementations
