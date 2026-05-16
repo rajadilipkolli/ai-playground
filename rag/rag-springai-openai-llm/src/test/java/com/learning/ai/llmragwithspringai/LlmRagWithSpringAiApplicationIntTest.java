@@ -7,7 +7,7 @@ import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
 import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
