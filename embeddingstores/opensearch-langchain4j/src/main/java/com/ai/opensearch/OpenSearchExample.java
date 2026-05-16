@@ -15,7 +15,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +52,7 @@ public class OpenSearchExample {
             embeddingStore.add(embedding4, segment4);
 
             URL fileUrl = OpenSearchExample.class.getResource("/restaurants.json");
-            Path path = Paths.get(fileUrl.toURI());
+            Path path = Path.of(fileUrl.toURI());
 
 //        Document document = FileSystemDocumentLoader.loadDocument(path, new TextDocumentParser());
 //        DocumentSplitter splitter = DocumentSplitters.recursive(600, 0);
