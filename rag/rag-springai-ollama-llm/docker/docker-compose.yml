@@ -8,7 +8,7 @@ services:
 
   postgresqldb:
     container_name: postgresqldb
-    image: pgvector/pgvector:pg17
+    image: pgvector/pgvector:pg18
     extra_hosts: [ 'host.docker.internal:host-gateway' ]
     restart: always
     environment:
