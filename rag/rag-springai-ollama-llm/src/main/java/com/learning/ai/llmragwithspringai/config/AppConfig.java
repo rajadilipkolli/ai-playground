@@ -9,6 +9,6 @@ public class AppConfig {
 
     @Bean
     TokenTextSplitter tokenTextSplitter() {
-        return new TokenTextSplitter();
+        return TokenTextSplitter.builder().build();
     }
 }
