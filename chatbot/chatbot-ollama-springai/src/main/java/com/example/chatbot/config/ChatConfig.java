@@ -19,8 +19,7 @@ public class ChatConfig {
                 .defaultAdvisors(
                         MessageChatMemoryAdvisor.builder(chatMemory).build(),
                         VectorStoreChatMemoryAdvisor.builder(vectorStore).build(),
-                        new QuestionAnswerAdvisor(vectorStore) // RAG advisor
-                        )
+                        QuestionAnswerAdvisor.builder(vectorStore).build()) // RAG Advisor
                 .build();
     }
 }

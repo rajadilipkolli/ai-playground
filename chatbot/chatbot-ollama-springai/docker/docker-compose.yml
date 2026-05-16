@@ -8,7 +8,7 @@ services:
 
     postgresqldb:
         container_name: postgresqldb
-        image: pgvector/pgvector:pg17
+        image: pgvector/pgvector:pg18
         extra_hosts: [ 'host.docker.internal:host-gateway' ]
         restart: always
         environment:
@@ -49,7 +49,7 @@ services:
           - "/bin/echo 'postgresqldb:5432:*:appuser:secret' > /tmp/pgpassfile && chmod 600 /tmp/pgpassfile && /entrypoint.sh"
 
     lgtm-stack:
-      image: grafana/otel-lgtm:0.16.0
+      image: grafana/otel-lgtm:0.28.0
       extra_hosts: [ 'host.docker.internal:host-gateway' ]
       container_name: lgtm-stack
       environment:
