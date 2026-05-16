@@ -16,8 +16,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AIChatService {
 
-    private static final String template =
-            """
+    private static final String template = """
             You're assisting with questions about cricket
 
             Cricket is a bat-and-ball game that is played between two teams of eleven players on a field at the centre of which is a 22-yard (20-metre) pitch with a wicket at each end,
@@ -54,7 +53,7 @@ public class AIChatService {
         Message systemMessage = new SystemPromptTemplate(template).createMessage(Map.of("documents", documents));
         UserMessage userMessage = new UserMessage(searchQuery);
         OpenAiChatOptions chatOptions =
-                OpenAiChatOptions.builder().function("currentDateFunction").build();
+                OpenAiChatOptions.builder().toolNames("currentDateFunction").build();
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage), chatOptions);
         return aiClient.prompt(prompt).call().content();
     }

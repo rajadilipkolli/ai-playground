@@ -4,13 +4,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
-import org.springframework.boot.web.client.RestClientCustomizer;
+import org.springframework.boot.restclient.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -72,7 +73,9 @@ class ResponseHeadersModification {
 
         public CustomClientHttpResponse(ClientHttpResponse originalResponse) {
             this.originalResponse = originalResponse;
-            MultiValueMap<String, String> modifiedHeaders = new LinkedMultiValueMap<>(originalResponse.getHeaders());
+            HttpHeaders readOnlyHeaders = originalResponse.getHeaders();
+            MultiValueMap<String, String> modifiedHeaders = new LinkedMultiValueMap<>();
+            readOnlyHeaders.forEach((key, value) -> modifiedHeaders.put(key, new ArrayList<>(value)));
             modifiedHeaders.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(MediaType.APPLICATION_JSON_VALUE));
             this.headers = new HttpHeaders(modifiedHeaders);
         }
