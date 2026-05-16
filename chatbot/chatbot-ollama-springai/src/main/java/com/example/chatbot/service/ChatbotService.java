@@ -5,6 +5,7 @@ import com.example.chatbot.model.response.AIChatResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,8 +25,7 @@ public class ChatbotService {
                 .prompt()
                 .user(request.query())
                 .advisors(a -> {
-                    a.param("CHAT_MEMORY_CONVERSATION_ID_KEY", conversationId);
-                    a.param("CHAT_MEMORY_RETRIEVE_SIZE_KEY", 100);
+                    a.param(ChatMemory.CONVERSATION_ID, conversationId);
                 })
                 .call()
                 .content();
