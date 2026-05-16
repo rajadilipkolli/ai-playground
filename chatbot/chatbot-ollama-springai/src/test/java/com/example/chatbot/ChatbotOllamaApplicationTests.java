@@ -9,15 +9,15 @@ import com.example.chatbot.model.response.AIChatResponse;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import java.io.IOException;
-import org.apache.hc.core5.http.HttpStatus;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(
         classes = {ContainerConfig.class},
@@ -26,7 +26,7 @@ import tools.jackson.databind.ObjectMapper;
 class ChatbotOllamaApplicationTests {
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonMapper jsonMapper;
 
     @LocalServerPort
     private int localServerPort;
@@ -37,14 +37,16 @@ class ChatbotOllamaApplicationTests {
     }
 
     @Test
-    void chat() throws IOException {
+    void chat() {
 
         Response response = given().contentType(ContentType.JSON)
                 .body(
                         new AIChatRequest(
                                 "As a cricketer, how many centuries did Sachin Tendulkar scored adding up both One Day International (ODI) and Test centuries ?"))
                 .when()
-                .post("/api/ai/chat/{conversationId}", "junit1")
+                .post(
+                        "/api/ai/chat/{conversationId}",
+                        RandomStringUtils.secure().nextAlphabetic(16))
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
@@ -54,7 +56,7 @@ class ChatbotOllamaApplicationTests {
                 .extract()
                 .response();
 
-        AIChatResponse aiChatResponse = objectMapper.readValue(response.asByteArray(), AIChatResponse.class);
+        AIChatResponse aiChatResponse = jsonMapper.readValue(response.asByteArray(), AIChatResponse.class);
 
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest("Who scored 100 centuries ?"))

@@ -22,7 +22,7 @@ jobs:
         working-directory: playground-langchain4j
     strategy:
       matrix:
-        java: [ '21' ]
+        java: [ '25' ]
     steps:
       - uses: actions/checkout@v6
         with:
