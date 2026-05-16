@@ -2,6 +2,7 @@ package com.example.ai.config;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -17,7 +18,9 @@ public class CustomClientHttpResponse implements ClientHttpResponse {
 
     public CustomClientHttpResponse(ClientHttpResponse originalResponse) {
         this.originalResponse = originalResponse;
-        MultiValueMap<String, String> modifiedHeaders = new LinkedMultiValueMap<>(originalResponse.getHeaders());
+        HttpHeaders readOnlyHeaders = originalResponse.getHeaders();
+        MultiValueMap<String, String> modifiedHeaders = new LinkedMultiValueMap<>();
+        readOnlyHeaders.forEach((key, value) -> modifiedHeaders.put(key, new ArrayList<>(value)));
         modifiedHeaders.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(MediaType.APPLICATION_JSON_VALUE));
         this.headers = new HttpHeaders(modifiedHeaders);
     }
@@ -33,7 +36,9 @@ public class CustomClientHttpResponse implements ClientHttpResponse {
     }
 
     @Override
-    public void close() {}
+    public void close() {
+        originalResponse.close();
+    }
 
     @Override
     public InputStream getBody() throws IOException {
