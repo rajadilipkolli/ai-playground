@@ -9,7 +9,7 @@ AI implementations using java, stores and either of Langchain4j or springai fram
 - Document - information that is required for AI to process
 
 ## Pre-requisite
-- Java 21+
+- Java 25+
 - Docker Engine
 
 ## Implementations
