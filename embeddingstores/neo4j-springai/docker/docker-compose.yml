@@ -1,7 +1,7 @@
 services:
   neo4j:
     container_name: neo4j
-    image: neo4j:2025-bullseye
+    image: neo4j:2026-bullseye
     ports:
       - "7474:7474"
       - "7687:7687"
