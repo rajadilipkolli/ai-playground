@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
-import org.springframework.boot.web.client.RestClientCustomizer;
+import org.springframework.boot.restclient.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpRequest;
@@ -18,7 +18,7 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.StreamUtils;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(value = "spring.ai.azure.openai.api-key", havingValue = "demo")
+@ConditionalOnProperty(value = "spring.ai.openai.api-key", havingValue = "demo")
 public class LoggingConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingConfig.class);
