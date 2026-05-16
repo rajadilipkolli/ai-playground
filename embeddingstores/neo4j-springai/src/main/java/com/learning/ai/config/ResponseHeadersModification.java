@@ -33,7 +33,9 @@ class ResponseHeadersModification {
 
         public CustomClientHttpResponse(ClientHttpResponse originalResponse) {
             this.originalResponse = originalResponse;
-            MultiValueMap<String, String> modifiedHeaders = new LinkedMultiValueMap<>(originalResponse.getHeaders());
+            HttpHeaders readOnlyHeaders = originalResponse.getHeaders();
+            MultiValueMap<String, String> modifiedHeaders = new LinkedMultiValueMap<>();
+            readOnlyHeaders.forEach(modifiedHeaders::put);
             modifiedHeaders.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(MediaType.APPLICATION_JSON_VALUE));
             this.headers = new HttpHeaders(modifiedHeaders);
         }
