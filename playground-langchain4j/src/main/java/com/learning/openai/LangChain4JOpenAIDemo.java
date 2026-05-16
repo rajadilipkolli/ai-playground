@@ -9,6 +9,8 @@ import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
 import java.util.Map;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,10 +19,10 @@ public class LangChain4JOpenAIDemo {
     private static final Logger LOGGER = LoggerFactory.getLogger(LangChain4JOpenAIDemo.class);
 
     public static void main(String[] args) {
-        // String openAIKey = System.getenv("OPEN_AI_KEY");
-        // OpenAiChatModel openAiChatModel = OpenAiChatModel.withApiKey("demo");
+        String openAIKey = System.getenv("OPEN_AI_KEY");
         OpenAiChatModel openAiChatModel = OpenAiChatModel.builder()
-                .apiKey("demo")
+                .baseUrl("http://langchain4j.dev/demo/openai/v1")
+                .apiKey(Optional.ofNullable(openAIKey).orElse("demo"))
                 .modelName(OpenAiChatModelName.GPT_4_O_MINI)
                 .logRequests(false)
                 .logResponses(false)
@@ -28,15 +30,15 @@ public class LangChain4JOpenAIDemo {
 
         /////////        Stage 1
 
-        String response = openAiChatModel.generate("List all the IPL Teams");
+        String response = openAiChatModel.chat("List all the IPL Teams");
         LOGGER.info("response :: {}", response);
-        response = openAiChatModel.generate("how old are they");
+        response = openAiChatModel.chat("how old are they");
         LOGGER.info("response :: {}", response);
 
         // Two type of memory we have they are MessageWindowChatMemory and TokenWindowChatMemory
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(20);
         ConversationalChain conversationalChain = ConversationalChain.builder()
-                .chatLanguageModel(openAiChatModel)
+                .chatModel(openAiChatModel)
                 .chatMemory(chatMemory)
                 .build();
 
@@ -67,7 +69,7 @@ public class LangChain4JOpenAIDemo {
 
         chatMemory.add(UserMessage.userMessage("What are all teams played by Rohit Sharma?"));
         AiMessage generatedResponse =
-                openAiChatModel.generate(chatMemory.messages()).content();
+                openAiChatModel.chat(chatMemory.messages()).aiMessage();
         LOGGER.info("response :: {}", generatedResponse);
         chatMemory.add(generatedResponse);
     }

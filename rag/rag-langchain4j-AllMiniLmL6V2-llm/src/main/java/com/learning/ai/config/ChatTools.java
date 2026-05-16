@@ -2,12 +2,14 @@ package com.learning.ai.config;
 
 import dev.langchain4j.agent.tool.Tool;
 import java.time.LocalTime;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
 class ChatTools {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatTools.class);
 
     /**
      * This tool is available to {@link AICustomerSupportAgent}

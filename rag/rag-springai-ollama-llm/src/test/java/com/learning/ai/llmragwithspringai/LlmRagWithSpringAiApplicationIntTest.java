@@ -13,7 +13,6 @@ import io.restassured.http.ContentType;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -214,6 +213,6 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     private Path getPath(String fileName) throws URISyntaxException, IOException {
-        return Paths.get(new ClassPathResource(fileName).getURL().toURI());
+        return Path.of(new ClassPathResource(fileName).getURL().toURI());
     }
 }

@@ -1,13 +1,13 @@
-name: neo4j-springai CI Build
+name: chatbot-ollama-springai CI Build
 
 on:
   push:
     paths:
-      - "embeddingstores/neo4j-springai/**"
+      - "playground-langchain4j/**"
     branches: [main]
   pull_request:
     paths:
-      - "embeddingstores/neo4j-springai/**"
+      - "playground-langchain4j/**"
     types:
       - opened
       - synchronize
@@ -19,10 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: embeddingstores/neo4j-springai
+        working-directory: playground-langchain4j
     strategy:
       matrix:
-        distribution: [ 'temurin' ]
         java: [ '21' ]
     steps:
       - uses: actions/checkout@v6
@@ -33,7 +32,7 @@ jobs:
         uses: actions/setup-java@v5.2.0
         with:
           java-version: ${{ matrix.java }}
-          distribution: ${{ matrix.distribution }}
+          distribution: temurin
           cache: 'maven'
       - name: Build and analyze
         run: ./mvnw clean verify

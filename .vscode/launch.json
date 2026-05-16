@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "OpenSearchExample",
+            "request": "launch",
+            "mainClass": "com.ai.opensearch.OpenSearchExample",
+            "projectName": "opensearch-langchain4j"
+        },
+        {
+            "type": "java",
             "name": "LangChain4JAIServicesDemo",
             "request": "launch",
             "mainClass": "com.learning.openai.LangChain4JAIServicesDemo",

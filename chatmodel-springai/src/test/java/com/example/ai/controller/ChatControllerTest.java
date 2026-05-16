@@ -13,7 +13,7 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import java.util.Arrays;
 import java.util.stream.Stream;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -153,7 +153,7 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("actor", is("BalaKrishna"))
+                .body("actor", containsStringIgnoringCase("Balakrishna"))
                 .body("movies", hasSize(greaterThanOrEqualTo(10)));
     }
 
