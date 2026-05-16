@@ -6,18 +6,18 @@ import static org.hamcrest.Matchers.containsString;
 import com.example.chatbot.common.ContainerConfig;
 import com.example.chatbot.model.request.AIChatRequest;
 import com.example.chatbot.model.response.AIChatResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import java.io.IOException;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(
         classes = {ContainerConfig.class},
