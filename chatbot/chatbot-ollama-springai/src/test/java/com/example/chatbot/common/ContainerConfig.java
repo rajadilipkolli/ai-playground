@@ -1,5 +1,6 @@
 package com.example.chatbot.common;
 
+import java.time.Duration;
 import org.springframework.boot.devtools.restart.RestartScope;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
