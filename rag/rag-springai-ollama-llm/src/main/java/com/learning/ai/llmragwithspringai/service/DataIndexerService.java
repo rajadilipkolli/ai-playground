@@ -1,5 +1,8 @@
 package com.learning.ai.llmragwithspringai.service;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.annotation.Observed;
 import java.util.Map;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -23,12 +26,20 @@ public class DataIndexerService {
 
     private final TokenTextSplitter tokenTextSplitter;
     private final VectorStore vectorStore;
+    private final Counter ingestDocumentsCounter;
 
-    public DataIndexerService(TokenTextSplitter tokenTextSplitter, VectorStore vectorStore) {
+    public DataIndexerService(
+            TokenTextSplitter tokenTextSplitter, VectorStore vectorStore, MeterRegistry meterRegistry) {
         this.tokenTextSplitter = tokenTextSplitter;
         this.vectorStore = vectorStore;
+
+        // Register custom metrics
+        this.ingestDocumentsCounter = Counter.builder("rag.ingest.documents")
+                .description("Number of documents ingested into the vector store")
+                .register(meterRegistry);
     }
 
+    @Observed(name = "rag.ingest", contextualName = "rag-ingest")
     public void loadData(Resource documentResource) {
         DocumentReader documentReader = null;
         if (documentResource.getFilename() != null
@@ -58,11 +69,15 @@ public class DataIndexerService {
                 });
                 return documents;
             };
-            vectorStore.accept(metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get())));
+            var documents = tokenTextSplitter.apply(documentReader.get());
+            vectorStore.accept(metadataEnricher.apply(documents));
+            // Increment counter for each document ingested
+            ingestDocumentsCounter.increment(documents.size());
             LOGGER.info("Loaded document to vector database.");
         }
     }
 
+    @Observed(name = "rag.count", contextualName = "rag-count")
     public long count() {
         return Objects.requireNonNull(this.vectorStore.similaritySearch("*")).size();
     }
