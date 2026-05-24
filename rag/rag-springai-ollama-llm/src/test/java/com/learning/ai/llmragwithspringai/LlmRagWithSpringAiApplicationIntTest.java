@@ -212,6 +212,64 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .log();
     }
 
+    // Observability Tests
+    @Test
+    @Order(201)
+    void testRagChatMetricAvailable() {
+        given().when()
+                .get("/actuator/metrics/rag.chat")
+                .then()
+                .statusCode(200)
+                .body("name", is("rag.chat"))
+                .body("measurements", containsString("statistic"))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(202)
+    void testRagIngestMetricAvailable() {
+        given().when()
+                .get("/actuator/metrics/rag.ingest")
+                .then()
+                .statusCode(200)
+                .body("name", is("rag.ingest"))
+                .body("measurements", containsString("statistic"))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(203)
+    void testRagCountMetricAvailable() {
+        given().when()
+                .get("/actuator/metrics/rag.count")
+                .then()
+                .statusCode(200)
+                .body("name", is("rag.count"))
+                .body("measurements", containsString("statistic"))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(204)
+    void testPrometheusMetricsContainRagMetrics() {
+        given().when()
+                .get("/actuator/prometheus")
+                .then()
+                .statusCode(200)
+                .body(containsString("rag_chat_seconds_count"))
+                .body(containsString("rag_ingest_seconds_count"))
+                .body(containsString("rag_count_seconds_count"))
+                .body(containsString("rag_retrieval_latency_seconds"))
+                .body(containsString("rag_retrieval_documents_total"))
+                .body(containsString("rag_context_length"))
+                .body(containsString("rag_ingest_documents_total"))
+                .log()
+                .all();
+    }
+
     private Path getPath(String fileName) throws URISyntaxException, IOException {
         return Path.of(new ClassPathResource(fileName).getURL().toURI());
     }
