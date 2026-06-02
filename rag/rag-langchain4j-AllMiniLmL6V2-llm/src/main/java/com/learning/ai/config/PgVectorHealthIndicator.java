@@ -10,12 +10,20 @@ public class PgVectorHealthIndicator implements HealthIndicator {
 
     private final EmbeddingModel embeddingModel;
 
+    private volatile Health cachedHealth;
+    private volatile long cachedAt = 0;
+    private static final long TTL_MS = 5000;
+
     public PgVectorHealthIndicator(EmbeddingModel embeddingModel) {
         this.embeddingModel = embeddingModel;
     }
 
     @Override
     public Health health() {
+        if (cachedHealth != null && System.currentTimeMillis() - cachedAt < TTL_MS) {
+            return cachedHealth;
+        }
+
         try {
             // Check embedding model availability
             var embedding = embeddingModel.embed("health-check").content();
@@ -26,14 +34,14 @@ public class PgVectorHealthIndicator implements HealthIndicator {
                         .build();
             }
 
-            // The PgVectorEmbeddingStore does not expose a ping method directly in LangChain4j.
-            // If the application context started and wired properly, and spring-boot-actuator
-            // JDBC health indicator is active, that is usually sufficient.
-            // This is an additional check for the embedding model component.
-            return Health.up()
+            Health newHealth = Health.up()
                     .withDetail("embeddingModel", embeddingModel.getClass().getSimpleName())
                     .withDetail("embeddingDimension", embedding.dimension())
                     .build();
+
+            cachedHealth = newHealth;
+            cachedAt = System.currentTimeMillis();
+            return newHealth;
 
         } catch (Exception e) {
             return Health.down().withException(e).build();

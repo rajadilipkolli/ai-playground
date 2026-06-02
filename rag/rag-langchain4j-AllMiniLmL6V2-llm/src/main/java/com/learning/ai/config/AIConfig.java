@@ -1,7 +1,5 @@
 package com.learning.ai.config;
 
-import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocument;
-
 import com.learning.ai.service.AICustomerSupportAgent;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
@@ -26,6 +24,7 @@ import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +48,9 @@ class AIConfig {
 
     @Value("${langchain4j.rag.ingest.enabled:false}")
     private boolean ingestEnabled;
+
+    @Value("${langchain4j.rag.ingest.forceRefresh:false}")
+    private boolean forceRefresh;
 
     @Bean
     AICustomerSupportAgent aiCustomerSupportAgent(
@@ -127,23 +129,42 @@ class AIConfig {
                 .password(jdbcConnectionDetails.getPassword())
                 .database(path.substring(1))
                 .table("ai_vector_store")
-                .dropTableFirst(false)
+                .dropTableFirst(forceRefresh)
                 .dimension(384)
                 .build();
 
         if (ingestEnabled) {
-            log.info("Ingesting document into vector store...");
-            Resource pdfResource = resourceLoader.getResource("classpath:Rohit.pdf");
-            Document document = loadDocument(pdfResource.getFile().toPath(), new ApachePdfBoxDocumentParser());
+            boolean isEmpty = false;
+            if (!forceRefresh) {
+                var testEmbedding = embeddingModel.embed("test").content();
+                var searchRequest = dev.langchain4j.store.embedding.EmbeddingSearchRequest.builder()
+                        .queryEmbedding(testEmbedding)
+                        .maxResults(1)
+                        .build();
+                isEmpty = embeddingStore.search(searchRequest).matches().isEmpty();
+            }
 
-            DocumentSplitter documentSplitter = DocumentSplitters.recursive(chunkSize, chunkOverlap, openAiTokenizer);
-            EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
-                    .documentSplitter(documentSplitter)
-                    .embeddingModel(embeddingModel)
-                    .embeddingStore(embeddingStore)
-                    .build();
-            ingestor.ingest(document);
-            log.info("Document ingestion complete.");
+            if (forceRefresh || isEmpty) {
+                log.info(
+                        "Ingesting document into vector store (forceRefresh={}, isEmpty={})...", forceRefresh, isEmpty);
+                Resource pdfResource = resourceLoader.getResource("classpath:Rohit.pdf");
+                Document document;
+                try (InputStream inputStream = pdfResource.getInputStream()) {
+                    document = new ApachePdfBoxDocumentParser().parse(inputStream);
+                }
+
+                DocumentSplitter documentSplitter =
+                        DocumentSplitters.recursive(chunkSize, chunkOverlap, openAiTokenizer);
+                EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
+                        .documentSplitter(documentSplitter)
+                        .embeddingModel(embeddingModel)
+                        .embeddingStore(embeddingStore)
+                        .build();
+                ingestor.ingest(document);
+                log.info("Document ingestion complete.");
+            } else {
+                log.info("Document ingestion skipped. Store is not empty and forceRefresh is false.");
+            }
         } else {
             log.info("Document ingestion skipped (langchain4j.rag.ingest.enabled=false).");
         }
