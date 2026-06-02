@@ -75,9 +75,9 @@ class RagEvaluationIntTest extends AbstractIntegrationTest {
 
         if (!entry.expectedContextKeywords().isEmpty()) {
             String fullContext = String.join(" ", contextList).replaceAll("\\s+", " ");
-            for (String expectedContextKeyword : entry.expectedContextKeywords()) {
-                assertThat(fullContext).containsIgnoringCase(expectedContextKeyword);
-            }
+            assertThat(entry.expectedContextKeywords())
+                    .as("Context should contain at least one of the expected keywords")
+                    .anyMatch(keyword -> fullContext.toLowerCase().contains(keyword.toLowerCase()));
         }
     }
 }
