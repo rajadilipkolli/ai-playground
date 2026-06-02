@@ -1,0 +1,17 @@
+[
+  {
+    "question": "What team does Rohit Sharma play for in the IPL?",
+    "expectedAnswerKeywords": ["Mumbai Indians"],
+    "expectedContextKeywords": ["Mumbai Indians", "IPL"]
+  },
+  {
+    "question": "How many centuries does Rohit have at Cricket World Cups?",
+    "expectedAnswerKeywords": ["7"],
+    "expectedContextKeywords": ["World Cups", "7"]
+  },
+  {
+    "question": "What is Rohit Sharma's favorite video game?",
+    "expectedAnswerKeywords": ["do not have the answer", "not contain relevant information"],
+    "expectedContextKeywords": []
+  }
+]
