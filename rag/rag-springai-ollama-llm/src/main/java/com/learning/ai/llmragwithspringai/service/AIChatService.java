@@ -34,10 +34,7 @@ public class AIChatService {
     @Value("${rag.retrieval.similarityThreshold:0.6}")
     private double similarityThreshold;
 
-    public AIChatService(
-            ChatClient.Builder builder,
-            VectorStore vectorStore,
-            io.micrometer.core.instrument.MeterRegistry meterRegistry) {
+    public AIChatService(ChatClient.Builder builder, VectorStore vectorStore, MeterRegistry meterRegistry) {
         this.vectorStore = vectorStore;
         this.meterRegistry = meterRegistry;
         this.aiClient =
@@ -91,7 +88,7 @@ public class AIChatService {
                     .map(d -> {
                         Object score = d.getMetadata().getOrDefault("distance", 0.0);
                         LOGGER.debug("Retrieved document score: {}", score);
-                        return new RetrievalDiagnostic(d.getText(), (Double) score);
+                        return new RetrievalDiagnostic(d.getText(), (Float) score);
                     })
                     .toList();
             meterRegistry.counter("rag.documents.retrieved").increment(docs.size());
