@@ -1,8 +1,13 @@
 package com.learning.ai.llmragwithspringai.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.document.DocumentReader;
 import org.springframework.ai.document.DocumentTransformer;
 import org.springframework.ai.reader.ExtractedTextFormatter;
@@ -22,12 +27,10 @@ public class DataIndexerService {
 
     private final TokenTextSplitter tokenTextSplitter;
     private final VectorStore vectorStore;
-    private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry;
 
     public DataIndexerService(
-            TokenTextSplitter tokenTextSplitter,
-            VectorStore vectorStore,
-            io.micrometer.core.instrument.MeterRegistry meterRegistry) {
+            TokenTextSplitter tokenTextSplitter, VectorStore vectorStore, MeterRegistry meterRegistry) {
         this.tokenTextSplitter = tokenTextSplitter;
         this.vectorStore = vectorStore;
         this.meterRegistry = meterRegistry;
@@ -69,26 +72,18 @@ public class DataIndexerService {
                 return documents;
             };
 
-            java.util.List<org.springframework.ai.document.Document> docsToIngest =
-                    metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get()));
+            List<Document> docsToIngest = metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get()));
             vectorStore.accept(docsToIngest);
 
             long duration = System.currentTimeMillis() - startTime;
             LOGGER.info("Loaded {} chunks to vector database in {} ms.", docsToIngest.size(), duration);
-            meterRegistry.timer("rag.ingestion.latency").record(java.time.Duration.ofMillis(duration));
+            meterRegistry.timer("rag.ingestion.latency").record(Duration.ofMillis(duration));
             meterRegistry.counter("rag.documents.ingested").increment(docsToIngest.size());
         }
     }
 
     public long count() {
-        return vectorStore
-                        .similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
-                                .query("")
-                                .topK(1)
-                                .build())
-                        .isEmpty()
-                ? 0
-                : 1;
+        return Objects.requireNonNull(this.vectorStore.similaritySearch("*")).size();
     }
 
     public boolean isEmpty() {

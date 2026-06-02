@@ -1,5 +1,6 @@
 package com.learning.ai.llmragwithspringai.config;
 
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
@@ -26,10 +27,8 @@ public class PgVectorHealthIndicator implements HealthIndicator {
 
         try {
             // Check vector store availability
-            vectorStore.similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
-                    .query("health-check")
-                    .topK(1)
-                    .build());
+            vectorStore.similaritySearch(
+                    SearchRequest.builder().query("health-check").topK(1).build());
 
             Health newHealth = Health.up()
                     .withDetail("vectorStore", vectorStore.getClass().getSimpleName())
@@ -40,7 +39,10 @@ public class PgVectorHealthIndicator implements HealthIndicator {
             return newHealth;
 
         } catch (Exception e) {
-            return Health.down().withException(e).build();
+            Health newHealth = Health.down().withException(e).build();
+            cachedHealth = newHealth;
+            cachedAt = System.currentTimeMillis();
+            return newHealth;
         }
     }
 }

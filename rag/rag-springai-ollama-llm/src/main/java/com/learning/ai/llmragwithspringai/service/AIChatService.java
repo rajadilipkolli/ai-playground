@@ -4,12 +4,13 @@ import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.model.response.RetrievalDiagnostic;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
@@ -62,27 +63,35 @@ public class AIChatService {
                 .queryAugmenter(queryAugmenter)
                 .build();
 
-        String aiResponse = aiClient.prompt()
+        var callResponse = aiClient.prompt()
                 .system(
                         "You are a helpful customer support agent. Use the provided information segments to synthesize your answer. If the segments do not contain relevant information, politely state that you do not have the answer.")
                 .user(query)
                 .advisors(advisor)
-                .call()
-                .content();
+                .call();
+
+        ChatResponse chatResponse = callResponse.chatResponse();
+        String aiResponse = chatResponse.getResult().getOutput().getText();
 
         stopWatch.stop();
-        LOGGER.info("Response received from call in {} ms: {}", stopWatch.getTotalTimeMillis(), aiResponse);
-        meterRegistry.timer("rag.retrieval.latency").record(Duration.ofMillis(stopWatch.getTotalTimeMillis()));
+        LOGGER.debug("Response received from call in {} ms: {}", stopWatch.getTotalTimeMillis(), aiResponse);
+        LOGGER.info("Response received from call in {} ms", stopWatch.getTotalTimeMillis());
+
+        meterRegistry.timer("rag.chat.total.latency").record(Duration.ofMillis(stopWatch.getTotalTimeMillis()));
         meterRegistry.counter("rag.llm.calls").increment();
 
         List<RetrievalDiagnostic> diagnostics = null;
         if (includeDiagnostics) {
-            List<Document> docs = documentRetriever.retrieve(new Query(query));
+            // Extract documents from context
+            List<Document> docs = chatResponse.getMetadata().get(RetrievalAugmentationAdvisor.DOCUMENT_CONTEXT);
+            if (docs == null) {
+                docs = Collections.emptyList();
+            }
             diagnostics = docs.stream()
                     .map(d -> {
                         Object score = d.getMetadata().getOrDefault("distance", 0.0);
                         LOGGER.debug("Retrieved document score: {}", score);
-                        return new RetrievalDiagnostic(d.getText(), score);
+                        return new RetrievalDiagnostic(d.getText(), (Double) score);
                     })
                     .toList();
             meterRegistry.counter("rag.documents.retrieved").increment(docs.size());
