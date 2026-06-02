@@ -9,9 +9,9 @@ import dev.langchain4j.service.spring.AiService;
 public interface AICustomerSupportAgent {
 
     @UserMessage({"""
-            Tell me about {{question}}? as of {{current_date_time}}
+            Tell me about {{question}}?
 
-            Use the following information to answer the question:
+            Use the following numbered information segments to synthesize your answer:
             {{information}}
         """})
     AICustomerSupportResponse chat(@V("question") String question, @V("information") String information);
