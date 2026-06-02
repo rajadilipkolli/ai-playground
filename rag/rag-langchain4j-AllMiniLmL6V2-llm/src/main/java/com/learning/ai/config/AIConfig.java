@@ -153,6 +153,9 @@ class AIConfig {
                     document = new ApachePdfBoxDocumentParser().parse(inputStream);
                 }
 
+                // Note: The langchain4j-embeddings-all-minilm-l6-v2 model has a recommended max token window of 256.
+                // Since we are using an OpenAiTokenizer (which differs slightly from the model's native tokenizer),
+                // we apply a conservative max size to avoid truncation errors, while maintaining a healthy overlap.
                 DocumentSplitter documentSplitter =
                         DocumentSplitters.recursive(chunkSize, chunkOverlap, openAiTokenizer);
                 EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()

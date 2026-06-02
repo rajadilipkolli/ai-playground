@@ -29,9 +29,14 @@ The pipeline includes multiple layers of observability:
 2. **ChatModelListener:** Intercepts requests, responses, and errors from the LLM, outputting structured logs.
 3. **Structured Logging:** Timings and match scores for vector search operations are logged for debugging.
 
-### Links
- - PGAdmin http://localhost:5050
- 
-### Reference
- - https://github.com/langchain4j/langchain4j-examples/tree/main/spring-boot-example
+### Diagnostic Output
+You can enable retrieval diagnostics (viewing the raw returned segments and their similarity scores) by appending `?includeDiagnostics=true` to your API request.
+The response will include a `diagnostics` array:
+- **`text`**: The raw chunk of text retrieved.
+- **`score`**: The similarity score (1.0 is a perfect match, 0.0 is no relation). Scores above `minScore` (0.6) are processed by the LLM.
 
+### Links
+- PGAdmin http://localhost:5050
+
+### Reference
+- https://github.com/langchain4j/langchain4j-examples/tree/main/spring-boot-example

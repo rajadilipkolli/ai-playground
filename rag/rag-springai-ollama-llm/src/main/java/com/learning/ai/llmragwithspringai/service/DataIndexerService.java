@@ -1,7 +1,6 @@
 package com.learning.ai.llmragwithspringai.service;
 
 import java.util.Map;
-import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.DocumentReader;
@@ -23,13 +22,24 @@ public class DataIndexerService {
 
     private final TokenTextSplitter tokenTextSplitter;
     private final VectorStore vectorStore;
+    private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
-    public DataIndexerService(TokenTextSplitter tokenTextSplitter, VectorStore vectorStore) {
+    public DataIndexerService(
+            TokenTextSplitter tokenTextSplitter,
+            VectorStore vectorStore,
+            io.micrometer.core.instrument.MeterRegistry meterRegistry) {
         this.tokenTextSplitter = tokenTextSplitter;
         this.vectorStore = vectorStore;
+        this.meterRegistry = meterRegistry;
     }
 
     public void loadData(Resource documentResource) {
+        if (!isEmpty()) {
+            LOGGER.info("Vector store is not empty. Skipping ingestion.");
+            return;
+        }
+
+        long startTime = System.currentTimeMillis();
         DocumentReader documentReader = null;
         if (documentResource.getFilename() != null
                 && documentResource.getFilename().endsWith(".pdf")) {
@@ -50,7 +60,7 @@ public class DataIndexerService {
             documentReader = new JsonReader(documentResource);
         }
         if (documentReader != null) {
-            LOGGER.info("Loading text document to redis vector database");
+            LOGGER.info("Loading text document to vector database");
             DocumentTransformer metadataEnricher = documents -> {
                 documents.forEach(d -> {
                     Map<String, Object> metadata = d.getMetadata();
@@ -58,12 +68,30 @@ public class DataIndexerService {
                 });
                 return documents;
             };
-            vectorStore.accept(metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get())));
-            LOGGER.info("Loaded document to vector database.");
+
+            java.util.List<org.springframework.ai.document.Document> docsToIngest =
+                    metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get()));
+            vectorStore.accept(docsToIngest);
+
+            long duration = System.currentTimeMillis() - startTime;
+            LOGGER.info("Loaded {} chunks to vector database in {} ms.", docsToIngest.size(), duration);
+            meterRegistry.timer("rag.ingestion.latency").record(java.time.Duration.ofMillis(duration));
+            meterRegistry.counter("rag.documents.ingested").increment(docsToIngest.size());
         }
     }
 
     public long count() {
-        return Objects.requireNonNull(this.vectorStore.similaritySearch("*")).size();
+        return vectorStore
+                        .similaritySearch(org.springframework.ai.vectorstore.SearchRequest.builder()
+                                .query("")
+                                .topK(1)
+                                .build())
+                        .isEmpty()
+                ? 0
+                : 1;
+    }
+
+    public boolean isEmpty() {
+        return count() == 0;
     }
 }

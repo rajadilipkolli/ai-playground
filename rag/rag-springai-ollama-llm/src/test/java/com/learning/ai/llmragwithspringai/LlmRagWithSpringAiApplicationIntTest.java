@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
 import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
@@ -85,6 +86,22 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .then()
                 .statusCode(200)
                 .body("queryResponse", containsStringIgnoringCase("No"))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(103)
+    void testRagWithDiagnostics() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Is Rohit Sharma batsman?"))
+                .queryParam("includeDiagnostics", true)
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("queryResponse", containsStringIgnoringCase("yes"))
+                .body("diagnostics", notNullValue())
                 .log()
                 .all();
     }
