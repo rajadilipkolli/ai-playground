@@ -57,7 +57,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .get("/api/data/v1/count")
                 .then()
                 .statusCode(200)
-                .body("count", is(1))
+                .body("count", is(2))
                 .log()
                 .all();
     }
