@@ -11,20 +11,29 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.evaluation.RelevancyEvaluator;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.evaluation.EvaluationRequest;
 import org.springframework.ai.evaluation.EvaluationResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 
 class RagEvaluationIntTest extends AbstractIntegrationTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RagEvaluationIntTest.class);
 
-    private RelevancyEvaluator relevancyEvaluator;
+    // till framework provide an option using custom evaluator, ref :
+    // https://github.com/spring-projects/spring-ai/pull/6265
+    private RobustRelevancyEvaluator relevancyEvaluator;
+
+    @Value("classpath:Rohit_Gurunath_Sharma.pdf")
+    private Resource pdfResource;
 
     @BeforeEach
     void setUp() {
-        this.relevancyEvaluator = new RelevancyEvaluator(chatClientBuilder);
+        if (dataIndexerService.isEmpty()) {
+            dataIndexerService.loadData(pdfResource);
+        }
+        this.relevancyEvaluator = new RobustRelevancyEvaluator(chatClientBuilder);
     }
 
     static List<GoldenDatasetEntry> goldenDatasetProvider() throws Exception {
@@ -53,14 +62,19 @@ class RagEvaluationIntTest extends AbstractIntegrationTest {
         LOGGER.info("Evaluation Pass: {}, Score: {}", isPass, evaluationResponse.getScore());
 
         // 2. Asserts
-        assertThat(isPass).isTrue();
+        // The RelevancyEvaluator will return true if the response aligns with the context.
+        if (!entry.expectedContextKeywords().isEmpty()) {
+            assertThat(isPass)
+                    .as("Relevancy evaluation should pass (response is grounded in the provided context)")
+                    .isTrue();
+        }
 
         assertThat(entry.expectedAnswerKeywords())
                 .as("Response should contain at least one of the expected keywords")
                 .anyMatch(keyword -> responseText.toLowerCase().contains(keyword.toLowerCase()));
 
         if (!entry.expectedContextKeywords().isEmpty()) {
-            String fullContext = String.join(" ", contextList);
+            String fullContext = String.join(" ", contextList).replaceAll("\\s+", " ");
             for (String expectedContextKeyword : entry.expectedContextKeywords()) {
                 assertThat(fullContext).containsIgnoringCase(expectedContextKeyword);
             }

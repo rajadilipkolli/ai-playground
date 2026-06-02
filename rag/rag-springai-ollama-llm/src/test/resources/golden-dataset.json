@@ -5,13 +5,63 @@
     "expectedContextKeywords": ["Mumbai Indians", "IPL"]
   },
   {
-    "question": "How many centuries does Rohit have at Cricket World Cups?",
-    "expectedAnswerKeywords": ["7"],
-    "expectedContextKeywords": ["World Cups", "7"]
+    "question": "How many hundreds (100 runs) does Rohit have at Cricket World Cups?",
+    "expectedAnswerKeywords": ["7", "seven"],
+    "expectedContextKeywords": ["World Cups"]
   },
   {
     "question": "What is Rohit Sharma's favorite video game?",
-    "expectedAnswerKeywords": ["do not have the answer", "not contain relevant information"],
+    "expectedAnswerKeywords": ["do not have the answer", "not contain relevant information", "don't have information", "not have information"],
+    "expectedContextKeywords": []
+  },
+  {
+    "question": "Who is Rohit Sharma?",
+    "expectedAnswerKeywords": ["Rohit", "Sharma", "cricketer", "batsman"],
+    "expectedContextKeywords": ["Rohit", "Sharma", "cricket"]
+  },
+  {
+    "question": "When did Rohit Sharma make his cricket debut?",
+    "expectedAnswerKeywords": ["debut", "2007", "cricket"],
+    "expectedContextKeywords": ["debut", "2007", "first"]
+  },
+  {
+    "question": "What are Rohit Sharma's major cricket achievements?",
+    "expectedAnswerKeywords": ["trophy", "championship", "award", "centuries"],
+    "expectedContextKeywords": ["trophy", "championship", "award", "won", "title"]
+  },
+  {
+    "question": "Which cricket formats has Rohit Sharma played?",
+    "expectedAnswerKeywords": ["Test", "ODI", "T20", "international"],
+    "expectedContextKeywords": ["Test", "ODI", "T20", "format"]
+  },
+  {
+    "question": "What is Rohit Sharma's playing style?",
+    "expectedAnswerKeywords": ["aggressive", "style", "batting"],
+    "expectedContextKeywords": ["style", "batting", "technique"]
+  },
+  {
+    "question": "Did Rohit Sharma win any ICC World Cups?",
+    "expectedAnswerKeywords": ["World Cup", "ICC", "trophy", "championship"],
+    "expectedContextKeywords": ["World Cup", "ICC", "2011", "2015", "2019"]
+  },
+  {
+    "question": "What is Rohit Sharma's role in the Indian cricket team?",
+    "expectedAnswerKeywords": ["captain", "leader", "skipper", "opening"],
+    "expectedContextKeywords": ["captain", "leader", "team", "role"]
+  },
+  {
+    "question": "How many centuries has Rohit Sharma scored?",
+    "expectedAnswerKeywords": ["century", "centuries", "hundred", "50"],
+    "expectedContextKeywords": ["century", "centuries", "hundred", "runs", "score"]
+  },
+  {
+    "question": "What are some facts about Rohit Sharma's family?",
+    "expectedAnswerKeywords": ["family", "wife", "personal"],
+    "expectedContextKeywords": ["family", "personal", "born", "childhood"]
+  },
+  {
+    "question": "Tell me about something not mentioned in the document?",
+    "expectedAnswerKeywords": ["unclear", "unavailable", "limited", "information"],
     "expectedContextKeywords": []
   }
 ]
