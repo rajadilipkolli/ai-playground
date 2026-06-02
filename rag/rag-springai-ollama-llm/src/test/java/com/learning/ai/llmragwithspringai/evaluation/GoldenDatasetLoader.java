@@ -3,27 +3,25 @@ package com.learning.ai.llmragwithspringai.evaluation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import org.springframework.core.io.ClassPathResource;
 import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public class GoldenDatasetLoader {
 
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
-    public GoldenDatasetLoader(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public GoldenDatasetLoader(JsonMapper jsonMapper) {
+        this.jsonMapper = jsonMapper;
     }
 
     public GoldenDatasetLoader() {
-        this(new ObjectMapper());
+        this(new JsonMapper());
     }
 
     public List<GoldenDatasetEntry> loadDataset(String classpathResource) throws IOException {
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(classpathResource)) {
-            if (is == null) {
-                throw new IllegalArgumentException("Resource not found: " + classpathResource);
-            }
-            return objectMapper.readValue(is, new TypeReference<List<GoldenDatasetEntry>>() {});
+        try (InputStream is = new ClassPathResource(classpathResource).getInputStream()) {
+            return jsonMapper.readValue(is, new TypeReference<List<GoldenDatasetEntry>>() {});
         }
     }
 }
