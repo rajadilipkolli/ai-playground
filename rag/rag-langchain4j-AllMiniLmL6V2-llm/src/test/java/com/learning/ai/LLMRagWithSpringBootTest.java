@@ -2,6 +2,7 @@ package com.learning.ai;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 import com.learning.ai.domain.request.AIChatRequest;
 import io.restassured.RestAssured;
@@ -34,7 +35,22 @@ class LLMRagWithSpringBootTest {
                 .request(Method.POST, "/api/ai/chat")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
-                .body("name", is("Rohit Gurunath Sharma"))
+                .body("response.name", is("Rohit Gurunath Sharma"))
+                .log()
+                .all();
+    }
+
+    @Test
+    void whenRequestGetFromPdfWithDiagnostics_thenOK() {
+        given().contentType(ContentType.JSON)
+                .queryParam("includeDiagnostics", true)
+                .body(new AIChatRequest("Who is Rohit"))
+                .when()
+                .request(Method.POST, "/api/ai/chat")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .body("response.name", is("Rohit Gurunath Sharma"))
+                .body("diagnostics", notNullValue())
                 .log()
                 .all();
     }

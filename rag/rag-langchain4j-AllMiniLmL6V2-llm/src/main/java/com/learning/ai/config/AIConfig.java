@@ -1,7 +1,5 @@
 package com.learning.ai.config;
 
-import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocument;
-
 import com.learning.ai.service.AICustomerSupportAgent;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
@@ -11,17 +9,27 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.listener.ChatModelErrorContext;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
+import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
+import dev.langchain4j.model.chat.listener.ChatModelResponseContext;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiTokenizer;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +38,20 @@ import org.springframework.core.io.ResourceLoader;
 
 @Configuration(proxyBeanMethods = false)
 class AIConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(AIConfig.class);
+
+    @Value("${langchain4j.rag.chunking.size:300}")
+    private int chunkSize;
+
+    @Value("${langchain4j.rag.chunking.overlap:50}")
+    private int chunkOverlap;
+
+    @Value("${langchain4j.rag.ingest.enabled:false}")
+    private boolean ingestEnabled;
+
+    @Value("${langchain4j.rag.ingest.forceRefresh:false}")
+    private boolean forceRefresh;
 
     @Bean
     AICustomerSupportAgent aiCustomerSupportAgent(
@@ -50,11 +72,6 @@ class AIConfig {
         return MessageWindowChatMemory.withMaxMessages(15);
     }
 
-    //    @Bean
-    //    ChatMemory chatMemory(Tokenizer tokenizer) {
-    //        return TokenWindowChatMemory.withMaxTokens(1000, tokenizer);
-    //    }
-
     @Bean
     EmbeddingModel embeddingModel() {
         return new AllMiniLmL6V2EmbeddingModel();
@@ -63,6 +80,29 @@ class AIConfig {
     @Bean
     OpenAiTokenizer openAiTokenizer() {
         return new OpenAiTokenizer(OpenAiChatModelName.GPT_3_5_TURBO.toString());
+    }
+
+    @Bean
+    ChatModelListener chatModelListener(MeterRegistry meterRegistry) {
+        return new ChatModelListener() {
+            @Override
+            public void onRequest(ChatModelRequestContext requestContext) {
+                log.info("Sending request to LLM: {}", requestContext.request().messages());
+                meterRegistry.counter("llm.requests").increment();
+            }
+
+            @Override
+            public void onResponse(ChatModelResponseContext responseContext) {
+                log.info("Received response from LLM");
+                meterRegistry.counter("llm.responses").increment();
+            }
+
+            @Override
+            public void onError(ChatModelErrorContext errorContext) {
+                log.error("Error during LLM call", errorContext.error());
+                meterRegistry.counter("llm.errors").increment();
+            }
+        };
     }
 
     @Bean
@@ -90,30 +130,48 @@ class AIConfig {
                 .password(jdbcConnectionDetails.getPassword())
                 .database(path.substring(1))
                 .table("ai_vector_store")
-                .dropTableFirst(true)
+                .dropTableFirst(forceRefresh)
                 .dimension(384)
                 .build();
 
-        // 2. Load an example document (medicaid-wa-faqs.pdf)
-        Resource pdfResource = resourceLoader.getResource("classpath:Rohit.pdf");
-        Document document = loadDocument(pdfResource.getFile().toPath(), new ApachePdfBoxDocumentParser());
+        if (ingestEnabled) {
+            boolean isEmpty = false;
+            if (!forceRefresh) {
+                var testEmbedding = embeddingModel.embed("test").content();
+                var searchRequest = EmbeddingSearchRequest.builder()
+                        .queryEmbedding(testEmbedding)
+                        .maxResults(1)
+                        .build();
+                isEmpty = embeddingStore.search(searchRequest).matches().isEmpty();
+            }
 
-        //        URL url = new URL("https://en.wikipedia.org/wiki/MS_Dhoni");
-        //        Document htmlDocument = UrlDocumentLoader.load(url, new TextDocumentParser());
-        //        HtmlTextExtractor transformer = new HtmlTextExtractor(null, null, true);
-        //        Document dhoniDocument = transformer.transform(htmlDocument);
+            if (forceRefresh || isEmpty) {
+                log.info(
+                        "Ingesting document into vector store (forceRefresh={}, isEmpty={})...", forceRefresh, isEmpty);
+                Resource pdfResource = resourceLoader.getResource("classpath:Rohit.pdf");
+                Document document;
+                try (InputStream inputStream = pdfResource.getInputStream()) {
+                    document = new ApachePdfBoxDocumentParser().parse(inputStream);
+                }
 
-        // 3. Split the document into segments 500 tokens each
-        // 4. Convert segments into embeddings
-        // 5. Store embeddings into embedding store
-        // All this can be done manually, but we will use EmbeddingStoreIngestor to automate this:
-        DocumentSplitter documentSplitter = DocumentSplitters.recursive(500, 0, openAiTokenizer);
-        EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
-                .documentSplitter(documentSplitter)
-                .embeddingModel(embeddingModel)
-                .embeddingStore(embeddingStore)
-                .build();
-        ingestor.ingest(document /*, dhoniDocument*/);
+                // Note: The langchain4j-embeddings-all-minilm-l6-v2 model has a recommended max token window of 256.
+                // Since we are using an OpenAiTokenizer (which differs slightly from the model's native tokenizer),
+                // we apply a conservative max size to avoid truncation errors, while maintaining a healthy overlap.
+                DocumentSplitter documentSplitter =
+                        DocumentSplitters.recursive(chunkSize, chunkOverlap, openAiTokenizer);
+                EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
+                        .documentSplitter(documentSplitter)
+                        .embeddingModel(embeddingModel)
+                        .embeddingStore(embeddingStore)
+                        .build();
+                ingestor.ingest(document);
+                log.info("Document ingestion complete.");
+            } else {
+                log.info("Document ingestion skipped. Store is not empty and forceRefresh is false.");
+            }
+        } else {
+            log.info("Document ingestion skipped (langchain4j.rag.ingest.enabled=false).");
+        }
 
         return embeddingStore;
     }

@@ -3,6 +3,7 @@ package com.learning.ai.llmragwithspringai;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
@@ -56,7 +57,7 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .get("/api/data/v1/count")
                 .then()
                 .statusCode(200)
-                .body("count", is(1))
+                .body("count", is(2))
                 .log()
                 .all();
     }
@@ -85,6 +86,22 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .then()
                 .statusCode(200)
                 .body("queryResponse", containsStringIgnoringCase("No"))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(103)
+    void testRagWithDiagnostics() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Is Rohit Sharma batsman?"))
+                .queryParam("includeDiagnostics", true)
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("queryResponse", containsStringIgnoringCase("yes"))
+                .body("diagnostics.size()", greaterThan(0))
                 .log()
                 .all();
     }

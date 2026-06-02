@@ -1,36 +1,51 @@
-# Getting Started
+# llm-rag-with-spring-ai-ollama
 
-The use of the pgvector store with the ollama model is not feasible due to the generation of 4096 dimensions by the latter, which exceeds pg vector's indexing support limit of less than 2000 dimensions. This limitation hinders the ease of querying the embedding store due to the absence of indexing.
+This project implements a Retrieval-Augmented Generation (RAG) architecture using Spring AI 2.x components, PgVector, and Ollama.
 
-As LLMs need heavy computational power, they need GPU to be enabled for quick processing using complex Math operations behind the scenes.
-
-## Sequence Diagram
+## Architecture & Sequence Flow
 
 ```mermaid
 sequenceDiagram
     participant User
+    participant AiController
     participant AIChatService
-    participant QuestionAnswerAdvisor
-    participant RedisVectorStore
-    participant AIApiClient
+    participant RetrievalAugmentationAdvisor
+    participant VectorStoreDocumentRetriever
+    participant PgVector
+    participant OllamaChatClient
 
-    User->>AIChatService: Initiate chat request
-    AIChatService->>QuestionAnswerAdvisor: Generate advisory request
-    QuestionAnswerAdvisor->>RedisVectorStore: Query relevant information
-    RedisVectorStore-->>QuestionAnswerAdvisor: Return search results
-    QuestionAnswerAdvisor->>AIChatService: Provide advisory response
-    AIChatService->>AIApiClient: Forward chat input and advisory response
-    AIApiClient-->>AIChatService: Chat outcome
-    AIChatService-->>User: Return chat response
+    User->>AiController: Initiate chat request
+    AiController->>AIChatService: Process request
+    AIChatService->>RetrievalAugmentationAdvisor: Apply advisor
+    RetrievalAugmentationAdvisor->>VectorStoreDocumentRetriever: Query vector store
+    VectorStoreDocumentRetriever->>PgVector: Semantic search
+    PgVector-->>VectorStoreDocumentRetriever: Return similar segments
+    VectorStoreDocumentRetriever-->>RetrievalAugmentationAdvisor: Augment prompt with context
+    RetrievalAugmentationAdvisor->>OllamaChatClient: Forward prompt & context
+    OllamaChatClient-->>RetrievalAugmentationAdvisor: Generate answer
+    RetrievalAugmentationAdvisor-->>AIChatService: Return advisory response
+    AIChatService-->>AiController: Chat outcome
+    AiController-->>User: Return response & diagnostics
 ```
 
+## Configuration
 
-### Testcontainers support
+### Document Chunking Strategy
+We use `TokenTextSplitter` configured via properties:
+- `rag.chunking.size=300`: Sets the maximum chunk size constraints.
+- `rag.chunking.minSize=100`: Maintains a minimum chunk size to preserve context boundaries.
+Note: While `nomic-embed-text` supports up to 8192 tokens, chunks between 300-500 tokens generally yield the highest quality semantic retrieval.
 
+### Retrieval Configuration
+- `rag.retrieval.topK=3`: Retrieves the top 3 contextual segments.
+- `rag.retrieval.similarityThreshold=0.6`: Discards segments that do not meet the minimum cosine similarity.
+
+### Observability Setup
+This module is fully equipped for production observability using the OTLP/Grafana LGTM stack:
+- **Micrometer Metrics:** We record custom timers (`rag.retrieval.latency`, `rag.ingestion.latency`) and counters (`rag.llm.calls`, `rag.documents.retrieved`).
+- **Health Indicators:** A custom `PgVectorHealthIndicator` checks vector store connectivity with a 5-second TTL cache to prevent database overload.
+- **Diagnostics API:** Append `?includeDiagnostics=true` to any chat request to view the raw retrieved text chunks and their precise vector similarity distance scores.
+
+### Testcontainers Support
 This project uses [Testcontainers at development time](https://docs.spring.io/spring-boot/docs/3.2.4/reference/html/features.html#features.testing.testcontainers.at-development-time).
-
-Testcontainers has been configured to use the following Docker images:
-
-* [`pgvector/pgvector:pg16`](https://hub.docker.com/r/pgvector/pgvector)
-
-Please review the tags of the used images and set them to the same as you're running in production.
+It automatically spins up the required `pgvector/pgvector:pg18` and Ollama containers without manual orchestration.
