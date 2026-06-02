@@ -9,7 +9,7 @@ import dev.langchain4j.service.spring.AiService;
 public interface AICustomerSupportAgent {
 
     @UserMessage({"""
-            Tell me about {{question}}?
+            Tell me about {{question}}? as of {{current_date_time}}
 
             Use the following numbered information segments to synthesize your answer:
             {{information}}

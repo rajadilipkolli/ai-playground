@@ -19,6 +19,7 @@ import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiTokenizer;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
@@ -137,7 +138,7 @@ class AIConfig {
             boolean isEmpty = false;
             if (!forceRefresh) {
                 var testEmbedding = embeddingModel.embed("test").content();
-                var searchRequest = dev.langchain4j.store.embedding.EmbeddingSearchRequest.builder()
+                var searchRequest = EmbeddingSearchRequest.builder()
                         .queryEmbedding(testEmbedding)
                         .maxResults(1)
                         .build();
