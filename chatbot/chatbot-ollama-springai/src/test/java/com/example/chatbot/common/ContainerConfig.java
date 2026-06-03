@@ -5,6 +5,7 @@ import org.springframework.boot.devtools.restart.RestartScope;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.grafana.LgtmStackContainer;
 import org.testcontainers.ollama.OllamaContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -17,17 +18,22 @@ public class ContainerConfig {
     @ServiceConnection
     @RestartScope
     OllamaContainer ollama() {
-        return new OllamaContainer("ollama/ollama").withReuse(true);
+        return new OllamaContainer(DockerImageName.parse("ollama/ollama"))
+                .withReuse(true)
+                .withFileSystemBind(System.getProperty("user.home") + "/.ollama", "/root/.ollama", BindMode.READ_WRITE);
     }
 
     @Bean
     @ServiceConnection
+    @RestartScope
     PostgreSQLContainer postgreSQLContainer() {
-        return new PostgreSQLContainer(DockerImageName.parse("pgvector/pgvector:pg18"));
+        return new PostgreSQLContainer(
+                DockerImageName.parse("pgvector/pgvector").withTag("pg18"));
     }
 
     @Bean
     @ServiceConnection
+    @RestartScope
     LgtmStackContainer lgtmStackContainer() {
         return new LgtmStackContainer(DockerImageName.parse("grafana/otel-lgtm").withTag("0.28.0"))
                 .withStartupTimeout(Duration.ofMinutes(2));
