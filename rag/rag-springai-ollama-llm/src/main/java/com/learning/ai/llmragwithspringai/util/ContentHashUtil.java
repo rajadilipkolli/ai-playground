@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 
 public class ContentHashUtil {
@@ -12,24 +14,23 @@ public class ContentHashUtil {
         // Stateless utility class
     }
 
-    public static String calculateHash(Resource resource) {
+    public record HashResult(String hash, Resource rereadableResource) {}
+
+    public static HashResult calculateHash(Resource resource) {
         try (InputStream is = resource.getInputStream()) {
+            byte[] bytes = is.readAllBytes();
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) != -1) {
-                digest.update(buffer, 0, bytesRead);
-            }
-            byte[] hashBytes = digest.digest();
-            StringBuilder hexString = new StringBuilder(2 * hashBytes.length);
-            for (byte b : hashBytes) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
+            byte[] hashBytes = digest.digest(bytes);
+            String hash = HexFormat.of().formatHex(hashBytes);
+
+            Resource rereadableResource = new ByteArrayResource(bytes) {
+                @Override
+                public String getFilename() {
+                    return resource.getFilename();
                 }
-                hexString.append(hex);
-            }
-            return hexString.toString();
+            };
+
+            return new HashResult(hash, rereadableResource);
         } catch (IOException e) {
             throw new RuntimeException("Failed to read resource for hashing: " + resource.getFilename(), e);
         } catch (NoSuchAlgorithmException e) {

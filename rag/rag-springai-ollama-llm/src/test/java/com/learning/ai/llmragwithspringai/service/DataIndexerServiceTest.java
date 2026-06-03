@@ -1,10 +1,14 @@
 package com.learning.ai.llmragwithspringai.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import io.micrometer.core.instrument.Counter;
@@ -23,9 +27,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class DataIndexerServiceTest {
@@ -35,6 +39,9 @@ class DataIndexerServiceTest {
 
     @Mock
     private VectorStore vectorStore;
+
+    @Mock
+    private JdbcTemplate jdbcTemplate;
 
     @Mock
     private MeterRegistry meterRegistry;
@@ -73,15 +80,16 @@ class DataIndexerServiceTest {
 
         Document existingDoc = new Document("doc-123", "existing-content", Collections.emptyMap());
 
-        // First similaritySearch is for content_hash
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(existingDoc));
+        // First JdbcTemplate query is for content_hash
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
+                .thenReturn(List.of("doc-123"));
 
         IngestionResult result = dataIndexerService.loadData(resource);
 
-        assertEquals("skipped_duplicate", result.status());
-        assertEquals("test.txt", result.filename());
-        assertEquals(0, result.chunksIngested());
-        assertEquals(0, result.chunksDeleted());
+        assertThat(result.status()).isEqualTo("skipped_duplicate");
+        assertThat(result.filename()).isEqualTo("test.txt");
+        assertThat(result.chunksIngested()).isEqualTo(0);
+        assertThat(result.chunksDeleted()).isEqualTo(0);
 
         verify(vectorStore, never()).accept(anyList());
         verify(vectorStore, never()).delete(anyList());
@@ -96,18 +104,18 @@ class DataIndexerServiceTest {
         Document newDoc = new Document("New modified content");
         when(tokenTextSplitter.apply(anyList())).thenReturn(List.of(newDoc));
 
-        // First similaritySearch (hash) -> empty
-        // Second similaritySearch (filename) -> returns old document
-        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+        // First query (hash) -> empty
+        // Second query (filename) -> returns old document
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
                 .thenReturn(Collections.emptyList())
-                .thenReturn(List.of(oldDoc));
+                .thenReturn(List.of("doc-123"));
 
         IngestionResult result = dataIndexerService.loadData(resource);
 
-        assertEquals("replaced", result.status());
-        assertEquals("test.txt", result.filename());
-        assertTrue(result.chunksDeleted() > 0);
-        assertEquals(1, result.chunksIngested());
+        assertThat(result.status()).isEqualTo("replaced");
+        assertThat(result.filename()).isEqualTo("test.txt");
+        assertThat(result.chunksIngested()).isEqualTo(1);
+        assertThat(result.chunksDeleted()).isEqualTo(1);
 
         verify(vectorStore).delete(List.of("doc-123"));
         verify(vectorStore).accept(anyList());
@@ -119,14 +127,16 @@ class DataIndexerServiceTest {
 
         Document existingDoc = new Document("doc-999", "Identical content", Collections.emptyMap());
 
-        // First similaritySearch (hash) -> returns existing document
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(existingDoc));
+        // First query (hash) -> returns existing document
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
+                .thenReturn(List.of("doc-999"));
 
         IngestionResult result = dataIndexerService.loadData(resource);
 
-        assertEquals("skipped_duplicate", result.status());
-        assertEquals(0, result.chunksIngested());
-        assertEquals(0, result.chunksDeleted());
+        assertThat(result.status()).isEqualTo("skipped_duplicate");
+        assertThat(result.filename()).isEqualTo("new-file.txt");
+        assertThat(result.chunksIngested()).isEqualTo(0);
+        assertThat(result.chunksDeleted()).isEqualTo(0);
 
         verify(vectorStore, never()).delete(anyList());
         verify(vectorStore, never()).accept(anyList());
@@ -139,15 +149,17 @@ class DataIndexerServiceTest {
         Document newDoc = new Document("Fresh content");
         when(tokenTextSplitter.apply(anyList())).thenReturn(List.of(newDoc));
 
-        // First similaritySearch (hash) -> empty
-        // Second similaritySearch (filename) -> empty
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(Collections.emptyList());
+        // First query (hash) -> empty
+        // Second query (filename) -> empty
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
+                .thenReturn(Collections.emptyList());
 
         IngestionResult result = dataIndexerService.loadData(resource);
 
-        assertEquals("ingested", result.status());
-        assertTrue(result.chunksIngested() > 0);
-        assertEquals(0, result.chunksDeleted());
+        assertThat(result.status()).isEqualTo("ingested");
+        assertThat(result.filename()).isEqualTo("brand-new.txt");
+        assertThat(result.chunksIngested()).isEqualTo(1);
+        assertThat(result.chunksDeleted()).isEqualTo(0);
 
         verify(vectorStore, never()).delete(anyList());
         verify(vectorStore).accept(anyList());

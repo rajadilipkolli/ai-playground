@@ -21,6 +21,9 @@ class DataIndexController {
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ResponseEntity<?> load(@RequestPart("file") MultipartFile multipartFile) {
+        if (multipartFile.isEmpty()) {
+            return ResponseEntity.badRequest().body("Uploaded file is empty");
+        }
         try {
             IngestionResult result = this.dataIndexerService.loadData(multipartFile.getResource());
             return ResponseEntity.ok(result);

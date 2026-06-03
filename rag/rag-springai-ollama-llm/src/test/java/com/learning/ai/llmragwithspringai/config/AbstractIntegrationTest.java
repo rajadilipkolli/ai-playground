@@ -5,10 +5,10 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import com.learning.ai.llmragwithspringai.service.AIChatService;
 import com.learning.ai.llmragwithspringai.service.DataIndexerService;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(
         webEnvironment = RANDOM_PORT,
@@ -26,7 +26,7 @@ public abstract class AbstractIntegrationTest {
     protected DataIndexerService dataIndexerService;
 
     @Autowired
-    protected VectorStore vectorStore;
+    protected JsonMapper jsonMapper;
 
     @Autowired
     protected JdbcTemplate jdbcTemplate;

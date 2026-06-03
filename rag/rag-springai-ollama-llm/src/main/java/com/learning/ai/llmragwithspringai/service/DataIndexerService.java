@@ -9,7 +9,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -21,9 +20,9 @@ import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
@@ -35,12 +34,17 @@ public class DataIndexerService {
     private final TokenTextSplitter tokenTextSplitter;
     private final VectorStore vectorStore;
     private final MeterRegistry meterRegistry;
+    private final JdbcTemplate jdbcTemplate;
 
     public DataIndexerService(
-            TokenTextSplitter tokenTextSplitter, VectorStore vectorStore, MeterRegistry meterRegistry) {
+            TokenTextSplitter tokenTextSplitter,
+            VectorStore vectorStore,
+            MeterRegistry meterRegistry,
+            JdbcTemplate jdbcTemplate) {
         this.tokenTextSplitter = tokenTextSplitter;
         this.vectorStore = vectorStore;
         this.meterRegistry = meterRegistry;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public IngestionResult loadData(Resource documentResource) {
@@ -51,7 +55,9 @@ public class DataIndexerService {
 
         StopWatch stopWatch = new StopWatch("loadData");
         stopWatch.start();
-        String contentHash = ContentHashUtil.calculateHash(documentResource);
+        ContentHashUtil.HashResult hashResult = ContentHashUtil.calculateHash(documentResource);
+        String contentHash = hashResult.hash();
+        final Resource rereadableResource = hashResult.rereadableResource();
 
         List<String> existingByHash = findDocumentsByContentHash(contentHash);
         if (!existingByHash.isEmpty()) {
@@ -82,18 +88,18 @@ public class DataIndexerService {
                             .build())
                     .withPagesPerDocument(1)
                     .build();
-            documentReader = new PagePdfDocumentReader(documentResource, pdfDocumentReaderConfig);
+            documentReader = new PagePdfDocumentReader(rereadableResource, pdfDocumentReaderConfig);
         } else if (filename.endsWith(".txt")) {
-            documentReader = new TextReader(documentResource);
+            documentReader = new TextReader(rereadableResource);
         } else if (filename.endsWith(".json")) {
-            documentReader = new JsonReader(documentResource);
+            documentReader = new JsonReader(rereadableResource);
         }
 
         if (documentReader != null) {
             LOGGER.info("Loading text document to vector database");
             DocumentTransformer metadataEnricher = documents -> {
                 final String finalFilename =
-                        documentResource.getFilename() != null ? documentResource.getFilename() : "unknown";
+                        rereadableResource.getFilename() != null ? rereadableResource.getFilename() : "unknown";
                 documents.forEach(d -> {
                     Map<String, Object> metadata = d.getMetadata();
                     metadata.put("EXTERNAL_KNOWLEDGE", "true");
@@ -123,23 +129,13 @@ public class DataIndexerService {
     }
 
     private List<String> findDocumentsByContentHash(String hash) {
-        SearchRequest searchRequest = SearchRequest.builder()
-                .filterExpression("content_hash == '" + hash + "'")
-                .topK(10000)
-                .build();
-        return vectorStore.similaritySearch(searchRequest).stream()
-                .map(Document::getId)
-                .collect(Collectors.toList());
+        return jdbcTemplate.queryForList(
+                "SELECT id FROM vector_store WHERE metadata->>'content_hash' = ?", String.class, hash);
     }
 
     private List<String> findDocumentsByFilename(String filename) {
-        SearchRequest searchRequest = SearchRequest.builder()
-                .filterExpression("source_filename == '" + filename + "'")
-                .topK(10000)
-                .build();
-        return vectorStore.similaritySearch(searchRequest).stream()
-                .map(Document::getId)
-                .collect(Collectors.toList());
+        return jdbcTemplate.queryForList(
+                "SELECT id FROM vector_store WHERE metadata->>'source_filename' = ?", String.class, filename);
     }
 
     public long count() {
