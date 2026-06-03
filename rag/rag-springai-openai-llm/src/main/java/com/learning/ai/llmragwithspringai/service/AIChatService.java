@@ -2,7 +2,6 @@ package com.learning.ai.llmragwithspringai.service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
@@ -53,8 +52,9 @@ public class AIChatService {
         // to answer the question.
         Message systemMessage = new SystemPromptTemplate(template).createMessage(Map.of("documents", documents));
         UserMessage userMessage = new UserMessage(searchQuery);
+        // TODO add back when tools are serialized correctly
         OpenAiChatOptions chatOptions = OpenAiChatOptions.builder()
-                .toolNames(Set.of("currentDateFunction"))
+                // .toolNames(Set.of("currentDateFunction"))
                 .build();
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage), chatOptions);
         return aiClient.prompt(prompt).call().content();
