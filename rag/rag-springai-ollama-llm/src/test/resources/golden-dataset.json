@@ -1,0 +1,67 @@
+[
+  {
+    "question": "What team does Rohit Sharma play for in the IPL?",
+    "expectedAnswerKeywords": ["Mumbai Indians"],
+    "expectedContextKeywords": ["Mumbai Indians", "IPL"]
+  },
+  {
+    "question": "How many centuries does Rohit Sharma have at Cricket World Cups?",
+    "expectedAnswerKeywords": ["7", "seven"],
+    "expectedContextKeywords": ["World Cups", "centuries"]
+  },
+  {
+    "question": "What is Rohit Sharma's favorite video game?",
+    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedContextKeywords": []
+  },
+  {
+    "question": "Who is Rohit Sharma?",
+    "expectedAnswerKeywords": ["Rohit", "Sharma", "cricketer", "batsman", "captain"],
+    "expectedContextKeywords": ["Rohit", "Sharma", "cricket"]
+  },
+  {
+    "question": "When did Rohit Sharma make his cricket debut?",
+    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedContextKeywords": []
+  },
+  {
+    "question": "What are some of Rohit Sharma's major cricket achievements?",
+    "expectedAnswerKeywords": ["sixes", "double centuries", "World Cups", "titles", "Trophy"],
+    "expectedContextKeywords": ["achievements", "centuries", "Trophy", "titles"]
+  },
+  {
+    "question": "Which cricket formats is Rohit Sharma mentioned to play?",
+    "expectedAnswerKeywords": ["ODI", "T20", "formats", "Twenty20", "international"],
+    "expectedContextKeywords": ["ODI", "T20", "formats"]
+  },
+  {
+    "question": "What are the key elements of Rohit Sharma's batting abilities?",
+    "expectedAnswerKeywords": ["elegant", "timing", "six-hitting", "opening"],
+    "expectedContextKeywords": ["elegant", "timing", "abilities"]
+  },
+  {
+    "question": "Which ICC tournaments was Rohit Sharma part of the winning Indian team for?",
+    "expectedAnswerKeywords": ["2007", "T20", "World Cup", "2013", "Champions Trophy"],
+    "expectedContextKeywords": ["World Cup", "Champions Trophy", "2007", "2013"]
+  },
+  {
+    "question": "What leadership role does Rohit Sharma hold in the Indian national cricket team?",
+    "expectedAnswerKeywords": ["captain", "captains"],
+    "expectedContextKeywords": ["captains", "national"]
+  },
+  {
+    "question": "How many double centuries has Rohit Sharma scored in ODI cricket?",
+    "expectedAnswerKeywords": ["3", "three"],
+    "expectedContextKeywords": ["double centuries", "ODI"]
+  },
+  {
+    "question": "What are some facts about Rohit Sharma's family?",
+    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedContextKeywords": []
+  },
+  {
+    "question": "Tell me about something not mentioned in the document?",
+    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedContextKeywords": []
+  }
+]
