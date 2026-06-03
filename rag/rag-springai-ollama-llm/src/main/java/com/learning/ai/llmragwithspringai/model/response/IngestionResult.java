@@ -1,3 +1,3 @@
 package com.learning.ai.llmragwithspringai.model.response;
 
-public record IngestionResult(String status, String filename, int chunksIngested, int chunksDeleted) {}
+public record IngestionResult(IngestionStatus status, String filename, int chunksIngested, int chunksDeleted) {}

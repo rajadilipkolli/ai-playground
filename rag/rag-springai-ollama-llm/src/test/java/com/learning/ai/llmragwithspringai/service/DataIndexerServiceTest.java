@@ -1,22 +1,20 @@
 package com.learning.ai.llmragwithspringai.service;
 
+import static com.learning.ai.llmragwithspringai.util.TestResourceUtil.createMockResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
+import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,21 +59,8 @@ class DataIndexerServiceTest {
         lenient().when(meterRegistry.counter(anyString())).thenReturn(counter);
     }
 
-    private Resource createMockResource(String filename, String content) {
-        Resource resource = mock(Resource.class);
-        lenient().when(resource.getFilename()).thenReturn(filename);
-        try {
-            lenient()
-                    .when(resource.getInputStream())
-                    .thenAnswer(inv -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return resource;
-    }
-
     @Test
-    void testSkipDuplicateContent_SameFilename() {
+    void testSkipDuplicateContentSameFilename() {
         Resource resource = createMockResource("test.txt", "Some content");
 
         Document existingDoc = new Document("doc-123", "existing-content", Collections.emptyMap());
@@ -86,7 +71,7 @@ class DataIndexerServiceTest {
 
         IngestionResult result = dataIndexerService.loadData(resource);
 
-        assertThat(result.status()).isEqualTo("skipped_duplicate");
+        assertThat(result.status()).isEqualTo(IngestionStatus.SKIPPED_DUPLICATE);
         assertThat(result.filename()).isEqualTo("test.txt");
         assertThat(result.chunksIngested()).isEqualTo(0);
         assertThat(result.chunksDeleted()).isEqualTo(0);
@@ -96,7 +81,7 @@ class DataIndexerServiceTest {
     }
 
     @Test
-    void testReplaceChangedContent_SameFilename() {
+    void testReplaceChangedContentSameFilename() {
         Resource resource = createMockResource("test.txt", "New modified content");
 
         Document oldDoc = new Document("doc-123", "old-content", Collections.emptyMap());
@@ -112,7 +97,7 @@ class DataIndexerServiceTest {
 
         IngestionResult result = dataIndexerService.loadData(resource);
 
-        assertThat(result.status()).isEqualTo("replaced");
+        assertThat(result.status()).isEqualTo(IngestionStatus.REPLACED);
         assertThat(result.filename()).isEqualTo("test.txt");
         assertThat(result.chunksIngested()).isEqualTo(1);
         assertThat(result.chunksDeleted()).isEqualTo(1);
@@ -122,7 +107,7 @@ class DataIndexerServiceTest {
     }
 
     @Test
-    void testSkipDuplicateContent_DifferentFilename() {
+    void testSkipDuplicateContentDifferentFilename() {
         Resource resource = createMockResource("new-file.txt", "Identical content");
 
         Document existingDoc = new Document("doc-999", "Identical content", Collections.emptyMap());
@@ -133,7 +118,7 @@ class DataIndexerServiceTest {
 
         IngestionResult result = dataIndexerService.loadData(resource);
 
-        assertThat(result.status()).isEqualTo("skipped_duplicate");
+        assertThat(result.status()).isEqualTo(IngestionStatus.SKIPPED_DUPLICATE);
         assertThat(result.filename()).isEqualTo("new-file.txt");
         assertThat(result.chunksIngested()).isEqualTo(0);
         assertThat(result.chunksDeleted()).isEqualTo(0);
@@ -156,7 +141,7 @@ class DataIndexerServiceTest {
 
         IngestionResult result = dataIndexerService.loadData(resource);
 
-        assertThat(result.status()).isEqualTo("ingested");
+        assertThat(result.status()).isEqualTo(IngestionStatus.INGESTED);
         assertThat(result.filename()).isEqualTo("brand-new.txt");
         assertThat(result.chunksIngested()).isEqualTo(1);
         assertThat(result.chunksDeleted()).isEqualTo(0);

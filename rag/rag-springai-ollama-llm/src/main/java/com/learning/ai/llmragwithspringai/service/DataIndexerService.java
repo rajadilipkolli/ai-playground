@@ -1,6 +1,7 @@
 package com.learning.ai.llmragwithspringai.service;
 
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
+import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
@@ -62,7 +63,7 @@ public class DataIndexerService {
         List<String> existingByHash = findDocumentsByContentHash(contentHash);
         if (!existingByHash.isEmpty()) {
             LOGGER.info("Document {} with hash {} already exists. Skipping ingestion.", filename, contentHash);
-            return new IngestionResult("skipped_duplicate", filename, 0, 0);
+            return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
         }
 
         List<String> existingByFilename = findDocumentsByFilename(filename);
@@ -121,11 +122,11 @@ public class DataIndexerService {
             meterRegistry.timer("rag.ingestion.latency").record(Duration.ofMillis(stopWatch.getTotalTimeMillis()));
             meterRegistry.counter("rag.documents.ingested").increment(docsToIngest.size());
 
-            String status = chunksDeleted > 0 ? "replaced" : "ingested";
+            IngestionStatus status = chunksDeleted > 0 ? IngestionStatus.REPLACED : IngestionStatus.INGESTED;
             return new IngestionResult(status, filename, docsToIngest.size(), chunksDeleted);
         }
 
-        return new IngestionResult("skipped_duplicate", filename, 0, 0); // fallback
+        return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0); // fallback
     }
 
     private List<String> findDocumentsByContentHash(String hash) {

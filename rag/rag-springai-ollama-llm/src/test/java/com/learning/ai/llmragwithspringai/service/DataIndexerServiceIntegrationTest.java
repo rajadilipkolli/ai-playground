@@ -1,16 +1,13 @@
 package com.learning.ai.llmragwithspringai.service;
 
+import static com.learning.ai.llmragwithspringai.util.TestResourceUtil.createMockResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 
 import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -27,19 +24,6 @@ class DataIndexerServiceIntegrationTest extends AbstractIntegrationTest {
         // Delete only the documents created by this integration test to avoid breaking other tests
         jdbcTemplate.execute(
                 "DELETE FROM vector_store WHERE metadata->>'source_filename' IN ('test.txt', 'fileA.txt', 'fileB.txt', 'brand-new-integration.txt')");
-    }
-
-    private Resource createMockResource(String filename, String content) {
-        Resource resource = mock(Resource.class);
-        lenient().when(resource.getFilename()).thenReturn(filename);
-        try {
-            lenient()
-                    .when(resource.getInputStream())
-                    .thenAnswer(inv -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return resource;
     }
 
     private List<Document> getDocumentsByFilename(String filename) {
@@ -62,18 +46,18 @@ class DataIndexerServiceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testSkipDuplicateContent_SameFilename_Integration() {
+    void testSkipDuplicateContentSameFilenameIntegration() {
         Resource resource = createMockResource("test.txt", "Integration test content");
 
         IngestionResult result1 = dataIndexerService.loadData(resource);
-        assertEquals("ingested", result1.status());
+        assertEquals(IngestionStatus.INGESTED, result1.status());
 
         List<Document> initialDocs = getDocumentsByFilename("test.txt");
         int initialCount = initialDocs.size();
         assertTrue(initialCount > 0);
 
         IngestionResult result2 = dataIndexerService.loadData(resource);
-        assertEquals("skipped_duplicate", result2.status());
+        assertEquals(IngestionStatus.SKIPPED_DUPLICATE, result2.status());
         assertEquals(0, result2.chunksIngested());
         assertEquals(0, result2.chunksDeleted());
 
@@ -82,10 +66,10 @@ class DataIndexerServiceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testReplaceChangedContent_SameFilename_Integration() {
+    void testReplaceChangedContentSameFilenameIntegration() {
         Resource resource1 = createMockResource("test2.txt", "version 1");
         IngestionResult result1 = dataIndexerService.loadData(resource1);
-        assertEquals("ingested", result1.status());
+        assertEquals(IngestionStatus.INGESTED, result1.status());
 
         List<Document> docsV1 = getDocumentsByFilename("test2.txt");
         int chunksV1 = docsV1.size();
@@ -93,7 +77,7 @@ class DataIndexerServiceIntegrationTest extends AbstractIntegrationTest {
 
         Resource resource2 = createMockResource("test2.txt", "version 2 with more text");
         IngestionResult result2 = dataIndexerService.loadData(resource2);
-        assertEquals("replaced", result2.status());
+        assertEquals(IngestionStatus.REPLACED, result2.status());
         assertEquals(chunksV1, result2.chunksDeleted());
         assertTrue(result2.chunksIngested() > 0);
 
@@ -105,10 +89,10 @@ class DataIndexerServiceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testSkipDuplicateContent_DifferentFilename_Integration() {
+    void testSkipDuplicateContentDifferentFilenameIntegration() {
         Resource resourceA = createMockResource("fileA.txt", "duplicate content");
         IngestionResult resultA = dataIndexerService.loadData(resourceA);
-        assertEquals("ingested", resultA.status());
+        assertEquals(IngestionStatus.INGESTED, resultA.status());
 
         List<Document> docsA = getDocumentsByFilename("fileA.txt");
         int initialCount = docsA.size();
@@ -116,7 +100,7 @@ class DataIndexerServiceIntegrationTest extends AbstractIntegrationTest {
 
         Resource resourceB = createMockResource("fileB.txt", "duplicate content");
         IngestionResult resultB = dataIndexerService.loadData(resourceB);
-        assertEquals("skipped_duplicate", resultB.status());
+        assertEquals(IngestionStatus.SKIPPED_DUPLICATE, resultB.status());
 
         List<Document> finalDocsFileA = getDocumentsByFilename("fileA.txt");
         assertEquals(initialCount, finalDocsFileA.size());
@@ -125,7 +109,7 @@ class DataIndexerServiceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testIngestNewFile_Integration() {
+    void testIngestNewFileIntegration() {
         List<Document> initialDocs = getDocumentsByFilename("brand-new-integration.txt");
         assertEquals(0, initialDocs.size());
 
@@ -133,7 +117,7 @@ class DataIndexerServiceIntegrationTest extends AbstractIntegrationTest {
                 createMockResource("brand-new-integration.txt", "Fresh unique content for integration test");
         IngestionResult result = dataIndexerService.loadData(resource);
 
-        assertEquals("ingested", result.status());
+        assertEquals(IngestionStatus.INGESTED, result.status());
         assertTrue(result.chunksIngested() > 0);
         assertEquals(0, result.chunksDeleted());
 
