@@ -25,6 +25,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StopWatch;
 
 @Service
@@ -48,6 +49,7 @@ public class DataIndexerService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Transactional
     public IngestionResult loadData(Resource documentResource) {
         String filename = documentResource.getFilename();
         if (filename == null) {

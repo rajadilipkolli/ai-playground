@@ -17,18 +17,33 @@ public class ContentHashUtil {
     public record HashResult(String hash, Resource rereadableResource) {}
 
     public static HashResult calculateHash(Resource resource) {
-        try (InputStream is = resource.getInputStream()) {
-            byte[] bytes = is.readAllBytes();
+        try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(bytes);
-            String hash = HexFormat.of().formatHex(hashBytes);
-
-            Resource rereadableResource = new ByteArrayResource(bytes) {
-                @Override
-                public String getFilename() {
-                    return resource.getFilename();
+            byte[] bytes = null;
+            if (resource.isOpen()) {
+                try (InputStream is = resource.getInputStream()) {
+                    bytes = is.readAllBytes();
                 }
-            };
+                digest.update(bytes);
+            } else {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                try (InputStream is = resource.getInputStream()) {
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        digest.update(buffer, 0, bytesRead);
+                    }
+                }
+            }
+            String hash = HexFormat.of().formatHex(digest.digest());
+
+            Resource rereadableResource = bytes != null
+                    ? new ByteArrayResource(bytes) {
+                        @Override
+                        public String getFilename() {
+                            return resource.getFilename();
+                        }
+                    }
+                    : resource;
 
             return new HashResult(hash, rereadableResource);
         } catch (IOException e) {
