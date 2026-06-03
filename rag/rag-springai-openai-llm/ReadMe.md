@@ -7,6 +7,6 @@ This project uses [Testcontainers at development time](https://docs.spring.io/sp
 
 Testcontainers has been configured to use the following Docker images:
 
-* [`pgvector/pgvector:pg16`](https://hub.docker.com/r/pgvector/pgvector)
+* [`pgvector/pgvector:pg18`](https://hub.docker.com/r/pgvector/pgvector)
 
 Please review the tags of the used images and set them to the same as you're running in production.
