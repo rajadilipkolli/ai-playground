@@ -23,7 +23,7 @@ class DataIndexerServiceIntegrationTest extends AbstractIntegrationTest {
     void cleanUpTestData() {
         // Delete only the documents created by this integration test to avoid breaking other tests
         jdbcTemplate.execute(
-                "DELETE FROM vector_store WHERE metadata->>'source_filename' IN ('test.txt', 'fileA.txt', 'fileB.txt', 'brand-new-integration.txt')");
+                "DELETE FROM vector_store WHERE metadata->>'source_filename' IN ('test.txt', 'test2.txt','fileA.txt', 'fileB.txt', 'brand-new-integration.txt')");
     }
 
     private List<Document> getDocumentsByFilename(String filename) {
