@@ -14,17 +14,17 @@ flowchart TD
     classDef llm fill:#fdb,stroke:#333,stroke-width:2px;
 
     %% Nodes
-    User([User Query]):::userReq
-    Advisor[RetrievalAugmentationAdvisor<br/><i>Coordinates the RAG process</i>]:::coordinator
-    HybridRetriever[HybridDocumentRetriever<br/><i>Runs searches in parallel</i>]:::coordinator
+    User(["User Query"]):::userReq
+    Advisor["RetrievalAugmentationAdvisor<br/><i>Coordinates the RAG process</i>"]:::coordinator
+    HybridRetriever["HybridDocumentRetriever<br/><i>Runs searches in parallel</i>"]:::coordinator
     
-    KeywordSearch[(KeywordDocumentRetriever<br/><i>Exact Word Match / Keyword Search</i>)]:::searchEngine
-    VectorSearch[(VectorStoreDocumentRetriever<br/><i>Meaning-based Search / Vector Similarity</i>)]:::searchEngine
+    KeywordSearch[("KeywordDocumentRetriever<br/><i>Exact Word Match / Keyword Search</i>")]:::searchEngine
+    VectorSearch[("VectorStoreDocumentRetriever<br/><i>Meaning-based Search / Vector Similarity</i>")]:::searchEngine
     
-    Joiner[RRFDocumentJoiner<br/><i>Fuses and ranks results using Reciprocal Rank Fusion</i>]:::fusion
+    Joiner["RRFDocumentJoiner<br/><i>Fuses and ranks results using Reciprocal Rank Fusion</i>"]:::fusion
     
-    Ollama[ChatClient<br/><i>Large Language Model (LLM)</i>]:::llm
-    Response([Generated Answer]):::userReq
+    Ollama["ChatClient<br/><i>Large Language Model (LLM)</i>"]:::llm
+    Response(["Generated Answer"]):::userReq
 
     %% Flow
     User -->|1. Asks question| Advisor
@@ -44,11 +44,11 @@ flowchart TD
 
     %% Legend
     subgraph Legend [Legend: What do these boxes mean?]
-        L1([Input/Output]):::userReq
-        L2[Coordinator/Manager]:::coordinator
-        L3[(Search Engine/Database)]:::searchEngine
-        L4[Data Fusion/Ranking]:::fusion
-        L5[AI Model]:::llm
+        L1(["Input/Output"]):::userReq
+        L2["Coordinator/Manager"]:::coordinator
+        L3[("Search Engine/Database")]:::searchEngine
+        L4["Data Fusion/Ranking"]:::fusion
+        L5["AI Model"]:::llm
     end
 ```
 
