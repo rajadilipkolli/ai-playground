@@ -22,6 +22,9 @@ public class KeywordDocumentRetriever implements DocumentRetriever {
     private final JsonMapper jsonMapper;
 
     public KeywordDocumentRetriever(JdbcTemplate jdbcTemplate, int topK, JsonMapper jsonMapper) {
+        if (topK <= 0) {
+            throw new IllegalArgumentException("topK must be > 0");
+        }
         this.jdbcTemplate = jdbcTemplate;
         this.topK = topK;
         this.jsonMapper = jsonMapper;

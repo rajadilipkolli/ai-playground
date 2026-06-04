@@ -14,6 +14,12 @@ public class RRFDocumentJoiner implements DocumentJoiner {
     private final int topK;
 
     public RRFDocumentJoiner(int k, int topK) {
+        if (k < 0) {
+            throw new IllegalArgumentException("k must be >= 0");
+        }
+        if (topK < 0) {
+            throw new IllegalArgumentException("topK must be >= 0");
+        }
         this.k = k;
         this.topK = topK;
     }
@@ -41,12 +47,20 @@ public class RRFDocumentJoiner implements DocumentJoiner {
                             Object newSource = document.getMetadata().get("retrieval_source");
                             if (currentSource != null && newSource != null && !currentSource.equals(newSource)) {
                                 Document currentDoc = existingScore.getDocument();
+                                Map<String, Object> mergedMetadata = new HashMap<>();
+                                if (currentDoc.getMetadata() != null) {
+                                    mergedMetadata.putAll(currentDoc.getMetadata());
+                                }
+                                if (document.getMetadata() != null) {
+                                    mergedMetadata.putAll(document.getMetadata());
+                                }
+                                mergedMetadata.put("retrieval_source", "both");
+
                                 Document updatedDoc = Document.builder()
                                         .id(currentDoc.getId())
                                         .text(currentDoc.getText())
                                         .media(currentDoc.getMedia())
-                                        .metadata(currentDoc.getMetadata())
-                                        .metadata("retrieval_source", "both")
+                                        .metadata(mergedMetadata)
                                         .build();
                                 existingScore.setDocument(updatedDoc);
                             }

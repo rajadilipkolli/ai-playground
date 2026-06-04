@@ -39,34 +39,42 @@ public class HybridDocumentRetriever implements DocumentRetriever {
         log.debug("Executing hybrid retrieval for query: {}", query.text());
 
         CompletableFuture<List<Document>> vectorFuture = CompletableFuture.supplyAsync(
-                () -> {
-                    List<Document> docs = vectorRetriever.retrieve(query);
-                    return docs.stream()
-                            .map(d -> Document.builder()
-                                    .id(d.getId())
-                                    .text(d.getText())
-                                    .media(d.getMedia())
-                                    .metadata(d.getMetadata())
-                                    .metadata("retrieval_source", "vector")
-                                    .build())
-                            .collect(Collectors.toList());
-                },
-                executor);
+                        () -> {
+                            List<Document> docs = vectorRetriever.retrieve(query);
+                            return docs.stream()
+                                    .map(d -> Document.builder()
+                                            .id(d.getId())
+                                            .text(d.getText())
+                                            .media(d.getMedia())
+                                            .metadata(d.getMetadata())
+                                            .metadata("retrieval_source", "vector")
+                                            .build())
+                                    .collect(Collectors.toList());
+                        },
+                        executor)
+                .exceptionally(ex -> {
+                    log.warn("Vector retrieval failed, continuing with keyword results", ex);
+                    return List.of();
+                });
 
         CompletableFuture<List<Document>> keywordFuture = CompletableFuture.supplyAsync(
-                () -> {
-                    List<Document> docs = keywordRetriever.retrieve(query);
-                    return docs.stream()
-                            .map(d -> Document.builder()
-                                    .id(d.getId())
-                                    .text(d.getText())
-                                    .media(d.getMedia())
-                                    .metadata(d.getMetadata())
-                                    .metadata("retrieval_source", "keyword")
-                                    .build())
-                            .collect(Collectors.toList());
-                },
-                executor);
+                        () -> {
+                            List<Document> docs = keywordRetriever.retrieve(query);
+                            return docs.stream()
+                                    .map(d -> Document.builder()
+                                            .id(d.getId())
+                                            .text(d.getText())
+                                            .media(d.getMedia())
+                                            .metadata(d.getMetadata())
+                                            .metadata("retrieval_source", "keyword")
+                                            .build())
+                                    .collect(Collectors.toList());
+                        },
+                        executor)
+                .exceptionally(ex -> {
+                    log.warn("Keyword retrieval failed, continuing with vector results", ex);
+                    return List.of();
+                });
 
         List<Document> vectorDocs = vectorFuture.join();
         List<Document> keywordDocs = keywordFuture.join();
