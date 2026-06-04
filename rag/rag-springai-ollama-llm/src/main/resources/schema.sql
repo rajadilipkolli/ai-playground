@@ -1,0 +1,29 @@
+CREATE EXTENSION IF NOT EXISTS vector^^
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp"^^
+
+CREATE TABLE IF NOT EXISTS vector_store (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	content text,
+	metadata json,
+	embedding vector(768)
+)^^
+
+ALTER TABLE vector_store ADD COLUMN IF NOT EXISTS content_tsv tsvector^^
+
+CREATE INDEX IF NOT EXISTS vector_store_content_tsv_idx ON vector_store USING GIN(content_tsv)^^
+
+CREATE OR REPLACE FUNCTION update_content_tsv() RETURNS trigger AS $$
+BEGIN
+    NEW.content_tsv := to_tsvector('english', coalesce(NEW.content, ''));
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql^^
+
+DROP TRIGGER IF EXISTS trigger_update_content_tsv ON vector_store^^
+
+CREATE TRIGGER trigger_update_content_tsv
+BEFORE INSERT OR UPDATE ON vector_store
+FOR EACH ROW
+EXECUTE PROCEDURE update_content_tsv()^^
+
+UPDATE vector_store SET content_tsv = to_tsvector('english', coalesce(content, '')) WHERE content_tsv IS NULL^^
