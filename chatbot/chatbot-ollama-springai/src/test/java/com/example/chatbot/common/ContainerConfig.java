@@ -31,26 +31,13 @@ public class ContainerConfig {
                 .withStartupTimeout(Duration.ofMinutes(2));
     }
 
-    public static final RedisStackContainer REDIS_CONTAINER = new RedisStackContainer(
-                    DockerImageName.parse("redis/redis-stack").withTag("7.4.0-v1"))
-            .withReuse(true)
-            .withStartupTimeout(Duration.ofMinutes(2));
-
-    static {
-        REDIS_CONTAINER.start();
-        System.setProperty("spring.ai.chat.memory.redis.host", REDIS_CONTAINER.getHost());
-        System.setProperty("spring.ai.chat.memory.redis.port", String.valueOf(REDIS_CONTAINER.getMappedPort(6379)));
-        System.setProperty(
-                "spring.ai.vectorstore.redis.uri",
-                "redis://" + REDIS_CONTAINER.getHost() + ":" + REDIS_CONTAINER.getMappedPort(6379));
-        System.setProperty("spring.data.redis.host", REDIS_CONTAINER.getHost());
-        System.setProperty("spring.data.redis.port", String.valueOf(REDIS_CONTAINER.getMappedPort(6379)));
-        System.setProperty("spring.data.redis.client-type", "jedis");
-    }
-
     @Bean
+    @ServiceConnection(name = "redis")
     @RestartScope
     RedisStackContainer redisStackContainer() {
-        return REDIS_CONTAINER;
+        return new RedisStackContainer(
+                        DockerImageName.parse("redis/redis-stack").withTag("7.4.0-v1"))
+                .withReuse(true)
+                .withStartupTimeout(Duration.ofMinutes(2));
     }
 }
