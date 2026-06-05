@@ -19,6 +19,7 @@ public class QueryController {
 
     @GetMapping("/query")
     AIChatResponse queryEmbeddedStore(@RequestParam String question, @RequestParam(required = false) Integer userId) {
-        return pgVectorStoreService.queryEmbeddingStore(question, userId);
+        return pgVectorStoreService.queryEmbeddingStore(question, userId)
+                .orElse(new AIChatResponse("No relevant documents found."));
     }
 }

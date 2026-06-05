@@ -51,7 +51,23 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("response", containsStringIgnoringCase("Rohit"))
+                .body("response", allOf(not(emptyOrNullString()), containsStringIgnoringCase("Rohit")))
+                .log()
+                .all();
+    }
+
+    @Test
+    void testRagNoMatchingDocuments() {
+        given().contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body(new AIChatRequest("Who won the FIFA World Cup in 2022?"))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body(
+                        "response",
+                        matchesRegex(
+                                "(?i).*(don'?t know|do not know|not sure|unable to answer|cannot answer|no idea|unsure).*"))
                 .log()
                 .all();
     }

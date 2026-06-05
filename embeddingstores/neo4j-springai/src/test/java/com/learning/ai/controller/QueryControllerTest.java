@@ -1,6 +1,8 @@
 package com.learning.ai.controller;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.equalTo;
 
 import com.learning.ai.common.ContainerConfig;
@@ -34,5 +36,23 @@ class QueryControllerTest {
                 .then()
                 .statusCode(200)
                 .body("answer", equalTo("I like football."));
+    }
+
+    @Test
+    void queryEmbeddedStoreWithOutOfDomainQuery() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("What is the capital of France?"))
+                .when()
+                .post("/api/ai/query")
+                .then()
+                .statusCode(200)
+                // RAG should either say it doesn't know, or provide a generic response depending on fallback
+                .body(
+                        "answer",
+                        anyOf(
+                                containsStringIgnoringCase("don't know"),
+                                containsStringIgnoringCase("not sure"),
+                                containsStringIgnoringCase("cannot help"),
+                                containsStringIgnoringCase("do not have")));
     }
 }

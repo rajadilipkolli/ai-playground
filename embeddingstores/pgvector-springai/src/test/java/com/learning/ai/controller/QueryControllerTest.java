@@ -2,6 +2,7 @@ package com.learning.ai.controller;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 
 import com.learning.ai.PgVectorOpenAIEmbeddingStoreExample;
 import com.learning.ai.config.ContainersConfig;
@@ -56,5 +57,18 @@ class QueryControllerTest {
                 .then()
                 .statusCode(200)
                 .body("answer", equalTo("The weather is good today."));
+    }
+
+    @Test
+    void queryEmbeddedStoreWithInvalidMetadata() {
+        given().param("question", "What is your favourite sport")
+                .param("userId", 99)
+                .when()
+                .get("/api/ai/query")
+                .then()
+                .statusCode(200)
+                // Filter should exclude valid results, so we get something generic or empty depending on LLM
+                .body("answer", not(equalTo("I like football.")))
+                .body("answer", not(equalTo("I like cricket.")));
     }
 }
