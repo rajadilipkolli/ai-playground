@@ -7,11 +7,11 @@ This project implements a Retrieval-Augmented Generation (RAG) architecture usin
 ```mermaid
 flowchart TD
     %% Define Styles / Legend
-    classDef userReq fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef coordinator fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef searchEngine fill:#bfb,stroke:#333,stroke-width:2px;
-    classDef fusion fill:#fbb,stroke:#333,stroke-width:2px;
-    classDef llm fill:#fdb,stroke:#333,stroke-width:2px;
+    classDef userReq fill:#cc6699,stroke:#555555,stroke-width:2px;
+    classDef coordinator fill:#6688cc,stroke:#555555,stroke-width:2px;
+    classDef searchEngine fill:#66aa66,stroke:#555555,stroke-width:2px;
+    classDef fusion fill:#cc8855,stroke:#555555,stroke-width:2px;
+    classDef llm fill:#aa88cc,stroke:#555555,stroke-width:2px;
 
     %% Nodes
     User(["User Query"]):::userReq
