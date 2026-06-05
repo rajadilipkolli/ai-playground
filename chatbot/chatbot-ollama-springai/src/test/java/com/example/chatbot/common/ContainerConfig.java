@@ -6,6 +6,7 @@ import org.springframework.boot.devtools.restart.RestartScope;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.grafana.LgtmStackContainer;
 import org.testcontainers.ollama.OllamaContainer;
@@ -39,5 +40,14 @@ public class ContainerConfig {
                         DockerImageName.parse("redis/redis-stack").withTag("7.4.0-v1"))
                 .withReuse(true)
                 .withStartupTimeout(Duration.ofMinutes(2));
+    }
+
+    @Bean
+    DynamicPropertyRegistrar redisProperties(RedisStackContainer redisContainer) {
+        return registry -> {
+            registry.add("spring.ai.chat.memory.redis.host", redisContainer::getRedisHost);
+            registry.add("spring.ai.chat.memory.redis.port", redisContainer::getRedisPort);
+            registry.add("spring.ai.vectorstore.redis.uri", redisContainer::getRedisURI);
+        };
     }
 }
