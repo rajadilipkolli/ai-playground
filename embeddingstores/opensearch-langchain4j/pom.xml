@@ -21,6 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <langchain4j.version>0.36.2</langchain4j.version>
+        <opensearch.version>3.0.5</opensearch.version>
         <tinylog.version>2.7.0</tinylog.version>
     </properties>
 
@@ -48,6 +49,23 @@
            <artifactId>slf4j-tinylog</artifactId>
            <version>${tinylog.version}</version>
        </dependency> -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>spring-data-opensearch-testcontainers</artifactId>
+            <version>${opensearch.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 

@@ -34,4 +34,15 @@ class TestQueryController extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.answer", Matchers.is("The weather is good today.")));
     }
+
+    @Test
+    void queryEmbeddedStoreWithInvalidMetadata() throws Exception {
+        mockMvc.perform(get("/api/ai/query")
+                        .param("question", "What is your favourite sport")
+                        .param("userId", "99"))
+                .andExpect(status().isOk())
+                // Since userId=99 doesn't match the relevant docs, it shouldn't return football or cricket
+                .andExpect(jsonPath("$.answer", Matchers.not(Matchers.is("I like football."))))
+                .andExpect(jsonPath("$.answer", Matchers.not(Matchers.is("I like cricket."))));
+    }
 }

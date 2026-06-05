@@ -1,4 +1,4 @@
-name: chatbot-ollama-springai CI Build
+name: playground-langchain4j CI Build
 
 on:
   push:

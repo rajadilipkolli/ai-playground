@@ -57,4 +57,17 @@ class QueryControllerTest {
                 .statusCode(200)
                 .body("answer", equalTo("The weather is good today."));
     }
+
+    @Test
+    void queryEmbeddedStoreWithInvalidMetadata() {
+        given().param("question", "What is your favourite sport")
+                .param("userId", 99)
+                .when()
+                .get("/api/ai/query")
+                .then()
+                .statusCode(200)
+                // Filter should exclude valid results, so we get something generic or empty depending on LLM
+                .body("answer", org.hamcrest.Matchers.not(equalTo("I like football.")))
+                .body("answer", org.hamcrest.Matchers.not(equalTo("I like cricket.")));
+    }
 }

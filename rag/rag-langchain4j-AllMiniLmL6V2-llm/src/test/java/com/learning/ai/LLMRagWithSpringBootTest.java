@@ -36,6 +36,25 @@ class LLMRagWithSpringBootTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .body("response.name", is("Rohit Gurunath Sharma"))
+                .body("response", org.hamcrest.Matchers.allOf(notNullValue(), org.hamcrest.Matchers.hasKey("name")))
+                .log()
+                .all();
+    }
+
+    @Test
+    void whenRequestGetFromPdfNoMatchingDocuments_thenHandleGracefully() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Who won the FIFA World Cup in 2022?"))
+                .when()
+                .request(Method.POST, "/api/ai/chat")
+                .then()
+                // Depending on the exact LLM behavior, it might return 200 with an empty/unknown response or 404/500
+                // Here we assert it doesn't just blindly hallucinate a name
+                .body(
+                        "response.name",
+                        org.hamcrest.Matchers.anyOf(
+                                org.hamcrest.Matchers.nullValue(),
+                                org.hamcrest.Matchers.not(is("Rohit Gurunath Sharma"))))
                 .log()
                 .all();
     }

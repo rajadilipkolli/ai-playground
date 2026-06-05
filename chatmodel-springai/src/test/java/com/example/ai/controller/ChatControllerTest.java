@@ -69,7 +69,11 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsStringIgnoringCase(prompt));
+                .body(
+                        "answer",
+                        org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyOrNullString()),
+                                org.hamcrest.Matchers.containsStringIgnoringCase(prompt)));
     }
 
     @Test
@@ -178,7 +182,48 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("Regina Caterers"));
+                .body(
+                        "answer",
+                        org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyOrNullString()),
+                                org.hamcrest.Matchers.containsString("Regina Caterers")));
+    }
+
+    @Test
+    void testRagGenerateWithNoMatchingDocuments() {
+        given().contentType(ContentType.JSON)
+                .body(defaultChatRequest("Who won the FIFA World Cup in 2022?"))
+                .when()
+                .post("/api/ai/rag")
+                .then()
+                .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR); // Fails due to Assert.notEmpty in service
+    }
+
+    /*
+     * Limitation Note: Flux<String> returned in a synchronous MVC endpoint like /api/ai/chat/stream
+     * may serialize as a JSON array rather than Server-Sent Events (SSE). If proper streaming is a
+     * priority, the endpoint should return MediaType.TEXT_EVENT_STREAM_VALUE or the project should
+     * utilize Spring WebFlux.
+     */
+    @Test
+    void testStreamChatHappyPath() {
+        given().contentType(ContentType.JSON)
+                .body(defaultChatRequest("Hello!"))
+                .when()
+                .post("/api/ai/chat/stream")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .body(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyOrNullString()));
+    }
+
+    @Test
+    void testStreamChatValidationRejectsEmptyQuery() {
+        given().contentType(ContentType.JSON)
+                .body(defaultChatRequest(""))
+                .when()
+                .post("/api/ai/chat/stream")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
     static Stream<String> chatPrompts() {

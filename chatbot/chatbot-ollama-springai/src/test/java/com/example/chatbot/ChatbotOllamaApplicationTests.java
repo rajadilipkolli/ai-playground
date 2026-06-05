@@ -68,6 +68,7 @@ class ChatbotOllamaApplicationTests {
 
         AIChatResponse aiChatResponse = jsonMapper.readValue(response.asByteArray(), AIChatResponse.class);
 
+        // Test follow-up response uses context from previous turn
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest("Who scored 100 centuries ?"))
                 .when()
@@ -75,8 +76,43 @@ class ChatbotOllamaApplicationTests {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsStringIgnoringCase("Sachin"))
+                .body("answer", allOf(not(emptyOrNullString()), containsStringIgnoringCase("Sachin")))
                 .log()
                 .all(true);
+    }
+
+    @Test
+    void chatConversationIsolation() {
+        String conv1 = RandomStringUtils.secure().nextAlphabetic(16);
+        String conv2 = RandomStringUtils.secure().nextAlphabetic(16);
+
+        // Tell a fact to conv1
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("My favorite color is green."))
+                .when()
+                .post("/api/ai/chat/{conversationId}", conv1)
+                .then()
+                .statusCode(HttpStatus.SC_OK);
+
+        // Ask conv2 about the fact
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("What is my favorite color?"))
+                .when()
+                .post("/api/ai/chat/{conversationId}", conv2)
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .body("answer", not(containsStringIgnoringCase("green")))
+                .log()
+                .all(true);
+    }
+
+    @Test
+    void chatWithMissingConversationId() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Hello"))
+                .when()
+                .post("/api/ai/chat/") // Missing ID
+                .then()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 }
