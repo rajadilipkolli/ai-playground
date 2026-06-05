@@ -101,7 +101,8 @@ class ChatControllerTest {
     @Test
     void shouldAnalyzeSentimentAsSarcastic() {
         given().contentType(ContentType.JSON)
-                .body(defaultChatRequest("Why did the Python programmer go broke? Because he couldn't C#"))
+                .body(defaultChatRequest(
+                        "Oh, fantastic! Another software update that breaks everything. Just what I needed today!"))
                 .when()
                 .post("/api/ai/sentiment/analyze")
                 .then()
