@@ -42,8 +42,10 @@ public class ContainerConfig {
 
     @Bean
     @RestartScope
+    @ServiceConnection(name = "redis")
     RedisStackContainer redisStackContainer() {
-        return new RedisStackContainer(DockerImageName.parse("redis/redis-stack:latest"))
+        return new RedisStackContainer(
+                        DockerImageName.parse("redis/redis-stack").withTag("7.4.0-v1"))
                 .withReuse(true)
                 .withStartupTimeout(Duration.ofMinutes(2));
     }
