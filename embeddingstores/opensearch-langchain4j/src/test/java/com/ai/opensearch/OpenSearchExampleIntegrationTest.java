@@ -12,7 +12,7 @@ import org.opensearch.testcontainers.OpenSearchContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(classes = ContainersConfig.class)
+@SpringBootTest(classes = {TestApplication.class, ContainersConfig.class}, properties = "spring.main.allow-bean-definition-overriding=true")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class OpenSearchExampleIntegrationTest {
 
@@ -47,6 +47,6 @@ class OpenSearchExampleIntegrationTest {
         String output = outContent.toString();
 
         assertThat(output).contains("Cricket is my favourite sport.");
-        assertThat(output).contains("\"restaurant_id\": \"40371727\"");
+        assertThat(output).contains("\"restaurant_id\": \"40839319\"");
     }
 }
