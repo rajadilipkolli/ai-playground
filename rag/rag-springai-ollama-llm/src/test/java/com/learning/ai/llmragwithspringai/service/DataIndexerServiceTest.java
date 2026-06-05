@@ -20,9 +20,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -50,13 +50,22 @@ class DataIndexerServiceTest {
     @Mock
     private Counter counter;
 
-    @InjectMocks
+    @Mock
+    private ChatClient.Builder chatClientBuilder;
+
+    @Mock
+    private ChatClient chatClient;
+
     private DataIndexerService dataIndexerService;
 
     @BeforeEach
     void setUp() {
         lenient().when(meterRegistry.timer(anyString())).thenReturn(timer);
         lenient().when(meterRegistry.counter(anyString())).thenReturn(counter);
+        lenient().when(chatClientBuilder.build()).thenReturn(chatClient);
+
+        dataIndexerService = new DataIndexerService(
+                tokenTextSplitter, vectorStore, meterRegistry, jdbcTemplate, chatClientBuilder, false, "llava");
     }
 
     @Test
