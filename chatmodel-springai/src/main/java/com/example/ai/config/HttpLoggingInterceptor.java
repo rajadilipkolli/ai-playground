@@ -1,7 +1,6 @@
 package com.example.ai.config;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +28,7 @@ public class HttpLoggingInterceptor implements ClientHttpRequestInterceptor {
         LOGGER.info("Status code  : {}", response.getStatusCode());
         LOGGER.info("Status text  : {}", response.getStatusText());
         LOGGER.info("Headers      : {}", response.getHeaders());
-        LOGGER.info("Response body: {}", StreamUtils.copyToString(response.getBody(), Charset.defaultCharset()));
+        LOGGER.info("Response body: {}", StreamUtils.copyToString(response.getBody(), StandardCharsets.UTF_8));
         LOGGER.info("=======================response end=================================================");
     }
 
