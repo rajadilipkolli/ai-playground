@@ -32,14 +32,17 @@ public class Neo4jVectorStoreService {
     public AIChatResponse queryEmbeddingStore(String question) {
         try {
             // Retrieve embeddings
-            SearchRequest query =
-                    SearchRequest.builder().query(question).topK(1).build();
+            SearchRequest query = SearchRequest.builder()
+                    .query(question)
+                    .topK(1)
+                    .similarityThreshold(0.7)
+                    .build();
             List<Document> similarDocuments = vectorStore.similaritySearch(query);
 
             if (similarDocuments.isEmpty()) {
                 // Handle case where no similar documents are found
                 LOGGER.info("No similar documents found for the question: {}", question);
-                return new AIChatResponse("No similar documents found.");
+                return new AIChatResponse("I don't know the answer to this.");
             }
 
             String relevantData = similarDocuments.stream()
