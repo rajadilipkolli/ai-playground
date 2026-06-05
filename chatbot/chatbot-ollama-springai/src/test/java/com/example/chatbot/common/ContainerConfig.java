@@ -1,5 +1,6 @@
 package com.example.chatbot.common;
 
+import com.redis.testcontainers.RedisStackContainer;
 import java.time.Duration;
 import org.springframework.boot.devtools.restart.RestartScope;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -36,6 +37,14 @@ public class ContainerConfig {
     @RestartScope
     LgtmStackContainer lgtmStackContainer() {
         return new LgtmStackContainer(DockerImageName.parse("grafana/otel-lgtm").withTag("0.28.0"))
+                .withStartupTimeout(Duration.ofMinutes(2));
+    }
+
+    @Bean
+    @RestartScope
+    RedisStackContainer redisStackContainer() {
+        return new RedisStackContainer(DockerImageName.parse("redis/redis-stack:latest"))
+                .withReuse(true)
                 .withStartupTimeout(Duration.ofMinutes(2));
     }
 }

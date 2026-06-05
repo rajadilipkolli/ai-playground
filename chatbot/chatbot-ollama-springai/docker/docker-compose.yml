@@ -27,6 +27,19 @@ services:
           interval: 2s
           timeout: 20s
           retries: 10
+    redis-stack:
+      container_name: redis-stack
+      image: redis/redis-stack:latest
+      extra_hosts: [ 'host.docker.internal:host-gateway' ]
+      restart: always
+      ports:
+        - '6379:6379'
+        - '8001:8001'
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 2s
+        timeout: 20s
+        retries: 10
     pgadmin:
         container_name: pgadmin_container
         image: dpage/pgadmin4
