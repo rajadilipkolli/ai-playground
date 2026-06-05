@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.grafana.LgtmStackContainer;
 import org.testcontainers.ollama.OllamaContainer;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
@@ -27,26 +26,31 @@ public class ContainerConfig {
     @Bean
     @ServiceConnection
     @RestartScope
-    PostgreSQLContainer postgreSQLContainer() {
-        return new PostgreSQLContainer(
-                DockerImageName.parse("pgvector/pgvector").withTag("pg18"));
-    }
-
-    @Bean
-    @ServiceConnection
-    @RestartScope
     LgtmStackContainer lgtmStackContainer() {
         return new LgtmStackContainer(DockerImageName.parse("grafana/otel-lgtm").withTag("0.28.0"))
                 .withStartupTimeout(Duration.ofMinutes(2));
     }
 
+    public static final RedisStackContainer REDIS_CONTAINER = new RedisStackContainer(
+                    DockerImageName.parse("redis/redis-stack").withTag("7.4.0-v1"))
+            .withReuse(true)
+            .withStartupTimeout(Duration.ofMinutes(2));
+
+    static {
+        REDIS_CONTAINER.start();
+        System.setProperty("spring.ai.chat.memory.redis.host", REDIS_CONTAINER.getHost());
+        System.setProperty("spring.ai.chat.memory.redis.port", String.valueOf(REDIS_CONTAINER.getMappedPort(6379)));
+        System.setProperty(
+                "spring.ai.vectorstore.redis.uri",
+                "redis://" + REDIS_CONTAINER.getHost() + ":" + REDIS_CONTAINER.getMappedPort(6379));
+        System.setProperty("spring.data.redis.host", REDIS_CONTAINER.getHost());
+        System.setProperty("spring.data.redis.port", String.valueOf(REDIS_CONTAINER.getMappedPort(6379)));
+        System.setProperty("spring.data.redis.client-type", "jedis");
+    }
+
     @Bean
     @RestartScope
-    @ServiceConnection(name = "redis")
     RedisStackContainer redisStackContainer() {
-        return new RedisStackContainer(
-                        DockerImageName.parse("redis/redis-stack").withTag("7.4.0-v1"))
-                .withReuse(true)
-                .withStartupTimeout(Duration.ofMinutes(2));
+        return REDIS_CONTAINER;
     }
 }

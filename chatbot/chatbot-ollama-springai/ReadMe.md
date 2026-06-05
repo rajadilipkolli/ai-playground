@@ -4,8 +4,7 @@
 
 This module is a Spring Boot 4 demo using Spring AI for conversational chat with:
 - Ollama as the model provider
-- Redis Stack for Spring AI Redis chat memory (RedisJSON + RediSearch)
-- PgVector for the vector store
+- Redis Stack for Spring AI Redis chat memory (RedisJSON + RediSearch) and Vector Store
 - LGTM stack for observability, metrics, and tracing
 
 ## Prerequisites
@@ -42,18 +41,23 @@ Redis Stack provides:
 - RediSearch for fast chat memory indexing and retrieval
 
 Application properties for chat memory include:
-- `spring.data.redis.host=localhost`
-- `spring.data.redis.port=6379`
+- `spring.ai.chat.memory.redis.host=localhost`
+- `spring.ai.chat.memory.redis.port=6379`
 - `spring.ai.chat.memory.redis.initialize-schema=true`
 - `spring.ai.chat.memory.redis.index-name=chat-memory-index`
 - `spring.ai.chat.memory.redis.key-prefix=chat-memory:`
 - `spring.ai.chat.memory.redis.time-to-live=24h`
 
+## Vector Store
+This project now uses Redis Stack for Spring AI Vector Store instead of PgVector.
+- `spring.ai.vectorstore.redis.initialize-schema=true`
+- `spring.ai.vectorstore.redis.index=spring-ai-vector-store`
+
 Chat memory entries are configured to expire after 24 hours, and Redis persistence is handled by Redis Stack.
 
 ## Observability
 
-This module exposes metrics and tracing for both Redis and PostgreSQL.
+This module exposes metrics and tracing for Redis Stack.
 
 LGTM stack endpoints:
 - Grafana: `http://localhost:3000`
@@ -69,7 +73,7 @@ Key observability settings:
 - `spring.ai.chat.client.observations.log-completion=true`
 - `spring.ai.chat.client.observations.log-prompt=true`
 
-Redis command metrics should be visible in Prometheus and Grafana when Redis Stack is running. PostgreSQL JDBC metrics, query latency, and connection pool stats continue to be captured via the existing datasource observability configuration.
+Redis command metrics should be visible in Prometheus and Grafana when Redis Stack is running.
 
 ## Sequence Diagram
 

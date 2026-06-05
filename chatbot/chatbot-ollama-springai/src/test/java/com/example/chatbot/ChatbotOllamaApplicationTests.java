@@ -22,6 +22,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.DynamicPropertySource;
 import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(
@@ -29,6 +30,19 @@ import tools.jackson.databind.json.JsonMapper;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ChatbotOllamaApplicationTests {
+
+    @DynamicPropertySource
+    static void redisProperties(org.springframework.test.context.DynamicPropertyRegistry registry) {
+        registry.add("spring.ai.chat.memory.redis.host", ContainerConfig.REDIS_CONTAINER::getHost);
+        registry.add("spring.ai.chat.memory.redis.port", () -> ContainerConfig.REDIS_CONTAINER.getMappedPort(6379));
+        registry.add(
+                "spring.ai.vectorstore.redis.uri",
+                () -> "redis://" + ContainerConfig.REDIS_CONTAINER.getHost() + ":"
+                        + ContainerConfig.REDIS_CONTAINER.getMappedPort(6379));
+        registry.add("spring.data.redis.host", ContainerConfig.REDIS_CONTAINER::getHost);
+        registry.add("spring.data.redis.port", () -> ContainerConfig.REDIS_CONTAINER.getMappedPort(6379));
+        registry.add("spring.data.redis.client-type", () -> "jedis");
+    }
 
     @Autowired
     private JsonMapper jsonMapper;

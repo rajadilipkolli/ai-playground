@@ -19,7 +19,6 @@
 		<java.version>25</java.version>
 		<spotless.version>3.6.0</spotless.version>
 		<spring-ai.version>2.0.0-M8</spring-ai.version>
-		<datasource-micrometer.version>2.2.1</datasource-micrometer.version>
 		<otelInstrumentation.version>2.10.0-alpha</otelInstrumentation.version>
 	</properties>
 
@@ -54,7 +53,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.ai</groupId>
-			<artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
+			<artifactId>spring-ai-starter-vector-store-redis</artifactId>
 		</dependency>
 
 		<dependency>
@@ -78,14 +77,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-opentelemetry</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.ttddyy.observation</groupId>
-			<artifactId>datasource-micrometer-opentelemetry</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.ttddyy.observation</groupId>
-			<artifactId>datasource-micrometer-spring-boot</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry.instrumentation</groupId>
@@ -152,13 +143,6 @@
 				<groupId>org.springframework.ai</groupId>
 				<artifactId>spring-ai-bom</artifactId>
 				<version>${spring-ai.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>net.ttddyy.observation</groupId>
-				<artifactId>datasource-micrometer-bom</artifactId>
-				<version>${datasource-micrometer.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
