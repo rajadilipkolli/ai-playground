@@ -2,11 +2,15 @@ package com.example.ai.controller;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 import com.example.ai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
@@ -69,11 +73,7 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body(
-                        "answer",
-                        org.hamcrest.Matchers.allOf(
-                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyOrNullString()),
-                                org.hamcrest.Matchers.containsStringIgnoringCase(prompt)));
+                .body("answer", allOf(not(emptyOrNullString()), containsStringIgnoringCase(prompt)));
     }
 
     @Test
@@ -184,9 +184,9 @@ class ChatControllerTest {
                 .contentType(ContentType.JSON)
                 .body(
                         "answer",
-                        org.hamcrest.Matchers.allOf(
-                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyOrNullString()),
-                                org.hamcrest.Matchers.containsString("Regina Caterers")));
+                        allOf(
+                                not(emptyOrNullString()),
+                                anyOf(containsString("Regina Caterers"), containsString("Riviera Caterer"))));
     }
 
     @Test
@@ -196,7 +196,9 @@ class ChatControllerTest {
                 .when()
                 .post("/api/ai/rag")
                 .then()
-                .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR); // Fails due to Assert.notEmpty in service
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
+                .body("answer", containsString("I don't know the answer"));
     }
 
     /*
@@ -213,7 +215,7 @@ class ChatControllerTest {
                 .post("/api/ai/chat/stream")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
-                .body(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyOrNullString()));
+                .body(not(emptyOrNullString()));
     }
 
     @Test

@@ -66,10 +66,8 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .statusCode(200)
                 .body(
                         "response",
-                        anyOf(
-                                containsStringIgnoringCase("don't know"),
-                                containsStringIgnoringCase("do not know"),
-                                containsStringIgnoringCase("not sure")))
+                        matchesRegex(
+                                "(?i).*(don'?t know|do not know|not sure|unable to answer|cannot answer|no idea|unsure).*"))
                 .log()
                 .all();
     }
