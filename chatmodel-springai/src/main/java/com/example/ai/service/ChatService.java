@@ -23,7 +23,6 @@ import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 
 @Service
@@ -118,7 +117,10 @@ public class ChatService {
         logger.info("Retrieving relevant documents");
         List<Document> similarDocuments = simpleVectorStore.similaritySearch(
                 SearchRequest.builder().query(query).topK(2).build());
-        Assert.notEmpty(similarDocuments, () -> "No relevant documents found.");
+        if (similarDocuments.isEmpty()) {
+            logger.info("No relevant documents found for query.");
+            return new AIChatResponse("I'm sorry, I don't have enough information to answer that question.");
+        }
         logger.info("Found {} relevant documents.", similarDocuments.size());
 
         List<String> contentList =

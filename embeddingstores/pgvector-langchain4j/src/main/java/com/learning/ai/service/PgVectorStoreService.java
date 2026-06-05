@@ -14,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class PgVectorStoreService {
 
@@ -27,7 +29,7 @@ public class PgVectorStoreService {
         this.embeddingStore = embeddingStore;
     }
 
-    public AIChatResponse queryEmbeddingStore(String question, Integer userId) {
+    public Optional<AIChatResponse> queryEmbeddingStore(String question, Integer userId) {
         Embedding queryEmbedding = embeddingModel.embed(question).content();
         EmbeddingSearchRequest.EmbeddingSearchRequestBuilder embeddingSearchRequestBuilder =
                 EmbeddingSearchRequest.builder().queryEmbedding(queryEmbedding).maxResults(1);
@@ -37,11 +39,14 @@ public class PgVectorStoreService {
         }
         EmbeddingSearchRequest embeddingSearchRequest = embeddingSearchRequestBuilder.build();
         EmbeddingSearchResult<TextSegment> relevant = embeddingStore.search(embeddingSearchRequest);
+        if (relevant.matches().isEmpty()) {
+            return Optional.empty();
+        }
         EmbeddingMatch<TextSegment> embeddingMatch = relevant.matches().getFirst();
 
         LOGGER.info("Score : {}", embeddingMatch.score()); // 0.8144288608390052
         String answer = embeddingMatch.embedded().text();
         LOGGER.info("Embedded Segment : {}", answer); // I like football.
-        return new AIChatResponse(answer);
+        return Optional.of(new AIChatResponse(answer));
     }
 }
