@@ -1,8 +1,11 @@
 package com.example.chatbot;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 
 import com.example.chatbot.common.ContainerConfig;
@@ -52,7 +55,12 @@ class ChatbotOllamaApplicationTests {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", not(emptyOrNullString()))
+                .body(
+                        "answer",
+                        allOf(
+                                not(emptyOrNullString()),
+                                matchesPattern("(?is).*\\d+.*"),
+                                anyOf(containsStringIgnoringCase("centuries"), containsStringIgnoringCase("hundred"))))
                 .log()
                 .all(true)
                 .extract()
