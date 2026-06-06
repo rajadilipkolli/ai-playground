@@ -28,7 +28,7 @@ import org.springframework.http.MediaType;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class)
-class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
+class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
 
     @LocalServerPort
     private int localServerPort;
