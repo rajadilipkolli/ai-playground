@@ -4,12 +4,12 @@ import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.annotation.Observed;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -49,6 +49,7 @@ public class DataIndexerService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Observed(name = "rag.ingest", contextualName = "rag-ingest")
     @Transactional
     public IngestionResult loadData(Resource documentResource) {
         String filename = documentResource.getFilename();
@@ -141,8 +142,10 @@ public class DataIndexerService {
                 "SELECT id FROM vector_store WHERE metadata->>'source_filename' = ?", String.class, filename);
     }
 
+    @Observed(name = "rag.count", contextualName = "rag-count")
     public long count() {
-        return Objects.requireNonNull(this.vectorStore.similaritySearch("*")).size();
+        Long count = this.jdbcTemplate.queryForObject("SELECT COUNT(1) FROM vector_store", Long.class);
+        return count != null ? count : 0L;
     }
 
     public boolean isEmpty() {

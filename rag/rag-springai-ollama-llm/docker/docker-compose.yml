@@ -5,6 +5,8 @@ services:
     image: ollama/ollama:latest
     ports:
       - '11434:11434'
+    volumes:
+      - ollama_data:/root/.ollama
 
   postgresqldb:
     container_name: postgresqldb
@@ -60,3 +62,6 @@ services:
       - "4317:4317"
       - "4318:4318"
       - "9090:9090"
+
+volumes:
+  ollama_data:

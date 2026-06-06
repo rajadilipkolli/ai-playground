@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-class LlmRagWithSpringAiApplication {
+class OllamaRagSpringAiApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(LlmRagWithSpringAiApplication.class, args);
+        SpringApplication.run(OllamaRagSpringAiApplication.class, args);
     }
 }
