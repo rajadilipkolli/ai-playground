@@ -6,34 +6,35 @@ import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
 import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.model.response.RetrievalDiagnostic;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.evaluation.RelevancyEvaluator;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.evaluation.EvaluationRequest;
 import org.springframework.ai.evaluation.EvaluationResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RagEvaluationIntTest extends AbstractIntegrationTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RagEvaluationIntTest.class);
 
-    // till framework provide an option using custom evaluator, ref :
-    // https://github.com/spring-projects/spring-ai/pull/6265
-    private RobustRelevancyEvaluator relevancyEvaluator;
+    private RelevancyEvaluator relevancyEvaluator;
 
     @Value("classpath:Rohit_Gurunath_Sharma.pdf")
     private Resource pdfResource;
 
-    @BeforeEach
+    @BeforeAll
     void setUp() {
         if (dataIndexerService.isEmpty()) {
             dataIndexerService.loadData(pdfResource);
         }
-        this.relevancyEvaluator = new RobustRelevancyEvaluator(chatClientBuilder);
+        this.relevancyEvaluator = new RelevancyEvaluator(chatClientBuilder);
     }
 
     static List<GoldenDatasetEntry> goldenDatasetProvider() throws Exception {
