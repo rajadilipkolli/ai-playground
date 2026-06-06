@@ -9,7 +9,6 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
@@ -52,11 +51,7 @@ public class AIChatService {
         // to answer the question.
         Message systemMessage = new SystemPromptTemplate(template).createMessage(Map.of("documents", documents));
         UserMessage userMessage = new UserMessage(searchQuery);
-        // TODO add back when tools are serialized correctly
-        OpenAiChatOptions chatOptions = OpenAiChatOptions.builder()
-                // .toolNames(Set.of("currentDateFunction"))
-                .build();
-        Prompt prompt = new Prompt(List.of(systemMessage, userMessage), chatOptions);
+        Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
         return aiClient.prompt(prompt).call().content();
     }
 }

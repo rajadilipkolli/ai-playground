@@ -10,10 +10,7 @@ import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import redis.clients.jedis.DefaultJedisClientConfig;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.RedisClient;
 
 @Configuration(proxyBeanMethods = false)
 public class ChatConfig {
@@ -22,20 +19,11 @@ public class ChatConfig {
     @Bean
     RedisVectorStore vectorStore(
             EmbeddingModel embeddingModel,
-            JedisConnectionFactory jedisConnectionFactory,
+            RedisClient redisClient,
             @Value("${spring.ai.vectorstore.redis.index}") String indexName,
             @Value("${spring.ai.vectorstore.redis.initialize-schema:false}") boolean initializeSchema) {
 
-        JedisPooled jedisPooled = new JedisPooled(
-                new HostAndPort(jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort()),
-                DefaultJedisClientConfig.builder()
-                        .ssl(jedisConnectionFactory.isUseSsl())
-                        .clientName(jedisConnectionFactory.getClientName())
-                        .timeoutMillis(jedisConnectionFactory.getTimeout())
-                        .password(jedisConnectionFactory.getPassword())
-                        .build());
-
-        return RedisVectorStore.builder(jedisPooled, embeddingModel)
+        return RedisVectorStore.builder(redisClient, embeddingModel)
                 .indexName(indexName)
                 .initializeSchema(initializeSchema)
                 .metadataFields(RedisVectorStore.MetadataField.text("conversationId"))

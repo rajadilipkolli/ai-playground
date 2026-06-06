@@ -15,7 +15,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <spring-ai.version>2.0.0-M8</spring-ai.version>
+        <spring-ai.version>2.0.0-RC1</spring-ai.version>
         <spotless.version>3.6.0</spotless.version>
     </properties>
 
@@ -120,7 +120,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.14</version>
+                <version>0.8.15</version>
                 <executions>
                     <execution>
                         <goals>
