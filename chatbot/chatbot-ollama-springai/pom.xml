@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.6</version>
+		<version>4.1.0-RC1</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example.chatbot</groupId>
@@ -18,7 +18,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<spotless.version>3.6.0</spotless.version>
-		<spring-ai.version>2.0.0-M8</spring-ai.version>
+		<spring-ai.version>2.0.0-RC1</spring-ai.version>
 		<otelInstrumentation.version>2.10.0-alpha</otelInstrumentation.version>
 	</properties>
 
@@ -37,7 +37,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.ai</groupId>
-			<artifactId>spring-ai-advisors-vector-store</artifactId>
+			<artifactId>spring-ai-vector-store-advisor</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.ai</groupId>
