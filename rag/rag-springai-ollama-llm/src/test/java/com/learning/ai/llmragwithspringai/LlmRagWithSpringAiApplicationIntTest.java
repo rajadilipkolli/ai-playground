@@ -229,6 +229,25 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .log();
     }
 
+    @Test
+    @Order(121)
+    void testActuatorMetricsRagChat() {
+        given().when().get("/actuator/metrics/rag.chat").then().statusCode(200).body("name", is("rag.chat"));
+    }
+
+    @Test
+    @Order(122)
+    void testActuatorPrometheusMetrics() {
+        given().when()
+                .get("/actuator/prometheus")
+                .then()
+                .statusCode(200)
+                .body(containsString("rag_chat_total_latency_seconds"))
+                .body(containsString("rag_llm_calls_total"))
+                .body(containsString("rag_documents_retrieved_total"))
+                .body(containsString("rag_chat_seconds"));
+    }
+
     private Path getPath(String fileName) throws URISyntaxException, IOException {
         return Path.of(new ClassPathResource(fileName).getURL().toURI());
     }

@@ -4,6 +4,8 @@ import com.learning.ai.llmragwithspringai.rag.join.RRFDocumentJoiner;
 import com.learning.ai.llmragwithspringai.rag.retrieval.HybridDocumentRetriever;
 import com.learning.ai.llmragwithspringai.rag.retrieval.KeywordDocumentRetriever;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.aop.ObservedAspect;
 import java.util.concurrent.Executor;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
@@ -18,6 +20,11 @@ import tools.jackson.databind.json.JsonMapper;
 
 @Configuration(proxyBeanMethods = false)
 public class AppConfig {
+
+    @Bean
+    ObservedAspect observedAspect(ObservationRegistry observationRegistry) {
+        return new ObservedAspect(observationRegistry);
+    }
 
     @Value("${rag.chunking.size:300}")
     private int chunkSize;

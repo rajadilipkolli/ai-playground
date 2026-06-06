@@ -3,6 +3,7 @@ package com.learning.ai.llmragwithspringai.service;
 import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.model.response.RetrievalDiagnostic;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.annotation.Observed;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -14,6 +15,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
@@ -25,15 +27,22 @@ public class AIChatService {
     private final ChatClient aiClient;
     private final MeterRegistry meterRegistry;
     private final DocumentRetriever documentRetriever;
+    private final ToolCallback currentDateTool;
 
-    public AIChatService(ChatClient.Builder builder, MeterRegistry meterRegistry, DocumentRetriever documentRetriever) {
+    public AIChatService(
+            ChatClient.Builder builder,
+            MeterRegistry meterRegistry,
+            DocumentRetriever documentRetriever,
+            ToolCallback currentDateTool) {
         this.meterRegistry = meterRegistry;
         this.documentRetriever = documentRetriever;
+        this.currentDateTool = currentDateTool;
         this.aiClient =
                 builder.build(); // We will apply the advisor per request to use dynamic properties if needed, or we
         // can build it once.
     }
 
+    @Observed(name = "rag.chat", contextualName = "rag-chat")
     public AIChatResponse chat(String query, boolean includeDiagnostics) {
         StopWatch stopWatch = new StopWatch("chat");
         stopWatch.start();
@@ -51,6 +60,7 @@ public class AIChatService {
                         "You are a helpful customer support agent. Use the provided information segments to synthesize your answer. If the segments do not contain relevant information, politely state that you do not have the answer.")
                 .user(query)
                 .advisors(advisor)
+                .tools(currentDateTool)
                 .call();
 
         ChatResponse chatResponse = callResponse.chatResponse();
