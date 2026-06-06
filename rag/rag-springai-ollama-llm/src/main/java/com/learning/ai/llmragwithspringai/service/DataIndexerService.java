@@ -10,7 +10,6 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -145,7 +144,8 @@ public class DataIndexerService {
 
     @Observed(name = "rag.count", contextualName = "rag-count")
     public long count() {
-        return Objects.requireNonNull(this.vectorStore.similaritySearch("*")).size();
+        Long count = this.jdbcTemplate.queryForObject("SELECT COUNT(1) FROM vector_store", Long.class);
+        return count != null ? count : 0L;
     }
 
     public boolean isEmpty() {

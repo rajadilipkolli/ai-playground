@@ -4,7 +4,6 @@ import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.model.response.RetrievalDiagnostic;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.annotation.Observed;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
@@ -17,7 +16,6 @@ import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugment
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 
 @Service
 public class AIChatService {
@@ -27,16 +25,16 @@ public class AIChatService {
     private final ChatClient aiClient;
     private final MeterRegistry meterRegistry;
     private final DocumentRetriever documentRetriever;
-    private final ToolCallback currentDateTool;
+    private final List<ToolCallback> toolCallbacks;
 
     public AIChatService(
             ChatClient.Builder builder,
             MeterRegistry meterRegistry,
             DocumentRetriever documentRetriever,
-            ToolCallback currentDateTool) {
+            List<ToolCallback> toolCallbacks) {
         this.meterRegistry = meterRegistry;
         this.documentRetriever = documentRetriever;
-        this.currentDateTool = currentDateTool;
+        this.toolCallbacks = toolCallbacks;
         this.aiClient =
                 builder.build(); // We will apply the advisor per request to use dynamic properties if needed, or we
         // can build it once.
@@ -44,9 +42,6 @@ public class AIChatService {
 
     @Observed(name = "rag.chat", contextualName = "rag-chat")
     public AIChatResponse chat(String query, boolean includeDiagnostics) {
-        StopWatch stopWatch = new StopWatch("chat");
-        stopWatch.start();
-
         var queryAugmenter =
                 ContextualQueryAugmenter.builder().allowEmptyContext(true).build();
 
@@ -60,17 +55,14 @@ public class AIChatService {
                         "You are a helpful customer support agent. Use the provided information segments to synthesize your answer. If the segments do not contain relevant information, politely state that you do not have the answer.")
                 .user(query)
                 .advisors(advisor)
-                .tools(currentDateTool)
+                .tools(toolCallbacks)
                 .call();
 
         ChatResponse chatResponse = callResponse.chatResponse();
         String aiResponse = chatResponse.getResult().getOutput().getText();
 
-        stopWatch.stop();
-        LOGGER.debug("Response received from call in {} ms: {}", stopWatch.getTotalTimeMillis(), aiResponse);
-        LOGGER.info("Response received from call in {} ms", stopWatch.getTotalTimeMillis());
+        LOGGER.debug("Response received from call: {}", aiResponse);
 
-        meterRegistry.timer("rag.chat.total.latency").record(Duration.ofMillis(stopWatch.getTotalTimeMillis()));
         meterRegistry.counter("rag.llm.calls").increment();
 
         List<RetrievalDiagnostic> diagnostics = null;
