@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <spring-ai.version>2.0.0-M8</spring-ai.version>
+        <spring-ai.version>2.0.0-RC1</spring-ai.version>
         <datasource-micrometer.version>2.2.1</datasource-micrometer.version>
         <otelInstrumentation.version>2.10.0-alpha</otelInstrumentation.version>
         <spotless.version>3.6.0</spotless.version>
