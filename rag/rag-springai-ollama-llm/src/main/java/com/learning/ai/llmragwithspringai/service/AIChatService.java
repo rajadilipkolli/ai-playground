@@ -50,14 +50,18 @@ public class AIChatService {
                 .queryAugmenter(queryAugmenter)
                 .build();
 
-        var callResponse =
-                aiClient.prompt().system("""
+        var callResponse = aiClient.prompt()
+                .system("""
                         You are a helpful customer support agent.
                         Answer the user's question using the provided context.
                         If the context does not contain the answer,
                         you may use your own knowledge ONLY if you are absolutely sure.
                         Otherwise, politely state that you do not have the answer.
-                        """).user(query).advisors(advisor).call();
+                        """)
+                .user(query)
+                .advisors(advisor)
+                .tools(toolCallbacks)
+                .call();
 
         ChatResponse chatResponse = callResponse.chatResponse();
         String aiResponse = chatResponse.getResult().getOutput().getText();
