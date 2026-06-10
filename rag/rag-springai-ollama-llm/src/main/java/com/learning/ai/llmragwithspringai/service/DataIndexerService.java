@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import io.micrometer.observation.annotation.Observed;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -79,6 +80,7 @@ public class DataIndexerService {
         this.visionModel = visionModel;
     }
 
+    @Observed(name = "rag.ingest", contextualName = "rag-ingest")
     @Transactional
     public IngestionResult loadData(Resource documentResource) {
         String filename = documentResource.getFilename();
@@ -240,8 +242,10 @@ public class DataIndexerService {
                 "SELECT id FROM vector_store WHERE metadata->>'source_filename' = ?", String.class, filename);
     }
 
+    @Observed(name = "rag.count", contextualName = "rag-count")
     public long count() {
-        return Objects.requireNonNull(this.vectorStore.similaritySearch("*")).size();
+        Long count = this.jdbcTemplate.queryForObject("SELECT COUNT(1) FROM vector_store", Long.class);
+        return count != null ? count : 0L;
     }
 
     public boolean isEmpty() {

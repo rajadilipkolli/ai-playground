@@ -3,7 +3,7 @@ package com.learning.ai.llmragwithspringai.service;
 import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.model.response.RetrievalDiagnostic;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.time.Duration;
+import io.micrometer.observation.annotation.Observed;
 import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
@@ -14,8 +14,8 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 
 @Service
 public class AIChatService {
@@ -25,19 +25,23 @@ public class AIChatService {
     private final ChatClient aiClient;
     private final MeterRegistry meterRegistry;
     private final DocumentRetriever documentRetriever;
+    private final List<ToolCallback> toolCallbacks;
 
-    public AIChatService(ChatClient.Builder builder, MeterRegistry meterRegistry, DocumentRetriever documentRetriever) {
+    public AIChatService(
+            ChatClient.Builder builder,
+            MeterRegistry meterRegistry,
+            DocumentRetriever documentRetriever,
+            List<ToolCallback> toolCallbacks) {
         this.meterRegistry = meterRegistry;
         this.documentRetriever = documentRetriever;
+        this.toolCallbacks = toolCallbacks;
         this.aiClient =
                 builder.build(); // We will apply the advisor per request to use dynamic properties if needed, or we
         // can build it once.
     }
 
+    @Observed(name = "rag.chat", contextualName = "rag-chat")
     public AIChatResponse chat(String query, boolean includeDiagnostics) {
-        StopWatch stopWatch = new StopWatch("chat");
-        stopWatch.start();
-
         var queryAugmenter =
                 ContextualQueryAugmenter.builder().allowEmptyContext(true).build();
 
@@ -58,11 +62,8 @@ public class AIChatService {
         ChatResponse chatResponse = callResponse.chatResponse();
         String aiResponse = chatResponse.getResult().getOutput().getText();
 
-        stopWatch.stop();
-        LOGGER.debug("Response received from call in {} ms: {}", stopWatch.getTotalTimeMillis(), aiResponse);
-        LOGGER.info("Response received from call in {} ms", stopWatch.getTotalTimeMillis());
+        LOGGER.debug("Response received from call: {}", aiResponse);
 
-        meterRegistry.timer("rag.chat.total.latency").record(Duration.ofMillis(stopWatch.getTotalTimeMillis()));
         meterRegistry.counter("rag.llm.calls").increment();
 
         List<RetrievalDiagnostic> diagnostics = null;
