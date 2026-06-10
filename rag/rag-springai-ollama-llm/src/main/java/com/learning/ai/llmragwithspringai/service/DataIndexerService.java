@@ -192,8 +192,7 @@ public class DataIndexerService {
                 PDResources pdResources = page.getResources();
                 for (org.apache.pdfbox.cos.COSName cosName : pdResources.getXObjectNames()) {
                     PDXObject xObject = pdResources.getXObject(cosName);
-                    if (xObject instanceof PDImageXObject) {
-                        PDImageXObject image = (PDImageXObject) xObject;
+                    if (xObject instanceof PDImageXObject image) {
                         BufferedImage bufferedImage = image.getImage();
 
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -227,6 +226,7 @@ public class DataIndexerService {
             }
         } catch (Exception e) {
             LOGGER.error("Failed to extract text and images from PDF using vision model", e);
+            throw new IllegalStateException("Vision-based PDF ingestion failed", e);
         }
         return documents;
     }
