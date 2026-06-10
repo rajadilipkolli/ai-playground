@@ -1,7 +1,59 @@
-# ReAct RAG Spring AI Ollama
+# Reasoning and Acting (ReAct) with Retrieval-Augmented Generation (RAG) using Spring AI and Ollama
 
 This module demonstrates an agentic Chat Service using Spring AI and Ollama, combining Retrieval-Augmented Generation (RAG) with multi-tool calling through the ReAct (Reasoning and Acting) pattern.
 
+## Architecture & Sequence Flow
+
+```mermaid
+flowchart TD
+    %% Define Styles / Legend
+    classDef userReq fill:#cc6699,stroke:#555555,stroke-width:2px;
+    classDef coordinator fill:#6688cc,stroke:#555555,stroke-width:2px;
+    classDef tool fill:#66aa66,stroke:#555555,stroke-width:2px;
+    classDef llm fill:#aa88cc,stroke:#555555,stroke-width:2px;
+    classDef storage fill:#cc8855,stroke:#555555,stroke-width:2px;
+
+    %% Nodes
+    User(["User Query"]):::userReq
+    ChatService["AgenticChatService<br/><i>Coordinates LLM and Tools</i>"]:::coordinator
+    
+    Ollama["ChatClient (LLM)<br/><i>Reasons and decides which tools to call</i>"]:::llm
+    
+    DateTimeTool["currentDateTimeTool<br/><i>Returns current date/time</i>"]:::tool
+    CalculatorTool["calculatorTool<br/><i>Evaluates math expressions</i>"]:::tool
+    KnowledgeSearchTool["knowledgeSearchTool<br/><i>Performs similarity search</i>"]:::tool
+    
+    VectorStore[("PgVector Database<br/><i>Stores document embeddings</i>")]:::storage
+    
+    Response(["Generated Answer"]):::userReq
+
+    %% Flow
+    User -->|1. Asks question| ChatService
+    ChatService -->|2. Sends prompt + tools| Ollama
+    
+    Ollama -->|3a. Calls| DateTimeTool
+    Ollama -->|3b. Calls| CalculatorTool
+    Ollama -->|3c. Calls| KnowledgeSearchTool
+    
+    KnowledgeSearchTool -->|4. Queries| VectorStore
+    VectorStore -.->|5. Returns context| KnowledgeSearchTool
+    
+    DateTimeTool -.->|6. Returns result| Ollama
+    CalculatorTool -.->|6. Returns result| Ollama
+    KnowledgeSearchTool -.->|6. Returns result| Ollama
+    
+    Ollama -->|7. Synthesizes final answer| ChatService
+    ChatService -->|8. Returns answer| Response
+
+    %% Legend
+    subgraph Legend [Legend: What do these boxes mean?]
+        L1(["Input/Output"]):::userReq
+        L2["Coordinator/Manager"]:::coordinator
+        L3["Tool/Function"]:::tool
+        L4[("Database/Storage")]:::storage
+        L5["AI Model"]:::llm
+    end
+```
 ## Prerequisites
 * Docker & Docker Compose
 * Java 25
