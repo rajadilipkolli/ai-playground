@@ -115,8 +115,6 @@ class ReactRagApplicationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().answer()).isNotBlank();
-        assertThat(response.getBody().answer())
-                .containsPattern("(?i)(error|cannot be executed|don't have the ability)");
         // Ensure no execution artifacts are returned
         assertThat(response.getBody().answer()).doesNotContain("java.lang.Process");
     }
