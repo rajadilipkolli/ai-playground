@@ -1,0 +1,44 @@
+services:
+  ollama:
+    container_name: react_rag_ollama
+    image: ollama/ollama:latest
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama_data:/root/.ollama
+    # Optional GPU passthrough
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  postgres:
+    container_name: react_rag_postgres
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: vector_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  lgtm-stack:
+    image: grafana/otel-lgtm:0.28.0
+    container_name: react_rag_lgtm-stack
+    extra_hosts: [ 'host.docker.internal:host-gateway' ]
+    environment:
+      - OTEL_METRIC_EXPORT_INTERVAL=500
+    ports:
+      - "3000:3000"
+      - "4317:4317"
+      - "4318:4318"
+      - "9090:9090"
+
+volumes:
+  ollama_data:
+  postgres_data:
