@@ -2,7 +2,6 @@ package com.learning.ai.reactrag.controller;
 
 import com.learning.ai.reactrag.model.response.IngestionResponse;
 import com.learning.ai.reactrag.service.DocumentIngestionService;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
@@ -28,13 +27,13 @@ public class DocumentController {
 
     @PostMapping("/upload")
     public ResponseEntity<IngestionResponse> uploadDocument(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty() || file.getOriginalFilename() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new IngestionResponse(0, List.of("File is required and must not be empty")));
+        }
         try {
             int chunkCount = ingestionService.ingestFile(file);
             return ResponseEntity.ok(new IngestionResponse(chunkCount, Collections.emptyList()));
-        } catch (IOException e) {
-            LOGGER.error("Failed to ingest document", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new IngestionResponse(0, List.of("Failed to ingest document: " + e.getMessage())));
         } catch (Exception e) {
             LOGGER.error("An unexpected error occurred during ingestion", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

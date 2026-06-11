@@ -2,7 +2,6 @@ package com.learning.ai.reactrag.service;
 
 import com.learning.ai.reactrag.util.ContentHashUtil;
 import io.micrometer.observation.annotation.Observed;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +13,7 @@ import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -33,7 +33,7 @@ public class DocumentIngestionService {
     }
 
     @Observed(name = "document.ingestion", contextualName = "document-ingestion")
-    public int ingestFile(MultipartFile file) throws IOException {
+    public int ingestFile(MultipartFile file) {
         String filename = file.getOriginalFilename();
         LOGGER.info("Starting ingestion for file: {}", filename);
 
@@ -70,6 +70,18 @@ public class DocumentIngestionService {
         }
 
         List<Document> splitDocuments = tokenTextSplitter.apply(documents);
+
+        List<Document> existing = vectorStore.similaritySearch(SearchRequest.builder()
+                .query("")
+                .filterExpression("contentHash == '" + hash + "'")
+                .topK(1)
+                .build());
+
+        if (!existing.isEmpty()) {
+            LOGGER.info("Document with hash {} already exists. Skipping vector store insertion.", hash);
+            return 0;
+        }
+
         LOGGER.info("Split into {} chunks. Saving to vector store...", splitDocuments.size());
 
         vectorStore.accept(splitDocuments);
