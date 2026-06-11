@@ -37,7 +37,7 @@ public class AgenticChatService {
     }
 
     public ChatResponse chat(String query, boolean includeDiagnostics) {
-        LOGGER.info("Starting agentic chat with query: {}", query);
+        LOGGER.debug("Starting agentic chat (query redacted to prevent PII leak)");
 
         org.springframework.ai.chat.model.ChatResponse aiResponse = chatClient
                 .prompt()

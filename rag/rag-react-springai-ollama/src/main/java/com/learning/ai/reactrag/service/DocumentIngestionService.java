@@ -15,6 +15,7 @@ import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,9 +72,13 @@ public class DocumentIngestionService {
 
         List<Document> splitDocuments = tokenTextSplitter.apply(documents);
 
+        if (hash == null || !hash.matches("^[a-fA-F0-9]{64}$")) {
+            throw new IllegalArgumentException("Invalid content hash format");
+        }
+
         List<Document> existing = vectorStore.similaritySearch(SearchRequest.builder()
-                .query("")
-                .filterExpression("contentHash == '" + hash + "'")
+                .filterExpression(
+                        new FilterExpressionBuilder().eq("contentHash", hash).build())
                 .topK(1)
                 .build());
 

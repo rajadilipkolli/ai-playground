@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.learning.ai.reactrag.common.ContainerConfig;
 import com.learning.ai.reactrag.model.request.ChatRequest;
 import com.learning.ai.reactrag.model.response.ChatResponse;
+import com.learning.ai.reactrag.service.AgenticChatService;
 import com.learning.ai.reactrag.service.DocumentIngestionService;
 import com.learning.ai.reactrag.util.ContentHashUtil;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +24,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.multipart.MultipartFile;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = ContainerConfig.class)
@@ -41,6 +47,9 @@ class ReactRagApplicationTests {
     @Autowired
     private DocumentIngestionService documentIngestionService;
 
+    @MockitoSpyBean
+    private AgenticChatService agenticChatService;
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
@@ -53,8 +62,8 @@ class ReactRagApplicationTests {
                     "SELECT id FROM vector_store WHERE metadata->>'testId' = ?", String.class, currentTestId);
             if (!ids.isEmpty()) {
                 vectorStore.delete(ids);
-                currentTestId = null;
             }
+            currentTestId = null;
         }
     }
 
@@ -69,7 +78,7 @@ class ReactRagApplicationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().answer()).isNotBlank();
-        assertThat(response.getBody().answer()).contains("25");
+        assertThat(response.getBody().answer()).containsPattern("(?i)(25|twenty-five)");
     }
 
     @Test
@@ -88,7 +97,7 @@ class ReactRagApplicationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().answer()).isNotBlank();
-        assertThat(response.getBody().answer()).contains("Antigravity");
+        assertThat(response.getBody().answer()).containsPattern("(?i)\\bAntigravity\\b");
     }
 
     @Test
@@ -106,8 +115,10 @@ class ReactRagApplicationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().answer()).isNotBlank();
-        // Since exp4j throws an exception for non-math strings, the LLM will see the tool's error
-        // or fail to parse it gracefully without server compromise.
+        assertThat(response.getBody().answer())
+                .containsPattern("(?i)(error|cannot be executed|don't have the ability)");
+        // Ensure no execution artifacts are returned
+        assertThat(response.getBody().answer()).doesNotContain("java.lang.Process");
     }
 
     @Test
@@ -133,5 +144,127 @@ class ReactRagApplicationTests {
         if (!ids.isEmpty()) {
             vectorStore.delete(ids);
         }
+    }
+
+    @Test
+    void testChatEndpoint_invalidQuery() {
+        RestClient restClient =
+                restClientBuilder.baseUrl("http://localhost:" + port).build();
+        ChatRequest request = new ChatRequest("   "); // blank query
+
+        RestClientResponseException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                RestClientResponseException.class,
+                () -> restClient
+                        .post()
+                        .uri("/api/chat")
+                        .body(request)
+                        .retrieve()
+                        .toBodilessEntity());
+        assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getResponseBodyAsString()).contains("Query cannot be null or empty");
+    }
+
+    @Test
+    void testFileUpload_emptyFile() {
+        RestClient restClient =
+                restClientBuilder.baseUrl("http://localhost:" + port).build();
+        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        org.springframework.core.io.ByteArrayResource emptyResource =
+                new org.springframework.core.io.ByteArrayResource(new byte[0]) {
+                    @Override
+                    public String getFilename() {
+                        return "empty.txt";
+                    }
+                };
+        parts.add("file", emptyResource);
+
+        RestClientResponseException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                RestClientResponseException.class,
+                () -> restClient
+                        .post()
+                        .uri("/api/documents/upload")
+                        .contentType(org.springframework.http.MediaType.MULTIPART_FORM_DATA)
+                        .body(parts)
+                        .retrieve()
+                        .toBodilessEntity());
+        assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getResponseBodyAsString()).contains("File is required and must not be empty");
+    }
+
+    @Test
+    void testFileUpload_invalidFormat() {
+        RestClient restClient =
+                restClientBuilder.baseUrl("http://localhost:" + port).build();
+        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        org.springframework.core.io.ByteArrayResource invalidFormatResource =
+                new org.springframework.core.io.ByteArrayResource("some content".getBytes()) {
+                    @Override
+                    public String getFilename() {
+                        return "test.xyz";
+                    }
+                };
+        parts.add("file", invalidFormatResource);
+
+        RestClientResponseException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                RestClientResponseException.class,
+                () -> restClient
+                        .post()
+                        .uri("/api/documents/upload")
+                        .contentType(org.springframework.http.MediaType.MULTIPART_FORM_DATA)
+                        .body(parts)
+                        .retrieve()
+                        .toBodilessEntity());
+        assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getResponseBodyAsString()).contains("Invalid file format");
+    }
+
+    @Test
+    void testFileUpload_oversizedFile() {
+        RestClient restClient =
+                restClientBuilder.baseUrl("http://localhost:" + port).build();
+        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        // 2MB file to trigger MaxUploadSizeExceededException (default 1MB)
+        org.springframework.core.io.ByteArrayResource largeResource =
+                new org.springframework.core.io.ByteArrayResource(new byte[2 * 1024 * 1024]) {
+                    @Override
+                    public String getFilename() {
+                        return "large.txt";
+                    }
+                };
+        parts.add("file", largeResource);
+
+        RestClientResponseException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                RestClientResponseException.class,
+                () -> restClient
+                        .post()
+                        .uri("/api/documents/upload")
+                        .contentType(org.springframework.http.MediaType.MULTIPART_FORM_DATA)
+                        .body(parts)
+                        .retrieve()
+                        .toBodilessEntity());
+        assertThat(ex.getStatusCode().is4xxClientError() || ex.getStatusCode().is5xxServerError())
+                .isTrue();
+    }
+
+    @Test
+    void testChatEndpoint_serviceFailure() {
+        Mockito.doThrow(new RuntimeException("Simulated backend failure"))
+                .when(agenticChatService)
+                .chat(Mockito.anyString(), Mockito.anyBoolean());
+
+        RestClient restClient =
+                restClientBuilder.baseUrl("http://localhost:" + port).build();
+        ChatRequest request = new ChatRequest("Fail me");
+
+        RestClientResponseException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                RestClientResponseException.class,
+                () -> restClient
+                        .post()
+                        .uri("/api/chat")
+                        .body(request)
+                        .retrieve()
+                        .toBodilessEntity());
+        assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(ex.getResponseBodyAsString()).contains("Simulated backend failure");
     }
 }

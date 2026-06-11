@@ -31,6 +31,12 @@ public class DocumentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new IngestionResponse(0, List.of("File is required and must not be empty")));
         }
+        String filename = file.getOriginalFilename();
+        if (filename != null && !filename.toLowerCase().matches(".*\\.(txt|pdf|md)$")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new IngestionResponse(
+                            0, List.of("Invalid file format. Only .txt, .pdf, and .md are supported.")));
+        }
         try {
             int chunkCount = ingestionService.ingestFile(file);
             return ResponseEntity.ok(new IngestionResponse(chunkCount, Collections.emptyList()));

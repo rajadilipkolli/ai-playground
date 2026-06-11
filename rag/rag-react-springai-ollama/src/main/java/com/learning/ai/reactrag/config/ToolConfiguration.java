@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import net.objecthunter.exp4j.ExpressionBuilder;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.function.FunctionToolCallback;
@@ -12,8 +13,6 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 @Configuration(proxyBeanMethods = false)
 public class ToolConfiguration {
@@ -35,9 +34,9 @@ public class ToolConfiguration {
     public ToolCallback calculatorTool() {
         return FunctionToolCallback.builder("calculatorTool", (Function<CalculatorInput, String>) input -> {
                     try {
-                        ExpressionParser parser = new SpelExpressionParser();
-                        Object result =
-                                parser.parseExpression(input.expression()).getValue();
+                        double result = new ExpressionBuilder(input.expression())
+                                .build()
+                                .evaluate();
                         return String.valueOf(result);
                     } catch (Exception e) {
                         return "Error evaluating expression: " + e.getMessage();
