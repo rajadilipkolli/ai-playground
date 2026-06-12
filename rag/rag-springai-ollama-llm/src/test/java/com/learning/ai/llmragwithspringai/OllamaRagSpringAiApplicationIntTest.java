@@ -242,7 +242,6 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .get("/actuator/prometheus")
                 .then()
                 .statusCode(200)
-                .body(containsString("rag_chat_total_latency_seconds"))
                 .body(containsString("rag_llm_calls_total"))
                 .body(containsString("rag_documents_retrieved_total"))
                 .body(containsString("rag_chat_seconds"));

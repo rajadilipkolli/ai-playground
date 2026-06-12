@@ -120,3 +120,25 @@ sequenceDiagram
     ChatbotController-->>User: response
 
 ```
+## Guardrails
+
+To ensure safe and reliable interactions, several guardrails have been implemented:
+
+| Guardrail Type             | Implemented | Rationale                                                                                                           |
+|----------------------------|-------------|---------------------------------------------------------------------------------------------------------------------|
+| Input Validation           | Yes         | Prevents excessively long inputs and invalid characters using @NotBlank, @Size, and @Pattern on AIChatRequest.      |
+| Sensitive Word Filtering   | Yes         | Blocks queries containing inappropriate or out-of-scope words using SafeGuardAdvisor.                               |
+| Logging                    | Yes         | Logs prompts and responses via SimpleLoggerAdvisor for auditing.                                                    |
+| System Prompt Constraints  | Yes         | Explicitly instructs the LLM to stay on topic and refuse harmful requests via .defaultSystem().                     |
+| Rate Limiting              | No          | Requires separate infrastructure (e.g., Redis rate limiter or API Gateway) which adds complexity to this demo.      |
+| Output Moderation          | No          | Too complex/slow for this basic demonstration, and relies on the LLM's inherent safety training.                    |
+| Prompt Injection Detection | No          | Advanced prompt injection detection is often handled by specialized commercial APIs rather than simple local logic. |
+
+### Configuration Examples
+
+Configure guardrails in application.properties:
+``properties
+guardrails.sensitive-words=politics,religion,violence,hate speech,explicit content
+guardrails.failure-message=I'm sorry, but I cannot assist with that topic. Please ask a question related to customer support.
+guardrails.logging.enabled=true
+``
