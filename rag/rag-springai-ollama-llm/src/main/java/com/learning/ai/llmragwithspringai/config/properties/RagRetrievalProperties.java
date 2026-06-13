@@ -1,26 +1,43 @@
 package com.learning.ai.llmragwithspringai.config.properties;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
 
 @Configuration
 @ConfigurationProperties(prefix = "rag.retrieval")
+@Validated
 public class RagRetrievalProperties {
 
+    @Pattern(regexp = "^(keyword|vector|hybrid)$")
     private String mode = "hybrid";
+
+    @Min(1)
     private int topK = 3;
+
+    @DecimalMin("0.0")
+    @DecimalMax("1.0")
     private double similarityThreshold = 0.6;
 
+    @Valid
     @NestedConfigurationProperty
     private Keyword keyword = new Keyword();
 
+    @Valid
     @NestedConfigurationProperty
     private Rrf rrf = new Rrf();
 
+    @Valid
     @NestedConfigurationProperty
     private Hybrid hybrid = new Hybrid();
 
+    @Valid
     @NestedConfigurationProperty
     private Rerank rerank = new Rerank();
 
@@ -81,6 +98,7 @@ public class RagRetrievalProperties {
     }
 
     public static class Keyword {
+        @Min(1)
         private int topK = 3;
 
         public int getTopK() {
@@ -93,6 +111,7 @@ public class RagRetrievalProperties {
     }
 
     public static class Rrf {
+        @Min(1)
         private int k = 60;
 
         public int getK() {
@@ -105,6 +124,7 @@ public class RagRetrievalProperties {
     }
 
     public static class Hybrid {
+        @Min(1)
         private int topK = 3;
 
         public int getTopK() {
@@ -118,6 +138,8 @@ public class RagRetrievalProperties {
 
     public static class Rerank {
         private boolean enabled = false;
+
+        @Min(1)
         private int topK = 3;
 
         public boolean isEnabled() {

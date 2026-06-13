@@ -12,9 +12,11 @@ public class RagCacheProperties {
 
     private boolean enabled = false;
 
-    @Positive(message = "ttlSeconds must be a positive number") private long ttlSeconds = 3600;
+    @Positive(message = "ttlSeconds must be a positive number")
+    private long ttlSeconds = 3600;
 
-    @Positive(message = "maxSize must be a positive number") private long maxSize = 1000;
+    @Positive(message = "maxSize must be a positive number")
+    private long maxSize = 1000;
 
     public boolean isEnabled() {
         return enabled;

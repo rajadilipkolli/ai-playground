@@ -7,15 +7,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.util.StringUtils;
 
 public class SectionTextSplitter extends TextSplitter {
 
-    private static final Logger log = LoggerFactory.getLogger(SectionTextSplitter.class);
     private final Pattern sectionPattern;
     private final TokenTextSplitter fallbackSplitter;
 
@@ -26,7 +24,7 @@ public class SectionTextSplitter extends TextSplitter {
 
     @Override
     protected List<String> splitText(String text) {
-        if (text.isEmpty()) {
+        if (!StringUtils.hasText(text)) {
             return List.of();
         }
         List<String> chunks = new ArrayList<>();
@@ -108,9 +106,6 @@ public class SectionTextSplitter extends TextSplitter {
                 .build();
 
         List<Document> subChunks = fallbackSplitter.apply(List.of(chunkDoc));
-        for (Document subChunk : subChunks) {
-            subChunk.getMetadata().put("section_title", sectionTitle);
-        }
         result.addAll(subChunks);
     }
 }

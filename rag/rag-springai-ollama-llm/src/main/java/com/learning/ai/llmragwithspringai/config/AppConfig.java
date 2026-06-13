@@ -26,6 +26,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.util.StringUtils;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration(proxyBeanMethods = false)
@@ -129,8 +130,8 @@ public class AppConfig {
                     .topK(retrievalProperties.getTopK())
                     .similarityThreshold(retrievalProperties.getSimilarityThreshold())
                     .build();
-            String filterExp = FilterContext.FILTER_EXPRESSION.orElse(null);
-            if (filterExp != null && !filterExp.isBlank()) {
+            String filterExp = FilterContext.FILTER_EXPRESSION.orElse("");
+            if (StringUtils.hasText(filterExp)) {
                 req = SearchRequest.from(req).filterExpression(filterExp).build();
             }
             return vectorStore.similaritySearch(req);
