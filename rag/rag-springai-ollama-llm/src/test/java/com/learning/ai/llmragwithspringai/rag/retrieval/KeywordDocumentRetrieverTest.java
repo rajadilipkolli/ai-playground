@@ -49,7 +49,6 @@ class KeywordDocumentRetrieverTest {
     @Test
     void testRetrieve_WithFilter_AppliesFilterToSql() {
         Query query = new Query("test filter");
-        FilterContext.setFilterExpression("category == 'tech'");
         Document mockDoc = Document.builder().id("1").text("test content").build();
 
         when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq("test filter"), eq("test filter"), eq(5)))
@@ -59,11 +58,9 @@ class KeywordDocumentRetrieverTest {
                     return List.of(mockDoc);
                 });
 
-        try {
+        ScopedValue.where(FilterContext.FILTER_EXPRESSION, "category == 'tech'").run(() -> {
             List<Document> results = retriever.retrieve(query);
             assertThat(results).hasSize(1);
-        } finally {
-            FilterContext.clear();
-        }
+        });
     }
 }

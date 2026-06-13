@@ -31,8 +31,9 @@ public class CachingDocumentRetriever implements DocumentRetriever {
     @Override
     public List<Document> retrieve(Query query) {
         String queryText = query.text();
-        String filterExp = FilterContext.getFilterExpression() != null ? FilterContext.getFilterExpression() : "";
-        String cacheKey = queryText + "::" + filterExp;
+        String filterExp = FilterContext.FILTER_EXPRESSION.orElse("");
+        String rawKey = queryText + "::" + filterExp;
+        String cacheKey = ContentHashUtil.getSha256Hash(rawKey);
 
         Cache cache = cacheManager.getCache("retrieval-cache");
         if (cache != null) {

@@ -36,24 +36,28 @@ public class HybridDocumentRetriever implements DocumentRetriever {
     @Override
     public List<Document> retrieve(Query query) {
         log.debug("Executing hybrid retrieval for query: {}", query.text());
-        String capturedFilter = FilterContext.getFilterExpression();
+        final String safeFilter = FilterContext.FILTER_EXPRESSION.orElse("");
 
         CompletableFuture<List<Document>> vectorFuture = CompletableFuture.supplyAsync(
                         () -> {
                             try {
-                                FilterContext.setFilterExpression(capturedFilter);
-                                List<Document> docs = vectorRetriever.retrieve(query);
-                                return docs.stream()
-                                        .map(d -> Document.builder()
-                                                .id(d.getId())
-                                                .text(d.getText())
-                                                .media(d.getMedia())
-                                                .metadata(d.getMetadata())
-                                                .metadata("retrieval_source", "vector")
-                                                .build())
-                                        .collect(Collectors.toList());
-                            } finally {
-                                FilterContext.clear();
+                                return ScopedValue.where(FilterContext.FILTER_EXPRESSION, safeFilter)
+                                        .call(() -> {
+                                            List<Document> docs = vectorRetriever.retrieve(query);
+                                            return docs.stream()
+                                                    .map(d -> Document.builder()
+                                                            .id(d.getId())
+                                                            .text(d.getText())
+                                                            .media(d.getMedia())
+                                                            .metadata(d.getMetadata())
+                                                            .metadata("retrieval_source", "vector")
+                                                            .build())
+                                                    .collect(Collectors.toList());
+                                        });
+                            } catch (RuntimeException | Error e) {
+                                throw e;
+                            } catch (Throwable t) {
+                                throw new RuntimeException(t);
                             }
                         },
                         executor)
@@ -65,19 +69,23 @@ public class HybridDocumentRetriever implements DocumentRetriever {
         CompletableFuture<List<Document>> keywordFuture = CompletableFuture.supplyAsync(
                         () -> {
                             try {
-                                FilterContext.setFilterExpression(capturedFilter);
-                                List<Document> docs = keywordRetriever.retrieve(query);
-                                return docs.stream()
-                                        .map(d -> Document.builder()
-                                                .id(d.getId())
-                                                .text(d.getText())
-                                                .media(d.getMedia())
-                                                .metadata(d.getMetadata())
-                                                .metadata("retrieval_source", "keyword")
-                                                .build())
-                                        .collect(Collectors.toList());
-                            } finally {
-                                FilterContext.clear();
+                                return ScopedValue.where(FilterContext.FILTER_EXPRESSION, safeFilter)
+                                        .call(() -> {
+                                            List<Document> docs = keywordRetriever.retrieve(query);
+                                            return docs.stream()
+                                                    .map(d -> Document.builder()
+                                                            .id(d.getId())
+                                                            .text(d.getText())
+                                                            .media(d.getMedia())
+                                                            .metadata(d.getMetadata())
+                                                            .metadata("retrieval_source", "keyword")
+                                                            .build())
+                                                    .collect(Collectors.toList());
+                                        });
+                            } catch (RuntimeException | Error e) {
+                                throw e;
+                            } catch (Throwable t) {
+                                throw new RuntimeException(t);
                             }
                         },
                         executor)

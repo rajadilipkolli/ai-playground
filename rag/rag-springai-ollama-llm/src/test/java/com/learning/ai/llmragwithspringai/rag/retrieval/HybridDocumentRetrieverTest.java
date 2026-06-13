@@ -134,12 +134,9 @@ class HybridDocumentRetrieverTest {
         HybridDocumentRetriever retriever =
                 new HybridDocumentRetriever(customVectorRetriever, keywordRetriever, documentJoiner, directExecutor);
 
-        FilterContext.setFilterExpression("test == 'value'");
-        try {
+        ScopedValue.where(FilterContext.FILTER_EXPRESSION, "test == 'value'").run(() -> {
             retriever.retrieve(new Query("test"));
             assertThat(vectorFilter.get()).isEqualTo("test == 'value'");
-        } finally {
-            FilterContext.clear();
-        }
+        });
     }
 }

@@ -25,7 +25,6 @@ class CachingDocumentRetrieverTest {
         delegate = mock(DocumentRetriever.class);
         cacheManager = new ConcurrentMapCacheManager("retrieval-cache");
         retriever = new CachingDocumentRetriever(delegate, cacheManager, new SimpleMeterRegistry());
-        FilterContext.clear();
     }
 
     @Test
@@ -50,11 +49,9 @@ class CachingDocumentRetrieverTest {
 
         when(delegate.retrieve(any())).thenReturn(docs1, docs2);
 
-        FilterContext.setFilterExpression("type == 'A'");
-        retriever.retrieve(query);
+        ScopedValue.where(FilterContext.FILTER_EXPRESSION, "type == 'A'").run(() -> retriever.retrieve(query));
 
-        FilterContext.setFilterExpression("type == 'B'");
-        retriever.retrieve(query);
+        ScopedValue.where(FilterContext.FILTER_EXPRESSION, "type == 'B'").run(() -> retriever.retrieve(query));
 
         verify(delegate, times(2)).retrieve(any());
     }

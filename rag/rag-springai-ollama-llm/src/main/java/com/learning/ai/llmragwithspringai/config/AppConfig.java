@@ -20,6 +20,7 @@ import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
@@ -89,7 +90,7 @@ public class AppConfig {
     @Bean
     @ConditionalOnProperty(name = "rag.retrieval.mode", havingValue = "keyword")
     DocumentRetriever keywordDocumentRetriever(
-            org.springframework.beans.factory.ObjectProvider<CacheManager> cacheManagerProvider,
+            ObjectProvider<CacheManager> cacheManagerProvider,
             JdbcTemplate jdbcTemplate,
             JsonMapper jsonMapper,
             MeterRegistry meterRegistry) {
@@ -107,24 +108,10 @@ public class AppConfig {
     @Bean
     @ConditionalOnProperty(name = "rag.retrieval.mode", havingValue = "vector")
     DocumentRetriever vectorDocumentRetriever(
-            VectorStore vectorStore,
-            org.springframework.beans.factory.ObjectProvider<CacheManager> cacheManagerProvider,
-            MeterRegistry meterRegistry) {
+            VectorStore vectorStore, ObjectProvider<CacheManager> cacheManagerProvider, MeterRegistry meterRegistry) {
         meterRegistry.counter("rag.retrieval.mode.active", "mode", "vector").increment();
 
-        DocumentRetriever baseRetriever = query -> {
-            SearchRequest req = SearchRequest.builder()
-                    .query(query.text())
-                    .topK(retrievalProperties.getTopK())
-                    .similarityThreshold(retrievalProperties.getSimilarityThreshold())
-                    .build();
-            if (FilterContext.getFilterExpression() != null) {
-                req = SearchRequest.from(req)
-                        .filterExpression(FilterContext.getFilterExpression())
-                        .build();
-            }
-            return vectorStore.similaritySearch(req);
-        };
+        DocumentRetriever baseRetriever = getVectorRetriever(vectorStore);
 
         return applyDecorators(
                 baseRetriever,
@@ -133,6 +120,21 @@ public class AppConfig {
                 cacheProperties.isEnabled(),
                 cacheManagerProvider.getIfAvailable(),
                 meterRegistry);
+    }
+
+    private DocumentRetriever getVectorRetriever(VectorStore vectorStore) {
+        return query -> {
+            SearchRequest req = SearchRequest.builder()
+                    .query(query.text())
+                    .topK(retrievalProperties.getTopK())
+                    .similarityThreshold(retrievalProperties.getSimilarityThreshold())
+                    .build();
+            String filterExp = FilterContext.FILTER_EXPRESSION.orElse(null);
+            if (filterExp != null && !filterExp.isBlank()) {
+                req = SearchRequest.from(req).filterExpression(filterExp).build();
+            }
+            return vectorStore.similaritySearch(req);
+        };
     }
 
     @Bean
@@ -146,19 +148,7 @@ public class AppConfig {
             MeterRegistry meterRegistry) {
         meterRegistry.counter("rag.retrieval.mode.active", "mode", "hybrid").increment();
 
-        DocumentRetriever vectorRetriever = query -> {
-            SearchRequest req = SearchRequest.builder()
-                    .query(query.text())
-                    .topK(retrievalProperties.getTopK())
-                    .similarityThreshold(retrievalProperties.getSimilarityThreshold())
-                    .build();
-            if (FilterContext.getFilterExpression() != null) {
-                req = SearchRequest.from(req)
-                        .filterExpression(FilterContext.getFilterExpression())
-                        .build();
-            }
-            return vectorStore.similaritySearch(req);
-        };
+        DocumentRetriever vectorRetriever = getVectorRetriever(vectorStore);
 
         var keywordRetriever = new KeywordDocumentRetriever(
                 jdbcTemplate, retrievalProperties.getKeyword().getTopK(), jsonMapper);

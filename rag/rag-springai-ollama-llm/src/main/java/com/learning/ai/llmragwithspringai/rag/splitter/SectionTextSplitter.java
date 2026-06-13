@@ -26,7 +26,35 @@ public class SectionTextSplitter extends TextSplitter {
 
     @Override
     protected List<String> splitText(String text) {
-        throw new UnsupportedOperationException("Use apply(List<Document>) instead to preserve metadata");
+        if (text.isEmpty()) {
+            return List.of();
+        }
+        List<String> chunks = new ArrayList<>();
+        Matcher matcher = sectionPattern.matcher(text);
+        int lastEnd = 0;
+        while (matcher.find()) {
+            int start = matcher.start();
+            if (start > lastEnd) {
+                String chunk = text.substring(lastEnd, start).trim();
+                if (!chunk.isEmpty()) {
+                    List<Document> subChunks = fallbackSplitter.apply(List.of(new Document(chunk)));
+                    for (Document subChunk : subChunks) {
+                        chunks.add(subChunk.getText());
+                    }
+                }
+            }
+            lastEnd = matcher.end();
+        }
+        if (lastEnd < text.length()) {
+            String chunk = text.substring(lastEnd).trim();
+            if (!chunk.isEmpty()) {
+                List<Document> subChunks = fallbackSplitter.apply(List.of(new Document(chunk)));
+                for (Document subChunk : subChunks) {
+                    chunks.add(subChunk.getText());
+                }
+            }
+        }
+        return chunks;
     }
 
     @Override
