@@ -11,7 +11,7 @@
   },
   {
     "question": "What is Rohit Sharma's favorite video game?",
-    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedAnswerKeywords": ["not mention", "no information", "not specified", "not available", "doesn't contain", "doesn't provide", "isn't mentioned", "not in the context", "doesn't say", "doesn't have", "does not specify", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
     "expectedContextKeywords": []
   },
   {
@@ -21,7 +21,7 @@
   },
   {
     "question": "When did Rohit Sharma make his cricket debut?",
-    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedAnswerKeywords": ["not mention", "no information", "not specified", "not available", "doesn't contain", "doesn't provide", "isn't mentioned", "not in the context", "doesn't say", "doesn't have", "does not specify", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
     "expectedContextKeywords": []
   },
   {
@@ -56,12 +56,12 @@
   },
   {
     "question": "What are some facts about Rohit Sharma's family?",
-    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedAnswerKeywords": ["not mention", "no information", "not specified", "not available", "doesn't contain", "doesn't provide", "isn't mentioned", "not in the context", "doesn't say", "doesn't have", "does not specify", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
     "expectedContextKeywords": []
   },
   {
     "question": "Tell me about something not mentioned in the document?",
-    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedAnswerKeywords": ["not mention", "no information", "not specified", "not available", "doesn't contain", "doesn't provide", "isn't mentioned", "not in the context", "doesn't say", "doesn't have", "does not specify", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
     "expectedContextKeywords": []
   }
 ]

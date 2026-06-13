@@ -1,6 +1,7 @@
 package com.learning.ai.llmragwithspringai;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.greaterThan;
@@ -102,6 +103,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .statusCode(200)
                 .body("queryResponse", containsStringIgnoringCase("yes"))
                 .body("diagnostics.size()", greaterThan(0))
+                .body("diagnostics[0].source", anyOf(is("vector"), is("keyword"), is("both")))
                 .log()
                 .all();
     }
