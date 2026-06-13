@@ -20,7 +20,7 @@ import org.springframework.ai.reader.JsonReader;
 import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
-import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,13 +33,13 @@ public class DataIndexerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataIndexerService.class);
 
-    private final TokenTextSplitter tokenTextSplitter;
+    private final TextSplitter tokenTextSplitter;
     private final VectorStore vectorStore;
     private final MeterRegistry meterRegistry;
     private final JdbcTemplate jdbcTemplate;
 
     public DataIndexerService(
-            TokenTextSplitter tokenTextSplitter,
+            TextSplitter tokenTextSplitter,
             VectorStore vectorStore,
             MeterRegistry meterRegistry,
             JdbcTemplate jdbcTemplate) {
@@ -51,7 +51,7 @@ public class DataIndexerService {
 
     @Observed(name = "rag.ingest", contextualName = "rag-ingest")
     @Transactional
-    public IngestionResult loadData(Resource documentResource) {
+    public IngestionResult loadData(Resource documentResource, String documentType, String owner, String category) {
         String filename = documentResource.getFilename();
         if (filename == null) {
             filename = "unknown";
@@ -110,6 +110,9 @@ public class DataIndexerService {
                     metadata.put("source_filename", finalFilename);
                     metadata.put("content_hash", contentHash);
                     metadata.put("ingested_at", ingestedAt);
+                    if (documentType != null) metadata.put("documentType", documentType);
+                    if (owner != null) metadata.put("owner", owner);
+                    if (category != null) metadata.put("category", category);
                 });
                 return documents;
             };

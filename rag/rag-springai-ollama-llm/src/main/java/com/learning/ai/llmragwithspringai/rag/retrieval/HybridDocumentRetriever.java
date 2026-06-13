@@ -13,18 +13,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
-import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 
 public class HybridDocumentRetriever implements DocumentRetriever {
 
     private static final Logger log = LoggerFactory.getLogger(HybridDocumentRetriever.class);
-    private final VectorStoreDocumentRetriever vectorRetriever;
+    private final DocumentRetriever vectorRetriever;
     private final KeywordDocumentRetriever keywordRetriever;
     private final RRFDocumentJoiner documentJoiner;
     private final Executor executor;
 
     public HybridDocumentRetriever(
-            VectorStoreDocumentRetriever vectorRetriever,
+            DocumentRetriever vectorRetriever,
             KeywordDocumentRetriever keywordRetriever,
             RRFDocumentJoiner documentJoiner,
             Executor executor) {

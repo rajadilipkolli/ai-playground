@@ -69,7 +69,7 @@ class DataIndexerServiceTest {
         when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
                 .thenReturn(List.of("doc-123"));
 
-        IngestionResult result = dataIndexerService.loadData(resource);
+        IngestionResult result = dataIndexerService.loadData(resource, null, null, null);
 
         assertThat(result.status()).isEqualTo(IngestionStatus.SKIPPED_DUPLICATE);
         assertThat(result.filename()).isEqualTo("test.txt");
@@ -95,7 +95,7 @@ class DataIndexerServiceTest {
                 .thenReturn(Collections.emptyList())
                 .thenReturn(List.of("doc-123"));
 
-        IngestionResult result = dataIndexerService.loadData(resource);
+        IngestionResult result = dataIndexerService.loadData(resource, null, null, null);
 
         assertThat(result.status()).isEqualTo(IngestionStatus.REPLACED);
         assertThat(result.filename()).isEqualTo("test.txt");
@@ -116,7 +116,7 @@ class DataIndexerServiceTest {
         when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
                 .thenReturn(List.of("doc-999"));
 
-        IngestionResult result = dataIndexerService.loadData(resource);
+        IngestionResult result = dataIndexerService.loadData(resource, null, null, null);
 
         assertThat(result.status()).isEqualTo(IngestionStatus.SKIPPED_DUPLICATE);
         assertThat(result.filename()).isEqualTo("new-file.txt");
@@ -139,7 +139,7 @@ class DataIndexerServiceTest {
         when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
                 .thenReturn(Collections.emptyList());
 
-        IngestionResult result = dataIndexerService.loadData(resource);
+        IngestionResult result = dataIndexerService.loadData(resource, null, null, null);
 
         assertThat(result.status()).isEqualTo(IngestionStatus.INGESTED);
         assertThat(result.filename()).isEqualTo("brand-new.txt");

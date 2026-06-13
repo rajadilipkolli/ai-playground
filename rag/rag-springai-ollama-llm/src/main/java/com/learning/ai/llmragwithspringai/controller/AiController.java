@@ -26,6 +26,6 @@ class AiController {
     AIChatResponse ragService(
             @RequestBody @Valid AIChatRequest aiChatRequest,
             @RequestParam(defaultValue = "false") boolean includeDiagnostics) {
-        return aiChatService.chat(aiChatRequest.question(), includeDiagnostics);
+        return aiChatService.chat(aiChatRequest, includeDiagnostics);
     }
 }
