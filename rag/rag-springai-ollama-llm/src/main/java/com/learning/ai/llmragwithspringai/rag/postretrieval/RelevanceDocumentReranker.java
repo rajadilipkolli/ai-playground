@@ -47,9 +47,9 @@ public class RelevanceDocumentReranker {
                     .id(doc.getId())
                     .text(doc.getText())
                     .metadata(doc.getMetadata())
+                    .metadata("rerank_score", overlapRatio)
                     .build();
 
-            updatedDoc.getMetadata().put("rerank_score", overlapRatio);
             rerankedDocs.add(updatedDoc);
 
             log.debug("Document {} overlap ratio: {}", doc.getId(), overlapRatio);
