@@ -8,6 +8,7 @@ import io.micrometer.observation.annotation.Observed;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -69,12 +70,15 @@ public class DataIndexerService {
             return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
         }
 
-        List<String> existingByFilename = findDocumentsByFilename(filename);
+        List<String> existingByFilename = findDocumentsByFilename(filename, documentType, owner, category);
         int chunksDeleted = 0;
         if (!existingByFilename.isEmpty()) {
             LOGGER.info(
-                    "Document {} exists with different hash. Replacing {} old chunks.",
+                    "Document {} exists with different hash for scope documentType='{}', owner='{}', category='{}'. Replacing {} old chunks.",
                     filename,
+                    documentType,
+                    owner,
+                    category,
                     existingByFilename.size());
             vectorStore.delete(existingByFilename);
             chunksDeleted = existingByFilename.size();
@@ -140,9 +144,31 @@ public class DataIndexerService {
                 "SELECT id FROM vector_store WHERE metadata->>'content_hash' = ?", String.class, hash);
     }
 
-    private List<String> findDocumentsByFilename(String filename) {
-        return jdbcTemplate.queryForList(
-                "SELECT id FROM vector_store WHERE metadata->>'source_filename' = ?", String.class, filename);
+    private List<String> findDocumentsByFilename(String filename, String documentType, String owner, String category) {
+        String sql = "SELECT id FROM vector_store WHERE metadata->>'source_filename' = ?";
+        if (documentType != null) {
+            sql += " AND metadata->>'documentType' = ?";
+        }
+        if (owner != null) {
+            sql += " AND metadata->>'owner' = ?";
+        }
+        if (category != null) {
+            sql += " AND metadata->>'category' = ?";
+        }
+
+        var args = new ArrayList<Object>();
+        args.add(filename);
+        if (documentType != null) {
+            args.add(documentType);
+        }
+        if (owner != null) {
+            args.add(owner);
+        }
+        if (category != null) {
+            args.add(category);
+        }
+
+        return jdbcTemplate.queryForList(sql, String.class, args.toArray());
     }
 
     @Observed(name = "rag.count", contextualName = "rag-count")

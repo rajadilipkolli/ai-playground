@@ -37,18 +37,25 @@ public class HybridDocumentRetriever implements DocumentRetriever {
     public List<Document> retrieve(Query query) {
         log.debug("Executing hybrid retrieval for query: {}", query.text());
 
+        String filterContext = FilterContext.getFilterExpression();
+
         CompletableFuture<List<Document>> vectorFuture = CompletableFuture.supplyAsync(
                         () -> {
-                            List<Document> docs = vectorRetriever.retrieve(query);
-                            return docs.stream()
-                                    .map(d -> Document.builder()
-                                            .id(d.getId())
-                                            .text(d.getText())
-                                            .media(d.getMedia())
-                                            .metadata(d.getMetadata())
-                                            .metadata("retrieval_source", "vector")
-                                            .build())
-                                    .collect(Collectors.toList());
+                            try {
+                                FilterContext.setFilterExpression(filterContext);
+                                List<Document> docs = vectorRetriever.retrieve(query);
+                                return docs.stream()
+                                        .map(d -> Document.builder()
+                                                .id(d.getId())
+                                                .text(d.getText())
+                                                .media(d.getMedia())
+                                                .metadata(d.getMetadata())
+                                                .metadata("retrieval_source", "vector")
+                                                .build())
+                                        .collect(Collectors.toList());
+                            } finally {
+                                FilterContext.clear();
+                            }
                         },
                         executor)
                 .exceptionally(ex -> {
@@ -58,16 +65,21 @@ public class HybridDocumentRetriever implements DocumentRetriever {
 
         CompletableFuture<List<Document>> keywordFuture = CompletableFuture.supplyAsync(
                         () -> {
-                            List<Document> docs = keywordRetriever.retrieve(query);
-                            return docs.stream()
-                                    .map(d -> Document.builder()
-                                            .id(d.getId())
-                                            .text(d.getText())
-                                            .media(d.getMedia())
-                                            .metadata(d.getMetadata())
-                                            .metadata("retrieval_source", "keyword")
-                                            .build())
-                                    .collect(Collectors.toList());
+                            try {
+                                FilterContext.setFilterExpression(filterContext);
+                                List<Document> docs = keywordRetriever.retrieve(query);
+                                return docs.stream()
+                                        .map(d -> Document.builder()
+                                                .id(d.getId())
+                                                .text(d.getText())
+                                                .media(d.getMedia())
+                                                .metadata(d.getMetadata())
+                                                .metadata("retrieval_source", "keyword")
+                                                .build())
+                                        .collect(Collectors.toList());
+                            } finally {
+                                FilterContext.clear();
+                            }
                         },
                         executor)
                 .exceptionally(ex -> {

@@ -1,8 +1,11 @@
 package com.learning.ai.llmragwithspringai.controller;
 
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
+import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.service.DataIndexerService;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -15,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/data/v1/")
 class DataIndexController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataIndexController.class);
 
     private final DataIndexerService dataIndexerService;
     private final CacheManager cacheManager;
@@ -37,7 +42,7 @@ class DataIndexController {
         try {
             IngestionResult result =
                     this.dataIndexerService.loadData(multipartFile.getResource(), documentType, owner, category);
-            if (this.cacheManager != null) {
+            if (this.cacheManager != null && result.status() != IngestionStatus.SKIPPED_DUPLICATE) {
                 Cache cache = this.cacheManager.getCache("retrieval-cache");
                 if (cache != null) {
                     cache.clear();
@@ -45,8 +50,9 @@ class DataIndexController {
             }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            LOGGER.error("Error indexing data", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred while indexing data: " + e.getMessage());
+                    .body("An internal server error occurred while indexing data");
         }
     }
 

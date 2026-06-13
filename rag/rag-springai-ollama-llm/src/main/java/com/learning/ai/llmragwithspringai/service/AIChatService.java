@@ -53,14 +53,20 @@ public class AIChatService {
     @Observed(name = "rag.chat", contextualName = "rag-chat")
     public AIChatResponse chat(AIChatRequest request, boolean includeDiagnostics) {
         List<String> conditions = new java.util.ArrayList<>();
-        if (request.documentType() != null && !request.documentType().isEmpty()) {
-            conditions.add("documentType == '" + request.documentType().replace("'", "''") + "'");
+        String documentType =
+                request.documentType() == null ? null : request.documentType().trim();
+        if (documentType != null && !documentType.isEmpty()) {
+            conditions.add("documentType == '" + documentType.replace("'", "''") + "'");
         }
-        if (request.owner() != null && !request.owner().isEmpty()) {
-            conditions.add("owner == '" + request.owner().replace("'", "''") + "'");
+
+        String owner = request.owner() == null ? null : request.owner().trim();
+        if (owner != null && !owner.isEmpty()) {
+            conditions.add("owner == '" + owner.replace("'", "''") + "'");
         }
-        if (request.category() != null && !request.category().isEmpty()) {
-            conditions.add("category == '" + request.category().replace("'", "''") + "'");
+
+        String category = request.category() == null ? null : request.category().trim();
+        if (category != null && !category.isEmpty()) {
+            conditions.add("category == '" + category.replace("'", "''") + "'");
         }
         String filterExpression = null;
         if (!conditions.isEmpty()) {

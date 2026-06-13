@@ -105,9 +105,14 @@ public class AppConfig {
             VectorStore vectorStore,
             @Value("${rag.retrieval.topK:3}") int topK,
             @Value("${rag.retrieval.similarityThreshold:0.6}") double similarityThreshold,
+            @Value("${rag.retrieval.rerank.enabled:false}") boolean rerankEnabled,
+            @Value("${rag.retrieval.rerank.topK:3}") int rerankTopK,
+            @Value("${rag.cache.enabled:false}") boolean cacheEnabled,
+            org.springframework.beans.factory.ObjectProvider<CacheManager> cacheManagerProvider,
             MeterRegistry meterRegistry) {
         meterRegistry.counter("rag.retrieval.mode.active", "mode", "vector").increment();
-        return query -> {
+
+        DocumentRetriever baseRetriever = query -> {
             SearchRequest req = SearchRequest.builder()
                     .query(query.text())
                     .topK(topK)
@@ -120,6 +125,14 @@ public class AppConfig {
             }
             return vectorStore.similaritySearch(req);
         };
+
+        return applyDecorators(
+                baseRetriever,
+                rerankEnabled,
+                rerankTopK,
+                cacheEnabled,
+                cacheManagerProvider.getIfAvailable(),
+                meterRegistry);
     }
 
     @Bean

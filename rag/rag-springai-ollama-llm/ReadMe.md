@@ -137,7 +137,7 @@ curl -X POST http://localhost:8080/api/ai/chat \
 
 **3. Clear Cache:**
 ```bash
-curl -X DELETE http://localhost:8080/api/ai/cache
+curl -X DELETE http://localhost:8080/api/data/ai/cache
 ```
 
 ---
