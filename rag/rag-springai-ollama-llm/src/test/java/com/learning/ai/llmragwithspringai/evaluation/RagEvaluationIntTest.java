@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@org.junit.jupiter.api.Disabled("Flaky evaluation test due to LLM response variability")
 class RagEvaluationIntTest extends AbstractIntegrationTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RagEvaluationIntTest.class);
