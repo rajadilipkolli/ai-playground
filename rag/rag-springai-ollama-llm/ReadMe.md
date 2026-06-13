@@ -119,8 +119,8 @@ To ensure safe and reliable interactions in the Retrieval-Augmented Generation p
 In the RAG module, SafeGuardAdvisor and SimpleLoggerAdvisor run alongside the RetrievalAugmentationAdvisor to filter bad queries *before* executing expensive vector searches or invoking the LLM.
 
 Configure guardrails in application.properties:
-``properties
+```properties
 guardrails.sensitive-words=politics,religion,violence,hate speech,explicit content
 guardrails.failure-message=I'm sorry, but I cannot assist with that topic. Please ask a question related to customer support.
 guardrails.logging.enabled=true
-``
+```

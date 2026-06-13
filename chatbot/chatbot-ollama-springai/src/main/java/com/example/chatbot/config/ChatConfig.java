@@ -60,7 +60,7 @@ public class ChatConfig {
             advisors.add(new SafeGuardAdvisor(
                     guardrailsProperties.getSensitiveWords(),
                     guardrailsProperties.getFailureMessage(),
-                    Ordered.LOWEST_PRECEDENCE));
+                    Ordered.HIGHEST_PRECEDENCE));
         }
 
         advisors.add(MessageChatMemoryAdvisor.builder(chatMemory).build());

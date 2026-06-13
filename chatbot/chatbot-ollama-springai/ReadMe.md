@@ -137,8 +137,8 @@ To ensure safe and reliable interactions, several guardrails have been implement
 ### Configuration Examples
 
 Configure guardrails in application.properties:
-``properties
+```properties
 guardrails.sensitive-words=politics,religion,violence,hate speech,explicit content
 guardrails.failure-message=I'm sorry, but I cannot assist with that topic. Please ask a question related to customer support.
 guardrails.logging.enabled=true
-``
+```

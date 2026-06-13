@@ -19,6 +19,7 @@ import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.core.Ordered;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -67,7 +68,7 @@ public class AIChatService {
             advisors.add(new SafeGuardAdvisor(
                     guardrailsProperties.getSensitiveWords(),
                     guardrailsProperties.getFailureMessage(),
-                    org.springframework.core.Ordered.LOWEST_PRECEDENCE));
+                    Ordered.HIGHEST_PRECEDENCE));
         }
         advisors.add(advisor);
 
