@@ -115,4 +115,33 @@ class ChatbotOllamaApplicationTests {
                 .then()
                 .statusCode(HttpStatus.SC_NOT_FOUND);
     }
+
+    @Test
+    void whenQueryHasInvalidCharacters_thenReturns400() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("What is this? <script>alert(1)</script>"))
+                .when()
+                .post(
+                        "/api/ai/chat/{conversationId}",
+                        RandomStringUtils.secure().nextAlphabetic(16))
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .body("title", org.hamcrest.Matchers.equalTo("Bad Request"))
+                .body("detail", org.hamcrest.Matchers.containsString("Invalid request content."));
+    }
+
+    @Test
+    void whenQueryHasSensitiveWords_thenReturnsBlockedMessage() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Let's talk about politics and who should win."))
+                .when()
+                .post(
+                        "/api/ai/chat/{conversationId}",
+                        RandomStringUtils.secure().nextAlphabetic(16))
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .body(
+                        "answer",
+                        org.hamcrest.Matchers.containsString("I'm sorry, but I cannot assist with that topic."));
+    }
 }

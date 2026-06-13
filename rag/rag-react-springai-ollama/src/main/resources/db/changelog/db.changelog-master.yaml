@@ -1,0 +1,58 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: ai-assistant
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS vector;
+
+  - changeSet:
+      id: 2
+      author: ai-assistant
+      changes:
+        - createTable:
+            tableName: vector_store
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  defaultValueComputed: uuid_generate_v4()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: content
+                  type: text
+              - column:
+                  name: metadata
+                  type: json
+              - column:
+                  name: embedding
+                  type: vector(1024)
+
+  - changeSet:
+      id: 3
+      author: ai-assistant
+      changes:
+        - addColumn:
+            tableName: vector_store
+            columns:
+              - column:
+                  name: content_tsv
+                  type: tsvector
+        - sql:
+            sql: CREATE INDEX ix_vector_store_content_tsv ON vector_store USING GIN(content_tsv);
+        - sql:
+            sql: >
+              CREATE OR REPLACE FUNCTION vector_store_tsvector_trigger() RETURNS trigger AS $$
+              BEGIN
+                new.content_tsv := to_tsvector('english', coalesce(new.content, ''));
+                RETURN new;
+              END
+              $$ LANGUAGE plpgsql;
+        - sql:
+            sql: >
+              CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE
+              ON vector_store FOR EACH ROW EXECUTE FUNCTION vector_store_tsvector_trigger();

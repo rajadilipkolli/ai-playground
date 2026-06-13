@@ -101,3 +101,26 @@ This module is fully equipped for production observability using the OTLP/Grafan
 ### Testcontainers Support
 This project uses [Testcontainers at development time](https://docs.spring.io/spring-boot/docs/3.2.4/reference/html/features.html#features.testing.testcontainers.at-development-time).
 It automatically spins up the required `pgvector/pgvector:pg18` and Ollama containers without manual orchestration.
+
+### Guardrails Configuration
+
+To ensure safe and reliable interactions in the Retrieval-Augmented Generation pipeline, several guardrails have been implemented:
+
+| Guardrail Type             | Implemented | Rationale                                                                                                           |
+|----------------------------|-------------|---------------------------------------------------------------------------------------------------------------------|
+| Input Validation           | Yes         | Prevents excessively long inputs and invalid characters.                                                            |
+| Sensitive Word Filtering   | Yes         | Blocks queries containing inappropriate words via SafeGuardAdvisor.                                                 |
+| Logging                    | Yes         | Logs prompts and responses via SimpleLoggerAdvisor.                                                                 |
+| System Prompt Constraints  | Yes         | Explicitly instructs the LLM to ignore injections and stay within the customer support domain.                      |
+| Rate Limiting              | No          | Requires separate infrastructure (e.g., Redis rate limiter or API Gateway) which adds complexity to this demo.      |
+| Output Moderation          | No          | Too complex/slow for this basic demonstration, and relies on the LLM's inherent safety training.                    |
+| Prompt Injection Detection | No          | Advanced prompt injection detection is often handled by specialized commercial APIs rather than simple local logic. |
+
+In the RAG module, SafeGuardAdvisor and SimpleLoggerAdvisor run alongside the RetrievalAugmentationAdvisor to filter bad queries *before* executing expensive vector searches or invoking the LLM.
+
+Configure guardrails in application.properties:
+```properties
+guardrails.sensitive-words=politics,religion,violence,hate speech,explicit content
+guardrails.failure-message=I'm sorry, but I cannot assist with that topic. Please ask a question related to customer support.
+guardrails.logging.enabled=true
+```
