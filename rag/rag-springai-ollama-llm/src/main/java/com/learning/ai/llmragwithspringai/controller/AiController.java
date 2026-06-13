@@ -23,7 +23,7 @@ class AiController {
     }
 
     @PostMapping("/chat")
-    AIChatResponse ragService(
+    AIChatResponse chat(
             @RequestBody @Valid AIChatRequest aiChatRequest,
             @RequestParam(defaultValue = "false") boolean includeDiagnostics) {
         return aiChatService.chat(aiChatRequest, includeDiagnostics);

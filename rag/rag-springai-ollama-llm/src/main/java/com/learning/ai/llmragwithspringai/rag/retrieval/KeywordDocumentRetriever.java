@@ -19,6 +19,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class KeywordDocumentRetriever implements DocumentRetriever {
 
     private static final Logger log = LoggerFactory.getLogger(KeywordDocumentRetriever.class);
+    private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
 
     private final JdbcTemplate jdbcTemplate;
     private final int topK;
@@ -67,7 +68,7 @@ public class KeywordDocumentRetriever implements DocumentRetriever {
             Map<String, Object> metadataMap = null;
             if (metadataJson != null && !metadataJson.isBlank()) {
                 try {
-                    metadataMap = jsonMapper.readValue(metadataJson, new TypeReference<Map<String, Object>>() {});
+                    metadataMap = jsonMapper.readValue(metadataJson, MAP_TYPE_REF);
                 } catch (JacksonException e) {
                     log.warn("Failed to parse metadata JSON for document id: {}", id, e);
                 }

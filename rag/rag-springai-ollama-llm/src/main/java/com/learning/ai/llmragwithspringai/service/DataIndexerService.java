@@ -1,5 +1,6 @@
 package com.learning.ai.llmragwithspringai.service;
 
+import com.learning.ai.llmragwithspringai.config.RagIngestionProperties;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
@@ -38,16 +39,19 @@ public class DataIndexerService {
     private final VectorStore vectorStore;
     private final MeterRegistry meterRegistry;
     private final JdbcTemplate jdbcTemplate;
+    private final RagIngestionProperties ragIngestionProperties;
 
     public DataIndexerService(
             TextSplitter tokenTextSplitter,
             VectorStore vectorStore,
             MeterRegistry meterRegistry,
-            JdbcTemplate jdbcTemplate) {
+            JdbcTemplate jdbcTemplate,
+            RagIngestionProperties ragIngestionProperties) {
         this.tokenTextSplitter = tokenTextSplitter;
         this.vectorStore = vectorStore;
         this.meterRegistry = meterRegistry;
         this.jdbcTemplate = jdbcTemplate;
+        this.ragIngestionProperties = ragIngestionProperties;
     }
 
     @Observed(name = "rag.ingest", contextualName = "rag-ingest")
@@ -91,8 +95,10 @@ public class DataIndexerService {
             LOGGER.info("Loading PDF document");
             PdfDocumentReaderConfig pdfDocumentReaderConfig = PdfDocumentReaderConfig.builder()
                     .withPageExtractedTextFormatter(ExtractedTextFormatter.builder()
-                            .withNumberOfBottomTextLinesToDelete(3)
-                            .withNumberOfTopPagesToSkipBeforeDelete(1)
+                            .withNumberOfBottomTextLinesToDelete(
+                                    ragIngestionProperties.getPdf().getBottomLinesToDelete())
+                            .withNumberOfTopPagesToSkipBeforeDelete(
+                                    ragIngestionProperties.getPdf().getTopPagesToSkip())
                             .build())
                     .withPagesPerDocument(1)
                     .build();
@@ -136,7 +142,7 @@ public class DataIndexerService {
             return new IngestionResult(status, filename, docsToIngest.size(), chunksDeleted);
         }
 
-        return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0); // fallback
+        return new IngestionResult(IngestionStatus.UNSUPPORTED_FORMAT, filename, 0, 0); // fallback
     }
 
     private List<String> findDocumentsByContentHash(String hash) {

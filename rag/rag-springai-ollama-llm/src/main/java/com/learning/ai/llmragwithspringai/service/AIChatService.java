@@ -109,7 +109,13 @@ public class AIChatService {
                     .call();
 
             ChatResponse chatResponse = callResponse.chatResponse();
-            String aiResponse = chatResponse.getResult().getOutput().getText();
+            String aiResponse = "I'm sorry, I was unable to generate a response. Please try again.";
+            if (chatResponse != null
+                    && chatResponse.getResult() != null
+                    && chatResponse.getResult().getOutput() != null
+                    && chatResponse.getResult().getOutput().getText() != null) {
+                aiResponse = chatResponse.getResult().getOutput().getText();
+            }
 
             LOGGER.debug("Response received from call: {}", aiResponse);
 

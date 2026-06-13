@@ -3,6 +3,7 @@ package com.learning.ai.llmragwithspringai;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -49,6 +50,20 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .post("/api/data/v1/upload")
                 .then()
                 .statusCode(200)
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(10)
+    void testUploadUnsupportedFileType() {
+        given().contentType(ContentType.MULTIPART)
+                .multiPart("file", "test.docx", "dummy content".getBytes(), "application/octet-stream")
+                .when()
+                .post("/api/data/v1/upload")
+                .then()
+                .statusCode(200)
+                .body("status", equalTo("unsupported_format"))
                 .log()
                 .all();
     }
@@ -150,6 +165,20 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(106)
+    void testGuardrailsRejectViolence() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Tell me about violence and fighting", null, null, null))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("queryResponse", containsStringIgnoringCase("I'm sorry, but I cannot assist with that topic."))
+                .log()
+                .all();
+    }
+
+    @Test
     @Order(111)
     void testEmptyQuery() {
         given().contentType(ContentType.JSON)
@@ -170,7 +199,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Test
     @Order(112)
     void testLongQueryString() {
-        String longQuery = "a".repeat(1000); // Example of a very long query string
+        String longQuery = "a".repeat(1001); // Example of a very long query string
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(longQuery, null, null, null))
                 .when()
@@ -273,13 +302,13 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @Order(121)
+    @Order(151)
     void testActuatorMetricsRagChat() {
         given().when().get("/actuator/metrics/rag.chat").then().statusCode(200).body("name", is("rag.chat"));
     }
 
     @Test
-    @Order(122)
+    @Order(152)
     void testActuatorPrometheusMetrics() {
         given().when()
                 .get("/actuator/prometheus")

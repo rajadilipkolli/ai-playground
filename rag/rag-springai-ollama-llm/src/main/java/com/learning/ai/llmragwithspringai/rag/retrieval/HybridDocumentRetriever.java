@@ -36,13 +36,12 @@ public class HybridDocumentRetriever implements DocumentRetriever {
     @Override
     public List<Document> retrieve(Query query) {
         log.debug("Executing hybrid retrieval for query: {}", query.text());
-
-        String filterContext = FilterContext.getFilterExpression();
+        String capturedFilter = FilterContext.getFilterExpression();
 
         CompletableFuture<List<Document>> vectorFuture = CompletableFuture.supplyAsync(
                         () -> {
                             try {
-                                FilterContext.setFilterExpression(filterContext);
+                                FilterContext.setFilterExpression(capturedFilter);
                                 List<Document> docs = vectorRetriever.retrieve(query);
                                 return docs.stream()
                                         .map(d -> Document.builder()
@@ -66,7 +65,7 @@ public class HybridDocumentRetriever implements DocumentRetriever {
         CompletableFuture<List<Document>> keywordFuture = CompletableFuture.supplyAsync(
                         () -> {
                             try {
-                                FilterContext.setFilterExpression(filterContext);
+                                FilterContext.setFilterExpression(capturedFilter);
                                 List<Document> docs = keywordRetriever.retrieve(query);
                                 return docs.stream()
                                         .map(d -> Document.builder()

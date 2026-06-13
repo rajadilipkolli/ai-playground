@@ -1,7 +1,10 @@
 package com.learning.ai.llmragwithspringai.rag.splitter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -67,12 +70,14 @@ public class SectionTextSplitter extends TextSplitter {
     }
 
     private void processChunk(String chunkText, String sectionTitle, Document originalDoc, List<Document> result) {
+        Map<String, Object> chunkMetadata = new HashMap<>(originalDoc.getMetadata());
+        chunkMetadata.put("section_title", sectionTitle);
+
         Document chunkDoc = Document.builder()
-                .id(originalDoc.getId())
+                .id(UUID.randomUUID().toString())
                 .text(chunkText)
-                .metadata(originalDoc.getMetadata())
+                .metadata(chunkMetadata)
                 .build();
-        chunkDoc.getMetadata().put("section_title", sectionTitle);
 
         List<Document> subChunks = fallbackSplitter.apply(List.of(chunkDoc));
         for (Document subChunk : subChunks) {

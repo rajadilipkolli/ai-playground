@@ -30,9 +30,6 @@ public class CachingDocumentRetriever implements DocumentRetriever {
 
     @Override
     public List<Document> retrieve(Query query) {
-        if (query == null || query.text() == null) {
-            return List.of();
-        }
         String queryText = query.text();
         String filterExp = FilterContext.getFilterExpression() != null ? FilterContext.getFilterExpression() : "";
         String rawKey = queryText + "::" + filterExp;
