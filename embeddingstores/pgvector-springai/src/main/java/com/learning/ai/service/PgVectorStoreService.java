@@ -38,6 +38,12 @@ public class PgVectorStoreService {
             queryBuilder.filterExpression("userId == " + userId);
         }
         List<Document> similarDocuments = vectorStore.similaritySearch(queryBuilder.build());
+
+        if (similarDocuments.isEmpty()) {
+            LOGGER.info("No similar documents found for the question: {}", question);
+            return new AIChatResponse("I don't know the answer to this.");
+        }
+
         String relevantData =
                 similarDocuments.stream().map(Document::getText).collect(Collectors.joining(System.lineSeparator()));
 

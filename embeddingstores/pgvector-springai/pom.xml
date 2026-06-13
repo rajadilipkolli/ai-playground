@@ -112,7 +112,6 @@
                         </palantirJavaFormat>
                         <importOrder />
                         <removeUnusedImports />
-                        <formatAnnotations />
                     </java>
                 </configuration>
                 <executions>
