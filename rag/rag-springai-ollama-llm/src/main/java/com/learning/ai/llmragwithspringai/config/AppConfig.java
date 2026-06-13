@@ -1,5 +1,8 @@
 package com.learning.ai.llmragwithspringai.config;
 
+import com.learning.ai.llmragwithspringai.config.properties.RagCacheProperties;
+import com.learning.ai.llmragwithspringai.config.properties.RagChunkingProperties;
+import com.learning.ai.llmragwithspringai.config.properties.RagRetrievalProperties;
 import com.learning.ai.llmragwithspringai.rag.join.RRFDocumentJoiner;
 import com.learning.ai.llmragwithspringai.rag.postretrieval.RelevanceDocumentReranker;
 import com.learning.ai.llmragwithspringai.rag.postretrieval.RerankingDocumentRetriever;

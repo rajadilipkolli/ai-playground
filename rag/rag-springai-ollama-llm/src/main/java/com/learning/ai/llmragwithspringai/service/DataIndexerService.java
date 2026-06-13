@@ -1,6 +1,6 @@
 package com.learning.ai.llmragwithspringai.service;
 
-import com.learning.ai.llmragwithspringai.config.RagIngestionProperties;
+import com.learning.ai.llmragwithspringai.config.properties.RagIngestionProperties;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;

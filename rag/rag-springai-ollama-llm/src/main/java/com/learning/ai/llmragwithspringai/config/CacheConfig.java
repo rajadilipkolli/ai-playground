@@ -1,6 +1,7 @@
 package com.learning.ai.llmragwithspringai.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.learning.ai.llmragwithspringai.config.properties.RagCacheProperties;
 import java.util.concurrent.TimeUnit;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;

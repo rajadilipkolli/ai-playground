@@ -1,6 +1,6 @@
 package com.learning.ai.llmragwithspringai.service;
 
-import com.learning.ai.llmragwithspringai.config.GuardrailsProperties;
+import com.learning.ai.llmragwithspringai.config.properties.GuardrailsProperties;
 import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
 import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.model.response.RetrievalDiagnostic;

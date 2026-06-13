@@ -1,4 +1,4 @@
-package com.learning.ai.llmragwithspringai.config;
+package com.learning.ai.llmragwithspringai.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
