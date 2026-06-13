@@ -32,16 +32,18 @@ public class CachingDocumentRetriever implements DocumentRetriever {
     public List<Document> retrieve(Query query) {
         String queryText = query.text();
         String filterExp = FilterContext.getFilterExpression() != null ? FilterContext.getFilterExpression() : "";
-        String rawKey = queryText + "::" + filterExp;
-        String cacheKey = ContentHashUtil.getSha256Hash(rawKey);
+        String cacheKey = queryText + "::" + filterExp;
 
         Cache cache = cacheManager.getCache("retrieval-cache");
         if (cache != null) {
             Cache.ValueWrapper wrapper = cache.get(cacheKey);
             if (wrapper != null) {
-                log.debug("Cache hit for query: {}", queryText);
-                hitsCounter.increment();
-                return (List<Document>) wrapper.get();
+                Object cachedValue = wrapper.get();
+                if (cachedValue instanceof List<?> list) {
+                    log.debug("Cache hit for query: {}", queryText);
+                    hitsCounter.increment();
+                    return (List<Document>) list;
+                }
             }
         }
 
