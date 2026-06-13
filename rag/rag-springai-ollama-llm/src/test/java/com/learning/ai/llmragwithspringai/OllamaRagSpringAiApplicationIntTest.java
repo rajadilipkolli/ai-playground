@@ -3,6 +3,7 @@ package com.learning.ai.llmragwithspringai;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -42,10 +43,27 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(1)
     void uploadPdfContent() throws IOException, URISyntaxException {
         given().multiPart("file", getPath("/Rohit_Gurunath_Sharma.pdf").toFile())
+                .queryParam("documentType", "profile")
+                .queryParam("owner", "cricket_board")
+                .queryParam("category", "sports")
                 .when()
                 .post("/api/data/v1/upload")
                 .then()
                 .statusCode(200)
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(10)
+    void testUploadUnsupportedFileType() {
+        given().contentType(ContentType.MULTIPART)
+                .multiPart("file", "test.docx", "dummy content".getBytes(), "application/octet-stream")
+                .when()
+                .post("/api/data/v1/upload")
+                .then()
+                .statusCode(200)
+                .body("status", equalTo("unsupported_format"))
                 .log()
                 .all();
     }
@@ -63,10 +81,22 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(3)
+    void testClearCache() {
+        given().when()
+                .delete("/api/data/v1/cache")
+                .then()
+                .statusCode(200)
+                .body("message", is("Cache cleared successfully"))
+                .log()
+                .all();
+    }
+
+    @Test
     @Order(101)
     void testRag() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Is Rohit Sharma batsman?"))
+                .body(new AIChatRequest("Is Rohit Sharma batsman?", null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -80,7 +110,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(102)
     void testRag2() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Did Rohit Sharma won ICC Mens T20 World Cup 2016 ?"))
+                .body(new AIChatRequest("Did Rohit Sharma won ICC Mens T20 World Cup 2016 ?", null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -94,7 +124,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(103)
     void testRagWithDiagnostics() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Is Rohit Sharma batsman?"))
+                .body(new AIChatRequest("Is Rohit Sharma batsman?", null, null, null))
                 .queryParam("includeDiagnostics", true)
                 .when()
                 .post("/api/ai/chat")
@@ -107,10 +137,52 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(104)
+    void testRagWithMetadataFilter() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Is Rohit Sharma batsman?", "profile", "cricket_board", "sports"))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("queryResponse", containsStringIgnoringCase("yes"))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(105)
+    void testGuardrailsRejectSensitiveQuery() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("What are your thoughts on politics?", null, null, null))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("queryResponse", containsStringIgnoringCase("I'm sorry, but I cannot assist with that topic."))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(106)
+    void testGuardrailsRejectViolence() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("Tell me about violence and fighting", null, null, null))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("queryResponse", containsStringIgnoringCase("I'm sorry, but I cannot assist with that topic."))
+                .log()
+                .all();
+    }
+
+    @Test
     @Order(111)
     void testEmptyQuery() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(""))
+                .body(new AIChatRequest("", null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -127,9 +199,9 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Test
     @Order(112)
     void testLongQueryString() {
-        String longQuery = "a".repeat(1000); // Example of a very long query string
+        String longQuery = "a".repeat(1001); // Example of a very long query string
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(longQuery))
+                .body(new AIChatRequest(longQuery, null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -147,7 +219,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(113)
     void testSpecialCharactersInQuery() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("@#$%^&*()"))
+                .body(new AIChatRequest("@#$%^&*(", null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -230,13 +302,13 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @Order(121)
+    @Order(151)
     void testActuatorMetricsRagChat() {
         given().when().get("/actuator/metrics/rag.chat").then().statusCode(200).body("name", is("rag.chat"));
     }
 
     @Test
-    @Order(122)
+    @Order(152)
     void testActuatorPrometheusMetrics() {
         given().when()
                 .get("/actuator/prometheus")
@@ -244,7 +316,9 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .statusCode(200)
                 .body(containsString("rag_llm_calls_total"))
                 .body(containsString("rag_documents_retrieved_total"))
-                .body(containsString("rag_chat_seconds"));
+                .body(containsString("rag_chat_seconds"))
+                .body(containsString("rag_cache_hits_total"))
+                .body(containsString("rag_cache_misses_total"));
     }
 
     private Path getPath(String fileName) throws URISyntaxException, IOException {

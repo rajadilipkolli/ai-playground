@@ -1,7 +1,8 @@
-package com.learning.ai.llmragwithspringai.config;
+package com.learning.ai.llmragwithspringai.config.properties;
 
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
@@ -10,6 +11,8 @@ public class GuardrailsProperties {
 
     private List<String> sensitiveWords;
     private String failureMessage;
+
+    @NestedConfigurationProperty
     private Logging logging = new Logging();
 
     public List<String> getSensitiveWords() {

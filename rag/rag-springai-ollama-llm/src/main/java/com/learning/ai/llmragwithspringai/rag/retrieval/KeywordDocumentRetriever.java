@@ -7,6 +7,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
+import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.ai.vectorstore.filter.FilterExpressionTextParser;
+import org.springframework.ai.vectorstore.pgvector.PgVectorFilterExpressionConverter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import tools.jackson.core.JacksonException;
@@ -16,6 +19,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class KeywordDocumentRetriever implements DocumentRetriever {
 
     private static final Logger log = LoggerFactory.getLogger(KeywordDocumentRetriever.class);
+    private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
 
     private final JdbcTemplate jdbcTemplate;
     private final int topK;
@@ -32,16 +36,24 @@ public class KeywordDocumentRetriever implements DocumentRetriever {
 
     @Override
     public List<Document> retrieve(Query query) {
-        String sql = """
-            SELECT id, content, metadata, ts_rank(content_tsv, plainto_tsquery('english', ?)) as rank
-            FROM vector_store
-            WHERE content_tsv @@ plainto_tsquery('english', ?)
-            ORDER BY rank DESC
-            LIMIT ?
-            """;
+        String filterString = FilterContext.getFilterExpression();
+        String metadataFilterSql = "";
+        if (filterString != null && !filterString.isBlank()) {
+            FilterExpressionTextParser parser = new FilterExpressionTextParser();
+            Filter.Expression filter = parser.parse(filterString);
+            PgVectorFilterExpressionConverter converter = new PgVectorFilterExpressionConverter();
+            metadataFilterSql = " AND (" + converter.convertExpression(filter) + ")";
+        }
+
+        String sql = "SELECT id, content, metadata, ts_rank(content_tsv, plainto_tsquery('english', ?)) as rank "
+                + "FROM vector_store "
+                + "WHERE content_tsv @@ plainto_tsquery('english', ?) "
+                + metadataFilterSql
+                + " " + "ORDER BY rank DESC "
+                + "LIMIT ?";
 
         String text = query.text();
-        log.debug("Executing keyword search for query: {}, topK: {}", text, topK);
+        log.debug("Executing keyword search for query: {}, topK: {}, filter: {}", text, topK, filterString);
 
         return jdbcTemplate.query(sql, documentRowMapper(), text, text, topK);
     }
@@ -56,7 +68,7 @@ public class KeywordDocumentRetriever implements DocumentRetriever {
             Map<String, Object> metadataMap = null;
             if (metadataJson != null && !metadataJson.isBlank()) {
                 try {
-                    metadataMap = jsonMapper.readValue(metadataJson, new TypeReference<Map<String, Object>>() {});
+                    metadataMap = jsonMapper.readValue(metadataJson, MAP_TYPE_REF);
                 } catch (JacksonException e) {
                     log.warn("Failed to parse metadata JSON for document id: {}", id, e);
                 }

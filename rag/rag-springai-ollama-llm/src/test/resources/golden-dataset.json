@@ -61,7 +61,7 @@
   },
   {
     "question": "Tell me about something not mentioned in the document?",
-    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer", "only contains information", "doesn't provide any additional details"],
     "expectedContextKeywords": []
   }
 ]

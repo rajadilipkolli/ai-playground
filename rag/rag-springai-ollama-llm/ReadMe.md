@@ -1,126 +1,237 @@
-# llm-rag-with-spring-ai-ollama
+# 🤖 RAG Spring AI Ollama LLM
 
-This project implements a Retrieval-Augmented Generation (RAG) architecture using Spring AI 2.x components, PgVector, and Ollama.
+Welcome to the **RAG (Retrieval-Augmented Generation)** application! This project uses **Spring AI**, **Ollama** (for local LLMs), and **PostgreSQL (pgvector)** to intelligently read your documents and answer questions based on them.
 
-## Architecture & Sequence Flow
+---
+
+## 📑 Table of Contents
+1. [Overview](#-overview)
+2. [Architecture Flow](#-architecture-flow)
+3. [Key Features](#-key-features)
+4. [Getting Started](#-getting-started)
+5. [API Reference](#-api-reference)
+6. [Configuration Reference](#-configuration-reference)
+7. [Guardrails](#-guardrails)
+8. [Alternative Approaches](#-alternative-approaches)
+9. [Performance Tuning](#-performance-tuning)
+
+---
+
+## 🌟 Overview
+
+When you ask a generic AI a specific question about your private data, it often doesn't know the answer. This project solves that by **RAG**. 
+1. **Ingestion**: You upload your private documents. The system chops them into bite-sized pieces and saves them in a database.
+2. **Retrieval**: When you ask a question, the system searches the database for the most relevant pieces of information.
+3. **Generation**: It hands those pieces to the AI (Ollama) and says, "Answer the user's question using *only* this information."
+
+---
+
+## 🏗️ Architecture Flow
+
+Here is how data flows through the system, from uploading a document to receiving an AI-generated answer.
 
 ```mermaid
 flowchart TD
-    %% Define Styles / Legend
-    classDef userReq fill:#cc6699,stroke:#555555,stroke-width:2px;
-    classDef coordinator fill:#6688cc,stroke:#555555,stroke-width:2px;
-    classDef searchEngine fill:#66aa66,stroke:#555555,stroke-width:2px;
-    classDef fusion fill:#cc8855,stroke:#555555,stroke-width:2px;
-    classDef llm fill:#aa88cc,stroke:#555555,stroke-width:2px;
+    %% Define Styles
+    classDef userReq fill:#cc6699,stroke:#555555,stroke-width:2px,color:#fff;
+    classDef coordinator fill:#6688cc,stroke:#555555,stroke-width:2px,color:#fff;
+    classDef searchEngine fill:#66aa66,stroke:#555555,stroke-width:2px,color:#fff;
+    classDef fusion fill:#cc8855,stroke:#555555,stroke-width:2px,color:#fff;
+    classDef llm fill:#aa88cc,stroke:#555555,stroke-width:2px,color:#fff;
+    classDef cache fill:#eecc55,stroke:#555555,stroke-width:2px,color:#000;
+    classDef ingestion fill:#44aaaa,stroke:#555555,stroke-width:2px,color:#fff;
 
-    %% Nodes
-    User(["User Query"]):::userReq
+    %% Nodes for Ingestion
+    IngestApi(["Ingestion API<br/><i>Upload with Metadata</i>"]):::userReq
+    DataIndexer["DataIndexerService<br/><i>Enriches Metadata</i>"]:::ingestion
+    Splitter{"SectionTextSplitter<br/><i>Chunking Strategy</i>"}:::ingestion
+    DB[("PgVector Database<br/><i>HNSW Index & tsvector</i>")]:::searchEngine
+
+    %% Nodes for Retrieval
+    User(["User Query + Metadata Filter"]):::userReq
     Advisor["RetrievalAugmentationAdvisor<br/><i>Coordinates the RAG process</i>"]:::coordinator
+    Cache["CachingDocumentRetriever<br/><i>Caffeine Cache Layer</i>"]:::cache
     HybridRetriever["HybridDocumentRetriever<br/><i>Runs searches in parallel</i>"]:::coordinator
     
-    KeywordSearch[("KeywordDocumentRetriever<br/><i>Exact Word Match / Keyword Search</i>")]:::searchEngine
-    VectorSearch[("VectorStoreDocumentRetriever<br/><i>Meaning-based Search / Vector Similarity</i>")]:::searchEngine
+    KeywordSearch[("KeywordDocumentRetriever<br/><i>Keyword Search</i>")]:::searchEngine
+    VectorSearch[("VectorStoreDocumentRetriever<br/><i>Vector Similarity</i>")]:::searchEngine
     
-    Joiner["RRFDocumentJoiner<br/><i>Fuses and ranks results using Reciprocal Rank Fusion</i>"]:::fusion
+    Joiner["RRFDocumentJoiner<br/><i>Reciprocal Rank Fusion</i>"]:::fusion
+    Reranker["RelevanceDocumentReranker<br/><i>Keyword Overlap Reranker</i>"]:::fusion
     
     Ollama["ChatClient<br/><i>Large Language Model (LLM)</i>"]:::llm
-    Response(["Generated Answer"]):::userReq
+    Response(["Generated Answer & Diagnostics"]):::userReq
 
-    %% Flow
-    User -->|1. Asks question| Advisor
-    Advisor -->|2. Requests context| HybridRetriever
+    %% Ingestion Flow
+    IngestApi -->|1. Upload File| DataIndexer
+    DataIndexer -->|2. Hash & Enrich| Splitter
+    Splitter -->|3. Store Chunked Data| DB
     
-    HybridRetriever -->|3a. Search by keywords| KeywordSearch
-    HybridRetriever -->|3b. Search by meaning| VectorSearch
+    %% Retrieval Flow
+    User -->|4. Asks question| Advisor
+    Advisor -->|5. Requests context| Cache
     
-    KeywordSearch -.->|4a. Returns matched docs| Joiner
-    VectorSearch -.->|4b. Returns similar docs| Joiner
+    Cache -- 6a. Cache Hit --> Advisor
+    Cache -->|6b. Cache Miss| HybridRetriever
     
-    Joiner -->|5. Combines and ranks top docs| HybridRetriever
-    HybridRetriever -->|6. Returns fused context| Advisor
+    HybridRetriever -->|7a. Keyword Search| KeywordSearch
+    HybridRetriever -->|7b. Vector Search| VectorSearch
     
-    Advisor -->|7. Sends query + context| Ollama
-    Ollama -->|8. Generates final answer| Response
-
-    %% Legend
-    subgraph Legend [Legend: What do these boxes mean?]
-        L1(["Input/Output"]):::userReq
-        L2["Coordinator/Manager"]:::coordinator
-        L3[("Search Engine/Database")]:::searchEngine
-        L4["Data Fusion/Ranking"]:::fusion
-        L5["AI Model"]:::llm
-    end
+    KeywordSearch -.->|8a. Matched docs| Joiner
+    VectorSearch -.->|8b. Similar docs| Joiner
+    
+    Joiner -->|9. Combines results| Reranker
+    Reranker -->|10. Scores and reranks| HybridRetriever
+    HybridRetriever -->|11. Returns fused context| Cache
+    Cache -.->|12. Stores in cache| Cache
+    Cache -->|13. Returns context| Advisor
+    
+    Advisor -->|14. Sends query + context| Ollama
+    Ollama -->|15. Generates final answer| Response
 ```
 
-## Other Approaches You Could Try (Alternatives Considered)
+---
 
-While the Reciprocal Rank Fusion (RRF) approach implemented above is excellent for combining search results from different algorithms without relying on complex machine learning models, there are other architectural patterns you could consider for your own use case.
+## ✨ Key Features
 
-### 1. SQL-Level Hybrid Fusion
-Instead of performing the keyword search and vector search in two separate queries and merging them in Java (like we do in `RRFDocumentJoiner`), you can write a single, complex PostgreSQL query that calculates both the vector distance and the keyword text-match score, combining them using a mathematical formula directly in the database.
-- **Pros:** Lower network latency since everything happens in one database call. Easier to paginate results.
-- **Cons:** Harder to debug and tune the weights between keyword scores and vector scores.
-- **When to choose:** Consider SQL-level fusion if you need strict pagination over large datasets, require the lowest possible latency, or want to simplify your Java code.
+1. **Hybrid Search**: ON. Combines two types of search: Vector Search (meaning) and Keyword Search (exact words).
+2. **Multi-Stage Retrieval (Reranking)**: ON. The system grabs a bunch of relevant documents, then double-checks and re-scores them via Keyword-overlap reranking.
+3. **Caching Layer**: ON. Retrieves cached context for identical queries, skipping heavy database searches.
+4. **HNSW Indexing**: ON. Uses a highly optimized indexing algorithm in PostgreSQL.
+5. **Section-Aware Chunking**: Available but token-based chunking is the default. Intelligently splits your documents.
+6. **Metadata Filtering**: ON. You can tag uploaded documents and search strictly within those categories.
+7. **Guardrails**: ON. Intercepts queries on restricted topics (politics, violence, etc.) and halts the request gracefully.
 
-### 2. LLM-Based Re-ranking
-After retrieving documents using both keyword and vector searches, you can pass all candidate documents back into a Language Model (LLM) and ask the LLM to score or rank them based on relevance to the user's query. This is often done using a "cross-encoder" (a specialized AI model that evaluates the query and a document *together* to output a highly accurate relevance score).
-- **Pros:** Extremely accurate because it uses deep language understanding to judge relevance.
-- **Cons:** Very slow and computationally expensive. Using an LLM to evaluate 20 documents can take several seconds.
-- **When to choose:** Use this when accuracy is your absolute highest priority, and you are willing to sacrifice response time and compute resources.
+---
 
-### 3. External Re-ranking Services
-Similar to LLM-based re-ranking, but instead of hosting the model yourself, you send the retrieved documents to a dedicated, optimized API (like Cohere Rerank). The API quickly evaluates and re-orders the documents.
-- **Pros:** Very fast and highly accurate. Offloads the heavy computational work to a managed service.
-- **Cons:** Introduces a dependency on an external vendor. Can become expensive at high volumes, and requires sending your internal data to a third party.
-- **When to choose:** Ideal if you want state-of-the-art accuracy without managing complex cross-encoder models yourself, provided your data privacy policies allow using external APIs.
+## 🚀 Getting Started
 
-### 4. Pure BM25 / Keyword-Only Retrieval
-Relying entirely on traditional text search (like PostgreSQL's full-text search) without any vector/semantic search.
-- **Pros:** Extremely fast, cheap to run, and highly predictable. You always know *why* a document matched (it contained the exact word).
-- **Cons:** Cannot understand synonyms or the "meaning" of a query (e.g., searching for "puppy" won't find documents that only say "dog").
-- **When to choose:** Perfect for systems where users search for exact part numbers, specific names, or highly technical jargon where exact matching is strictly preferred over semantic meaning.
+### Prerequisites
+- Java 25+
+- Docker (for Testcontainers)
+- No manual database setup needed
 
-## Configuration
-
-### Document Chunking Strategy
-We use `TokenTextSplitter` configured via properties:
-- `rag.chunking.size=300`: Sets the maximum chunk size constraints.
-- `rag.chunking.minSize=100`: Maintains a minimum chunk size to preserve context boundaries.
-Note: While `nomic-embed-text` supports up to 8192 tokens, chunks between 300-500 tokens generally yield the highest quality semantic retrieval.
-
-### Retrieval Configuration
-- `rag.retrieval.topK=3`: Retrieves the top 3 contextual segments.
-- `rag.retrieval.similarityThreshold=0.6`: Discards segments that do not meet the minimum cosine similarity.
-
-### Observability Setup
-This module is fully equipped for production observability using the OTLP/Grafana LGTM stack:
-- **Micrometer Metrics:** We record custom timers (`rag.retrieval.latency`, `rag.ingestion.latency`) and counters (`rag.llm.calls`, `rag.documents.retrieved`).
-- **Health Indicators:** A custom `PgVectorHealthIndicator` checks vector store connectivity with a 5-second TTL cache to prevent database overload.
-- **Diagnostics API:** Append `?includeDiagnostics=true` to any chat request to view the raw retrieved text chunks and their precise vector similarity distance scores.
-
-### Testcontainers Support
-This project uses [Testcontainers at development time](https://docs.spring.io/spring-boot/docs/3.2.4/reference/html/features.html#features.testing.testcontainers.at-development-time).
-It automatically spins up the required `pgvector/pgvector:pg18` and Ollama containers without manual orchestration.
-
-### Guardrails Configuration
-
-To ensure safe and reliable interactions in the Retrieval-Augmented Generation pipeline, several guardrails have been implemented:
-
-| Guardrail Type             | Implemented | Rationale                                                                                                           |
-|----------------------------|-------------|---------------------------------------------------------------------------------------------------------------------|
-| Input Validation           | Yes         | Prevents excessively long inputs and invalid characters.                                                            |
-| Sensitive Word Filtering   | Yes         | Blocks queries containing inappropriate words via SafeGuardAdvisor.                                                 |
-| Logging                    | Yes         | Logs prompts and responses via SimpleLoggerAdvisor.                                                                 |
-| System Prompt Constraints  | Yes         | Explicitly instructs the LLM to ignore injections and stay within the customer support domain.                      |
-| Rate Limiting              | No          | Requires separate infrastructure (e.g., Redis rate limiter or API Gateway) which adds complexity to this demo.      |
-| Output Moderation          | No          | Too complex/slow for this basic demonstration, and relies on the LLM's inherent safety training.                    |
-| Prompt Injection Detection | No          | Advanced prompt injection detection is often handled by specialized commercial APIs rather than simple local logic. |
-
-In the RAG module, SafeGuardAdvisor and SimpleLoggerAdvisor run alongside the RetrievalAugmentationAdvisor to filter bad queries *before* executing expensive vector searches or invoking the LLM.
-
-Configure guardrails in application.properties:
-```properties
-guardrails.sensitive-words=politics,religion,violence,hate speech,explicit content
-guardrails.failure-message=I'm sorry, but I cannot assist with that topic. Please ask a question related to customer support.
-guardrails.logging.enabled=true
+### Running Locally
+```bash
+./mvnw spring-boot:run
 ```
+Testcontainers automatically spins up PostgreSQL (pgvector) and Ollama.
+
+### Running Tests
+```bash
+./mvnw verify
+```
+
+---
+
+## 📡 API Reference
+
+### Upload Document
+```bash
+curl -X POST -F "file=@manual.pdf" \
+  "http://localhost:8080/api/data/v1/upload?documentType=manual&owner=support&category=hardware"
+```
+Supported formats: `.pdf`, `.txt`, `.json`
+
+### Chat
+```bash
+curl -X POST http://localhost:8080/api/ai/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question": "How to reboot?", "documentType": "manual", "category": "hardware"}'
+```
+
+### Chat with Diagnostics
+```bash
+curl -X POST "http://localhost:8080/api/ai/chat?includeDiagnostics=true" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "How to reboot?"}'
+```
+
+### Clear Cache
+```bash
+curl -X DELETE http://localhost:8080/api/data/v1/cache
+```
+
+### Document Count
+```bash
+curl http://localhost:8080/api/data/v1/count
+```
+
+---
+
+## ⚙️ Configuration Reference
+
+All properties are configured in `application.properties` using `@ConfigurationProperties` binding.
+
+### Retrieval Pipeline (`rag.retrieval.*`)
+
+| Property | Default | Description |
+|---|---|---|
+| `rag.retrieval.mode` | `hybrid` | Retrieval strategy: `vector`, `keyword`, or `hybrid` |
+| `rag.retrieval.top-k` | `3` | Number of documents for vector search |
+| `rag.retrieval.similarity-threshold` | `0.6` | Minimum cosine similarity for vector results |
+| `rag.retrieval.keyword.top-k` | `3` | Number of documents for keyword search |
+| `rag.retrieval.rrf.k` | `60` | RRF constant (higher = more uniform weighting) |
+| `rag.retrieval.hybrid.top-k` | `3` | Final result count after fusion |
+| `rag.retrieval.rerank.enabled` | `true` | Enable keyword-overlap reranking |
+| `rag.retrieval.rerank.top-k` | `3` | Documents to keep after reranking |
+
+### Chunking (`rag.chunking.*`)
+
+| Property | Default | Description |
+|---|---|---|
+| `rag.chunking.strategy` | `token` | `token` or `section` |
+| `rag.chunking.size` | `300` | Max chunk size in tokens |
+| `rag.chunking.min-size` | `100` | Min chunk size in characters |
+| `rag.chunking.section.pattern` | `(^#+\s+.*$)\|(\n\n)` | Regex for section boundaries (when strategy=section) |
+
+### Cache (`rag.cache.*`)
+
+| Property | Default | Description |
+|---|---|---|
+| `rag.cache.enabled` | `true` | Enable Caffeine retrieval cache |
+| `rag.cache.ttl-seconds` | `3600` | Cache entry time-to-live |
+| `rag.cache.max-size` | `1000` | Maximum cache entries |
+
+### Guardrails (`guardrails.*`)
+
+| Property | Default | Description |
+|---|---|---|
+| `guardrails.sensitive-words` | `politics,religion,...` | Comma-separated blocked words |
+| `guardrails.failure-message` | `I'm sorry, but I...` | Response when query is blocked |
+| `guardrails.logging.enabled` | `true` | Enable prompt/response logging |
+
+### Observability
+
+| Property | Default | Description |
+|---|---|---|
+| `management.endpoints.web.exposure.include` | `health,info,metrics,prometheus` | Exposed actuator endpoints |
+| `management.tracing.sampling.probability` | `1.0` | Trace sampling rate |
+
+---
+
+## 🛡️ Guardrails
+
+| Feature | Implemented | Description |
+|---|---|---|
+| Input Validation | Yes | Rejects empty, overly long, or malformed queries. |
+| Sensitive Topic Filtering | Yes | Blocks queries containing defined restricted words (e.g. politics, violence). |
+| PII Redaction | No | Does not yet detect or strip Personally Identifiable Information from inputs. |
+| Output Content Filtering | No | Does not review the LLM's response for safety violations. |
+
+---
+
+## 🧠 Alternative Approaches
+
+1. **SQL-Level Hybrid Fusion:** Write a single, complex PostgreSQL query that calculates both vector distance and keyword text-match score. Great for pagination, but harder to tune.
+2. **LLM-Based Re-ranking:** Pass all candidate documents back into an AI (Cross-Encoder) to accurately score relevance. Extremely accurate but very slow and computationally expensive.
+3. **External Re-ranking Services:** Use an API like Cohere Rerank. Very fast and accurate, but introduces a dependency on an external vendor.
+4. **Pure BM25 / Keyword-Only Retrieval:** Rely entirely on traditional text search. Extremely fast, but cannot understand synonyms or the "meaning" of a query.
+
+---
+
+## 🔧 Performance Tuning
+
+1. **HNSW:** Increase `m` (default 24) and `ef_construction` (default 128) for better recall at the cost of RAM and build time.
+2. **Caching:** Lower `rag.cache.ttl-seconds` for frequently changing data. Cache is auto-cleared on document upload only when the ingestion process completes (the controller clears the cache based on ingestion status).
+3. **Monitoring:** Track `rag.cache.hits`/`misses`, `rag.rerank.latency`, `rag.llm.calls` via `/actuator/metrics`.

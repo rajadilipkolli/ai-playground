@@ -1,36 +1,72 @@
 package com.learning.ai.llmragwithspringai.config;
 
+import com.learning.ai.llmragwithspringai.config.properties.RagCacheProperties;
+import com.learning.ai.llmragwithspringai.config.properties.RagChunkingProperties;
+import com.learning.ai.llmragwithspringai.config.properties.RagRetrievalProperties;
 import com.learning.ai.llmragwithspringai.rag.join.RRFDocumentJoiner;
+import com.learning.ai.llmragwithspringai.rag.postretrieval.RelevanceDocumentReranker;
+import com.learning.ai.llmragwithspringai.rag.postretrieval.RerankingDocumentRetriever;
+import com.learning.ai.llmragwithspringai.rag.retrieval.CachingDocumentRetriever;
+import com.learning.ai.llmragwithspringai.rag.retrieval.FilterContext;
 import com.learning.ai.llmragwithspringai.rag.retrieval.HybridDocumentRetriever;
 import com.learning.ai.llmragwithspringai.rag.retrieval.KeywordDocumentRetriever;
+import com.learning.ai.llmragwithspringai.rag.splitter.SectionTextSplitter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.aop.ObservedAspect;
 import java.util.concurrent.Executor;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
-import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.util.StringUtils;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration(proxyBeanMethods = false)
 public class AppConfig {
 
+    private final RagChunkingProperties chunkingProperties;
+    private final RagRetrievalProperties retrievalProperties;
+    private final RagCacheProperties cacheProperties;
+
+    public AppConfig(
+            RagChunkingProperties chunkingProperties,
+            RagRetrievalProperties retrievalProperties,
+            RagCacheProperties cacheProperties) {
+        this.chunkingProperties = chunkingProperties;
+        this.retrievalProperties = retrievalProperties;
+        this.cacheProperties = cacheProperties;
+    }
+
+    private DocumentRetriever applyDecorators(
+            DocumentRetriever baseRetriever,
+            boolean rerankEnabled,
+            int rerankTopK,
+            boolean cacheEnabled,
+            CacheManager cacheManager,
+            MeterRegistry meterRegistry) {
+        DocumentRetriever retriever = baseRetriever;
+        if (rerankEnabled) {
+            retriever =
+                    new RerankingDocumentRetriever(retriever, new RelevanceDocumentReranker(rerankTopK), meterRegistry);
+        }
+        if (cacheEnabled && cacheManager != null) {
+            retriever = new CachingDocumentRetriever(retriever, cacheManager, meterRegistry);
+        }
+        return retriever;
+    }
+
     @Bean
     ObservedAspect observedAspect(ObservationRegistry observationRegistry) {
         return new ObservedAspect(observationRegistry);
     }
-
-    @Value("${rag.chunking.size:300}")
-    private int chunkSize;
-
-    @Value("${rag.chunking.minSize:100}")
-    private int chunkMinSize;
 
     // Rationale: We use a default chunkSize of 300 to balance context richness and retrieval precision.
     // Nomic-embed-text supports a large context window, but chunks around 300-500 tokens generally yield the best RAG
@@ -39,63 +75,94 @@ public class AppConfig {
     // It does not have a direct 'token overlap' parameter; instead, it uses size constraints
     // and attempts to preserve semantic boundaries (like sentences).
     @Bean
-    TokenTextSplitter tokenTextSplitter() {
-        return TokenTextSplitter.builder()
-                .withChunkSize(chunkSize)
-                .withMinChunkSizeChars(chunkMinSize)
+    TextSplitter textSplitter() {
+
+        TokenTextSplitter tokenSplitter = TokenTextSplitter.builder()
+                .withChunkSize(chunkingProperties.getSize())
+                .withMinChunkSizeChars(chunkingProperties.getMinSize())
                 .build();
+
+        if ("section".equalsIgnoreCase(chunkingProperties.getStrategy())) {
+            return new SectionTextSplitter(chunkingProperties.getSectionPattern(), tokenSplitter);
+        }
+        return tokenSplitter;
     }
 
     @Bean
     @ConditionalOnProperty(name = "rag.retrieval.mode", havingValue = "keyword")
     DocumentRetriever keywordDocumentRetriever(
+            ObjectProvider<CacheManager> cacheManagerProvider,
             JdbcTemplate jdbcTemplate,
-            @Value("${rag.retrieval.keyword.topK:3}") int topK,
             JsonMapper jsonMapper,
             MeterRegistry meterRegistry) {
         meterRegistry.counter("rag.retrieval.mode.active", "mode", "keyword").increment();
-        return new KeywordDocumentRetriever(jdbcTemplate, topK, jsonMapper);
+        return applyDecorators(
+                new KeywordDocumentRetriever(
+                        jdbcTemplate, retrievalProperties.getKeyword().getTopK(), jsonMapper),
+                retrievalProperties.getRerank().isEnabled(),
+                retrievalProperties.getRerank().getTopK(),
+                cacheProperties.isEnabled(),
+                cacheManagerProvider.getIfAvailable(),
+                meterRegistry);
     }
 
     @Bean
     @ConditionalOnProperty(name = "rag.retrieval.mode", havingValue = "vector")
     DocumentRetriever vectorDocumentRetriever(
-            VectorStore vectorStore,
-            @Value("${rag.retrieval.topK:3}") int topK,
-            @Value("${rag.retrieval.similarityThreshold:0.6}") double similarityThreshold,
-            MeterRegistry meterRegistry) {
+            VectorStore vectorStore, ObjectProvider<CacheManager> cacheManagerProvider, MeterRegistry meterRegistry) {
         meterRegistry.counter("rag.retrieval.mode.active", "mode", "vector").increment();
-        return VectorStoreDocumentRetriever.builder()
-                .vectorStore(vectorStore)
-                .topK(topK)
-                .similarityThreshold(similarityThreshold)
-                .build();
+
+        DocumentRetriever baseRetriever = getVectorRetriever(vectorStore);
+
+        return applyDecorators(
+                baseRetriever,
+                retrievalProperties.getRerank().isEnabled(),
+                retrievalProperties.getRerank().getTopK(),
+                cacheProperties.isEnabled(),
+                cacheManagerProvider.getIfAvailable(),
+                meterRegistry);
+    }
+
+    private DocumentRetriever getVectorRetriever(VectorStore vectorStore) {
+        return query -> {
+            SearchRequest req = SearchRequest.builder()
+                    .query(query.text())
+                    .topK(retrievalProperties.getTopK())
+                    .similarityThreshold(retrievalProperties.getSimilarityThreshold())
+                    .build();
+            String filterExp = FilterContext.FILTER_EXPRESSION.orElse("");
+            if (StringUtils.hasText(filterExp)) {
+                req = SearchRequest.from(req).filterExpression(filterExp).build();
+            }
+            return vectorStore.similaritySearch(req);
+        };
     }
 
     @Bean
     @ConditionalOnProperty(name = "rag.retrieval.mode", havingValue = "hybrid", matchIfMissing = true)
     DocumentRetriever hybridDocumentRetriever(
+            org.springframework.beans.factory.ObjectProvider<CacheManager> cacheManagerProvider,
             JdbcTemplate jdbcTemplate,
-            @Value("${rag.retrieval.keyword.topK:3}") int keywordTopK,
             JsonMapper jsonMapper,
             VectorStore vectorStore,
-            @Value("${rag.retrieval.topK:3}") int vectorTopK,
-            @Value("${rag.retrieval.similarityThreshold:0.6}") double similarityThreshold,
-            @Value("${rag.retrieval.rrf.k:60}") int rrfK,
-            @Value("${rag.retrieval.hybrid.topK:3}") int hybridTopK,
             Executor executor,
             MeterRegistry meterRegistry) {
         meterRegistry.counter("rag.retrieval.mode.active", "mode", "hybrid").increment();
 
-        var vectorRetriever = VectorStoreDocumentRetriever.builder()
-                .vectorStore(vectorStore)
-                .topK(vectorTopK)
-                .similarityThreshold(similarityThreshold)
-                .build();
+        DocumentRetriever vectorRetriever = getVectorRetriever(vectorStore);
 
-        var keywordRetriever = new KeywordDocumentRetriever(jdbcTemplate, keywordTopK, jsonMapper);
-        var joiner = new RRFDocumentJoiner(rrfK, hybridTopK);
+        var keywordRetriever = new KeywordDocumentRetriever(
+                jdbcTemplate, retrievalProperties.getKeyword().getTopK(), jsonMapper);
+        var joiner = new RRFDocumentJoiner(
+                retrievalProperties.getRrf().getK(),
+                retrievalProperties.getHybrid().getTopK());
 
-        return new HybridDocumentRetriever(vectorRetriever, keywordRetriever, joiner, executor);
+        return applyDecorators(
+                new HybridDocumentRetriever(vectorRetriever, keywordRetriever, joiner, executor),
+                retrievalProperties.getRerank().isEnabled(),
+                retrievalProperties.getRerank().getTopK(),
+                cacheProperties.isEnabled(),
+                cacheManagerProvider.getIfAvailable(),
+                meterRegistry);
     }
 }

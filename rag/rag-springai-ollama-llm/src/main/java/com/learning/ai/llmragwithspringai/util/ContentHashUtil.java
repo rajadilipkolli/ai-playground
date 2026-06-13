@@ -16,6 +16,16 @@ public class ContentHashUtil {
 
     public record HashResult(String hash, Resource rereadableResource) {}
 
+    public static String getSha256Hash(String text) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hashBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 algorithm not available", e);
+        }
+    }
+
     public static HashResult calculateHash(Resource resource) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

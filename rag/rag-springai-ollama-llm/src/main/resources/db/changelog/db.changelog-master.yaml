@@ -10,7 +10,7 @@ databaseChangeLog:
               CREATE TABLE IF NOT EXISTS vector_store (
                   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
                   content text,
-                  metadata json,
+                  metadata jsonb,
                   embedding vector(768)
               );
               ALTER TABLE vector_store ADD COLUMN IF NOT EXISTS content_tsv tsvector;
@@ -32,3 +32,11 @@ databaseChangeLog:
                   FOR EACH ROW
                   EXECUTE PROCEDURE update_content_tsv();
               UPDATE vector_store SET content_tsv = to_tsvector('english', coalesce(content, '')) WHERE content_tsv IS NULL;
+  - changeSet:
+      id: 2
+      author: ai
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX IF NOT EXISTS vector_store_embedding_hnsw_idx 
+              ON vector_store USING hnsw (embedding vector_cosine_ops) WITH (m = 24, ef_construction = 128);

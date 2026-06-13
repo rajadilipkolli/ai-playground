@@ -1,5 +1,6 @@
 package com.learning.ai.llmragwithspringai.service;
 
+import com.learning.ai.llmragwithspringai.config.properties.RagIngestionProperties;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
@@ -8,7 +9,9 @@ import io.micrometer.observation.annotation.Observed;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +23,7 @@ import org.springframework.ai.reader.JsonReader;
 import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
-import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,25 +36,28 @@ public class DataIndexerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataIndexerService.class);
 
-    private final TokenTextSplitter tokenTextSplitter;
+    private final TextSplitter tokenTextSplitter;
     private final VectorStore vectorStore;
     private final MeterRegistry meterRegistry;
     private final JdbcTemplate jdbcTemplate;
+    private final RagIngestionProperties ragIngestionProperties;
 
     public DataIndexerService(
-            TokenTextSplitter tokenTextSplitter,
+            TextSplitter tokenTextSplitter,
             VectorStore vectorStore,
             MeterRegistry meterRegistry,
-            JdbcTemplate jdbcTemplate) {
+            JdbcTemplate jdbcTemplate,
+            RagIngestionProperties ragIngestionProperties) {
         this.tokenTextSplitter = tokenTextSplitter;
         this.vectorStore = vectorStore;
         this.meterRegistry = meterRegistry;
         this.jdbcTemplate = jdbcTemplate;
+        this.ragIngestionProperties = ragIngestionProperties;
     }
 
     @Observed(name = "rag.ingest", contextualName = "rag-ingest")
     @Transactional
-    public IngestionResult loadData(Resource documentResource) {
+    public IngestionResult loadData(Resource documentResource, String documentType, String owner, String category) {
         String filename = documentResource.getFilename();
         if (filename == null) {
             filename = "unknown";
@@ -63,18 +69,28 @@ public class DataIndexerService {
         String contentHash = hashResult.hash();
         final Resource rereadableResource = hashResult.rereadableResource();
 
-        List<String> existingByHash = findDocumentsByContentHash(contentHash);
-        if (!existingByHash.isEmpty()) {
-            LOGGER.info("Document {} with hash {} already exists. Skipping ingestion.", filename, contentHash);
+        List<String> existingByHashAndScope =
+                findDocumentsByContentHashAndScope(contentHash, documentType, owner, category);
+        if (!existingByHashAndScope.isEmpty()) {
+            LOGGER.info(
+                    "Document {} with hash {} already exists in scope documentType='{}', owner='{}', category='{}'. Skipping ingestion.",
+                    filename,
+                    contentHash,
+                    documentType,
+                    owner,
+                    category);
             return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
         }
 
-        List<String> existingByFilename = findDocumentsByFilename(filename);
+        List<String> existingByFilename = findDocumentsByFilename(filename, documentType, owner, category);
         int chunksDeleted = 0;
         if (!existingByFilename.isEmpty()) {
             LOGGER.info(
-                    "Document {} exists with different hash. Replacing {} old chunks.",
+                    "Document {} exists with different hash for scope documentType='{}', owner='{}', category='{}'. Replacing {} old chunks.",
                     filename,
+                    documentType,
+                    owner,
+                    category,
                     existingByFilename.size());
             vectorStore.delete(existingByFilename);
             chunksDeleted = existingByFilename.size();
@@ -82,20 +98,23 @@ public class DataIndexerService {
 
         String ingestedAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
 
+        String lowerFilename = filename.toLowerCase(Locale.ROOT);
         DocumentReader documentReader = null;
-        if (filename.endsWith(".pdf")) {
+        if (lowerFilename.endsWith(".pdf")) {
             LOGGER.info("Loading PDF document");
             PdfDocumentReaderConfig pdfDocumentReaderConfig = PdfDocumentReaderConfig.builder()
                     .withPageExtractedTextFormatter(ExtractedTextFormatter.builder()
-                            .withNumberOfBottomTextLinesToDelete(3)
-                            .withNumberOfTopPagesToSkipBeforeDelete(1)
+                            .withNumberOfBottomTextLinesToDelete(
+                                    ragIngestionProperties.getPdf().getBottomLinesToDelete())
+                            .withNumberOfTopPagesToSkipBeforeDelete(
+                                    ragIngestionProperties.getPdf().getTopPagesToSkip())
                             .build())
                     .withPagesPerDocument(1)
                     .build();
             documentReader = new PagePdfDocumentReader(rereadableResource, pdfDocumentReaderConfig);
-        } else if (filename.endsWith(".txt")) {
+        } else if (lowerFilename.endsWith(".txt")) {
             documentReader = new TextReader(rereadableResource);
-        } else if (filename.endsWith(".json")) {
+        } else if (lowerFilename.endsWith(".json")) {
             documentReader = new JsonReader(rereadableResource);
         }
 
@@ -110,6 +129,9 @@ public class DataIndexerService {
                     metadata.put("source_filename", finalFilename);
                     metadata.put("content_hash", contentHash);
                     metadata.put("ingested_at", ingestedAt);
+                    if (documentType != null) metadata.put("documentType", documentType);
+                    if (owner != null) metadata.put("owner", owner);
+                    if (category != null) metadata.put("category", category);
                 });
                 return documents;
             };
@@ -129,17 +151,62 @@ public class DataIndexerService {
             return new IngestionResult(status, filename, docsToIngest.size(), chunksDeleted);
         }
 
-        return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0); // fallback
+        return new IngestionResult(IngestionStatus.UNSUPPORTED_FORMAT, filename, 0, 0); // fallback
     }
 
-    private List<String> findDocumentsByContentHash(String hash) {
-        return jdbcTemplate.queryForList(
-                "SELECT id FROM vector_store WHERE metadata->>'content_hash' = ?", String.class, hash);
+    private List<String> findDocumentsByContentHashAndScope(
+            String hash, String documentType, String owner, String category) {
+        String sql = "SELECT id FROM vector_store WHERE metadata->>'content_hash' = ?";
+        if (documentType != null) {
+            sql += " AND metadata->>'documentType' = ?";
+        }
+        if (owner != null) {
+            sql += " AND metadata->>'owner' = ?";
+        }
+        if (category != null) {
+            sql += " AND metadata->>'category' = ?";
+        }
+
+        var args = new ArrayList<Object>();
+        args.add(hash);
+        if (documentType != null) {
+            args.add(documentType);
+        }
+        if (owner != null) {
+            args.add(owner);
+        }
+        if (category != null) {
+            args.add(category);
+        }
+
+        return jdbcTemplate.queryForList(sql, String.class, args.toArray());
     }
 
-    private List<String> findDocumentsByFilename(String filename) {
-        return jdbcTemplate.queryForList(
-                "SELECT id FROM vector_store WHERE metadata->>'source_filename' = ?", String.class, filename);
+    private List<String> findDocumentsByFilename(String filename, String documentType, String owner, String category) {
+        String sql = "SELECT id FROM vector_store WHERE metadata->>'source_filename' = ?";
+        if (documentType != null) {
+            sql += " AND metadata->>'documentType' = ?";
+        }
+        if (owner != null) {
+            sql += " AND metadata->>'owner' = ?";
+        }
+        if (category != null) {
+            sql += " AND metadata->>'category' = ?";
+        }
+
+        var args = new ArrayList<Object>();
+        args.add(filename);
+        if (documentType != null) {
+            args.add(documentType);
+        }
+        if (owner != null) {
+            args.add(owner);
+        }
+        if (category != null) {
+            args.add(category);
+        }
+
+        return jdbcTemplate.queryForList(sql, String.class, args.toArray());
     }
 
     @Observed(name = "rag.count", contextualName = "rag-count")
