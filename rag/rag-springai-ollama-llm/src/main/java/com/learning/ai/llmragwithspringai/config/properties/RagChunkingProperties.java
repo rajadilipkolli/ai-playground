@@ -1,14 +1,20 @@
 package com.learning.ai.llmragwithspringai.config.properties;
 
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Positive;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
 
 @Configuration
 @ConfigurationProperties(prefix = "rag.chunking")
+@Validated
 public class RagChunkingProperties {
 
-    private int size = 300;
-    private int minSize = 100;
+    @Positive(message = "size must be positive") private int size = 300;
+
+    @Positive(message = "minSize must be positive") private int minSize = 100;
+
     private String strategy = "token";
     private String sectionPattern = "(^#+\\s+.*$)|(\\n\\n)";
 
@@ -42,5 +48,9 @@ public class RagChunkingProperties {
 
     public void setSectionPattern(String sectionPattern) {
         this.sectionPattern = sectionPattern;
+    }
+
+    @AssertTrue(message = "size must be greater than or equal to minSize") public boolean isSizeValid() {
+        return size >= minSize;
     }
 }

@@ -122,7 +122,7 @@ public class AIChatService {
             meterRegistry.counter("rag.llm.calls").increment();
 
             List<RetrievalDiagnostic> diagnostics = null;
-            if (includeDiagnostics) {
+            if (includeDiagnostics && chatResponse != null) {
                 // Extract documents from context
                 List<Document> docs = chatResponse.getMetadata().get(RetrievalAugmentationAdvisor.DOCUMENT_CONTEXT);
                 if (docs == null) {

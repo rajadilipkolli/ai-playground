@@ -233,5 +233,5 @@ All properties are configured in `application.properties` using `@ConfigurationP
 ## 🔧 Performance Tuning
 
 1. **HNSW:** Increase `m` (default 24) and `ef_construction` (default 128) for better recall at the cost of RAM and build time.
-2. **Caching:** Lower `rag.cache.ttl-seconds` for frequently changing data. Cache is auto-cleared on document upload.
+2. **Caching:** Lower `rag.cache.ttl-seconds` for frequently changing data. Cache is auto-cleared on document upload only when the ingestion process completes (the controller clears the cache based on ingestion status).
 3. **Monitoring:** Track `rag.cache.hits`/`misses`, `rag.rerank.latency`, `rag.llm.calls` via `/actuator/metrics`.

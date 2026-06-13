@@ -1,12 +1,17 @@
 package com.learning.ai.llmragwithspringai.config.properties;
 
+import jakarta.validation.constraints.Min;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
 
 @Configuration
 @ConfigurationProperties(prefix = "rag.ingestion")
+@Validated
 public class RagIngestionProperties {
 
+    @NestedConfigurationProperty
     private final Pdf pdf = new Pdf();
 
     public Pdf getPdf() {
@@ -14,8 +19,9 @@ public class RagIngestionProperties {
     }
 
     public static class Pdf {
-        private int bottomLinesToDelete = 3;
-        private int topPagesToSkip = 1;
+        @Min(0) private int bottomLinesToDelete = 3;
+
+        @Min(0) private int topPagesToSkip = 1;
 
         public int getBottomLinesToDelete() {
             return bottomLinesToDelete;

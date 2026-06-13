@@ -1,15 +1,20 @@
 package com.learning.ai.llmragwithspringai.config.properties;
 
+import jakarta.validation.constraints.Positive;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
 
 @Configuration
 @ConfigurationProperties(prefix = "rag.cache")
+@Validated
 public class RagCacheProperties {
 
     private boolean enabled = false;
-    private long ttlSeconds = 3600;
-    private long maxSize = 1000;
+
+    @Positive(message = "ttlSeconds must be a positive number") private long ttlSeconds = 3600;
+
+    @Positive(message = "maxSize must be a positive number") private long maxSize = 1000;
 
     public boolean isEnabled() {
         return enabled;

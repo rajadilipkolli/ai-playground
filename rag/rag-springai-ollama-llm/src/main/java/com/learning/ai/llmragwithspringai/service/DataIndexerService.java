@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,9 +69,16 @@ public class DataIndexerService {
         String contentHash = hashResult.hash();
         final Resource rereadableResource = hashResult.rereadableResource();
 
-        List<String> existingByHash = findDocumentsByContentHash(contentHash);
-        if (!existingByHash.isEmpty()) {
-            LOGGER.info("Document {} with hash {} already exists. Skipping ingestion.", filename, contentHash);
+        List<String> existingByHashAndScope =
+                findDocumentsByContentHashAndScope(contentHash, documentType, owner, category);
+        if (!existingByHashAndScope.isEmpty()) {
+            LOGGER.info(
+                    "Document {} with hash {} already exists in scope documentType='{}', owner='{}', category='{}'. Skipping ingestion.",
+                    filename,
+                    contentHash,
+                    documentType,
+                    owner,
+                    category);
             return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
         }
 
@@ -90,8 +98,9 @@ public class DataIndexerService {
 
         String ingestedAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
 
+        String lowerFilename = filename.toLowerCase(Locale.ROOT);
         DocumentReader documentReader = null;
-        if (filename.endsWith(".pdf")) {
+        if (lowerFilename.endsWith(".pdf")) {
             LOGGER.info("Loading PDF document");
             PdfDocumentReaderConfig pdfDocumentReaderConfig = PdfDocumentReaderConfig.builder()
                     .withPageExtractedTextFormatter(ExtractedTextFormatter.builder()
@@ -103,9 +112,9 @@ public class DataIndexerService {
                     .withPagesPerDocument(1)
                     .build();
             documentReader = new PagePdfDocumentReader(rereadableResource, pdfDocumentReaderConfig);
-        } else if (filename.endsWith(".txt")) {
+        } else if (lowerFilename.endsWith(".txt")) {
             documentReader = new TextReader(rereadableResource);
-        } else if (filename.endsWith(".json")) {
+        } else if (lowerFilename.endsWith(".json")) {
             documentReader = new JsonReader(rereadableResource);
         }
 
@@ -145,9 +154,32 @@ public class DataIndexerService {
         return new IngestionResult(IngestionStatus.UNSUPPORTED_FORMAT, filename, 0, 0); // fallback
     }
 
-    private List<String> findDocumentsByContentHash(String hash) {
-        return jdbcTemplate.queryForList(
-                "SELECT id FROM vector_store WHERE metadata->>'content_hash' = ?", String.class, hash);
+    private List<String> findDocumentsByContentHashAndScope(
+            String hash, String documentType, String owner, String category) {
+        String sql = "SELECT id FROM vector_store WHERE metadata->>'content_hash' = ?";
+        if (documentType != null) {
+            sql += " AND metadata->>'documentType' = ?";
+        }
+        if (owner != null) {
+            sql += " AND metadata->>'owner' = ?";
+        }
+        if (category != null) {
+            sql += " AND metadata->>'category' = ?";
+        }
+
+        var args = new ArrayList<Object>();
+        args.add(hash);
+        if (documentType != null) {
+            args.add(documentType);
+        }
+        if (owner != null) {
+            args.add(owner);
+        }
+        if (category != null) {
+            args.add(category);
+        }
+
+        return jdbcTemplate.queryForList(sql, String.class, args.toArray());
     }
 
     private List<String> findDocumentsByFilename(String filename, String documentType, String owner, String category) {

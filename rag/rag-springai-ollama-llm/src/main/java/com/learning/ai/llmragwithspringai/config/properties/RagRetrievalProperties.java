@@ -1,6 +1,7 @@
 package com.learning.ai.llmragwithspringai.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
@@ -11,9 +12,16 @@ public class RagRetrievalProperties {
     private int topK = 3;
     private double similarityThreshold = 0.6;
 
+    @NestedConfigurationProperty
     private Keyword keyword = new Keyword();
+
+    @NestedConfigurationProperty
     private Rrf rrf = new Rrf();
+
+    @NestedConfigurationProperty
     private Hybrid hybrid = new Hybrid();
+
+    @NestedConfigurationProperty
     private Rerank rerank = new Rerank();
 
     public String getMode() {

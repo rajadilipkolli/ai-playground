@@ -42,7 +42,8 @@ class DataIndexController {
         try {
             IngestionResult result =
                     this.dataIndexerService.loadData(multipartFile.getResource(), documentType, owner, category);
-            if (this.cacheManager != null && result.status() != IngestionStatus.SKIPPED_DUPLICATE) {
+            if (this.cacheManager != null
+                    && (result.status() == IngestionStatus.INGESTED || result.status() == IngestionStatus.REPLACED)) {
                 Cache cache = this.cacheManager.getCache("retrieval-cache");
                 if (cache != null) {
                     cache.clear();

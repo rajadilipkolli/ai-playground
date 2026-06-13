@@ -42,7 +42,7 @@ public class KeywordDocumentRetriever implements DocumentRetriever {
             FilterExpressionTextParser parser = new FilterExpressionTextParser();
             Filter.Expression filter = parser.parse(filterString);
             PgVectorFilterExpressionConverter converter = new PgVectorFilterExpressionConverter();
-            metadataFilterSql = " AND " + converter.convertExpression(filter);
+            metadataFilterSql = " AND (" + converter.convertExpression(filter) + ")";
         }
 
         String sql = "SELECT id, content, metadata, ts_rank(content_tsv, plainto_tsquery('english', ?)) as rank "
