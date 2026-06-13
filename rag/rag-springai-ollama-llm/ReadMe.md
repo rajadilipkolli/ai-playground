@@ -6,11 +6,11 @@ Welcome to the **RAG (Retrieval-Augmented Generation)** application! This projec
 
 ## 📑 Table of Contents
 1. [Overview](#-overview)
-2. [Architecture Flow](#-architecture-flow)
-3. [Key Features](#-key-features)
-4. [Example API Usage](#-example-api-usage)
-5. [Configuration & Tuning](#-configuration--tuning)
-6. [Observability & Guardrails](#-observability--guardrails)
+2. [Architecture Flow](`#architecture-flow`)
+3. [Key Features](`#-key-features`)
+4. [Example API Usage](`#-example-api-usage`)
+5. [Configuration & Tuning](`#configuration--tuning`)
+6. [Observability & Guardrails](`#observability--guardrails`)
 7. [Alternative Approaches](#-alternative-approaches)
 
 ---
