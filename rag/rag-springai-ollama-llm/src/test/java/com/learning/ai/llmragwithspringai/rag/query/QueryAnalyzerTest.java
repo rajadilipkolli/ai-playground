@@ -22,8 +22,7 @@ class QueryAnalyzerTest {
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private ChatClient chatClient;
 
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    private JsonMapper jsonMapper;
+    private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
     private QueryAnalyzer queryAnalyzer;
 
