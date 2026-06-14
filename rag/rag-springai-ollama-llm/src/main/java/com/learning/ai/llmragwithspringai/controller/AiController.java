@@ -22,6 +22,10 @@ class AiController {
         this.aiChatService = aiChatService;
     }
 
+    @io.swagger.v3.oas.annotations.Operation(
+            summary = "Chat with AI",
+            description =
+                    "Ask a question and optionally filter the context by category, documentType, owner, or other custom filters mapping.")
     @PostMapping("/chat")
     AIChatResponse chat(
             @RequestBody @Valid AIChatRequest aiChatRequest,

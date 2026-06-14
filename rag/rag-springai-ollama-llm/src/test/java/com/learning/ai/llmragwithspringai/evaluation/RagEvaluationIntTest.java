@@ -3,6 +3,7 @@ package com.learning.ai.llmragwithspringai.evaluation;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
+import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
 import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.model.response.RetrievalDiagnostic;
 import java.util.List;
@@ -47,9 +48,8 @@ class RagEvaluationIntTest extends AbstractIntegrationTest {
         LOGGER.info("Evaluating question: {}", entry.question());
 
         // 1. Invoke RAG Pipeline
-        com.learning.ai.llmragwithspringai.model.request.AIChatRequest req =
-                new com.learning.ai.llmragwithspringai.model.request.AIChatRequest(entry.question(), null, null, null);
-        AIChatResponse chatResponse = aiChatService.chat(req, true);
+        AIChatResponse chatResponse =
+                aiChatService.chat(new AIChatRequest(entry.question(), null, null, null, null), true);
         String responseText = chatResponse.queryResponse();
 
         List<RetrievalDiagnostic> diagnostics = chatResponse.diagnostics();

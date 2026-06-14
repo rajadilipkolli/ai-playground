@@ -2,10 +2,13 @@ package com.learning.ai.llmragwithspringai.config;
 
 import com.learning.ai.llmragwithspringai.config.properties.RagCacheProperties;
 import com.learning.ai.llmragwithspringai.config.properties.RagChunkingProperties;
+import com.learning.ai.llmragwithspringai.config.properties.RagQueryProperties;
 import com.learning.ai.llmragwithspringai.config.properties.RagRetrievalProperties;
 import com.learning.ai.llmragwithspringai.rag.join.RRFDocumentJoiner;
 import com.learning.ai.llmragwithspringai.rag.postretrieval.RelevanceDocumentReranker;
 import com.learning.ai.llmragwithspringai.rag.postretrieval.RerankingDocumentRetriever;
+import com.learning.ai.llmragwithspringai.rag.query.MultiQueryExpander;
+import com.learning.ai.llmragwithspringai.rag.query.QueryAnalyzer;
 import com.learning.ai.llmragwithspringai.rag.retrieval.CachingDocumentRetriever;
 import com.learning.ai.llmragwithspringai.rag.retrieval.FilterContext;
 import com.learning.ai.llmragwithspringai.rag.retrieval.HybridDocumentRetriever;
@@ -15,18 +18,21 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.aop.ObservedAspect;
 import java.util.concurrent.Executor;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.ollama.OllamaChatModel;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.util.StringUtils;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration(proxyBeanMethods = false)
@@ -35,14 +41,17 @@ public class AppConfig {
     private final RagChunkingProperties chunkingProperties;
     private final RagRetrievalProperties retrievalProperties;
     private final RagCacheProperties cacheProperties;
+    private final RagQueryProperties queryProperties;
 
     public AppConfig(
             RagChunkingProperties chunkingProperties,
             RagRetrievalProperties retrievalProperties,
-            RagCacheProperties cacheProperties) {
+            RagCacheProperties cacheProperties,
+            RagQueryProperties queryProperties) {
         this.chunkingProperties = chunkingProperties;
         this.retrievalProperties = retrievalProperties;
         this.cacheProperties = cacheProperties;
+        this.queryProperties = queryProperties;
     }
 
     private DocumentRetriever applyDecorators(
@@ -130,8 +139,8 @@ public class AppConfig {
                     .topK(retrievalProperties.getTopK())
                     .similarityThreshold(retrievalProperties.getSimilarityThreshold())
                     .build();
-            String filterExp = FilterContext.FILTER_EXPRESSION.orElse("");
-            if (StringUtils.hasText(filterExp)) {
+            Filter.Expression filterExp = FilterContext.getFilterExpression();
+            if (filterExp != null) {
                 req = SearchRequest.from(req).filterExpression(filterExp).build();
             }
             return vectorStore.similaritySearch(req);
@@ -164,5 +173,32 @@ public class AppConfig {
                 cacheProperties.isEnabled(),
                 cacheManagerProvider.getIfAvailable(),
                 meterRegistry);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "rag.query.multiquery.enabled", havingValue = "true")
+    MultiQueryExpander multiQueryExpander(ChatClient.Builder chatClientBuilder, OllamaChatModel ollamaChatModel) {
+        return new MultiQueryExpander(queryTaskChatClientBuilder(chatClientBuilder, ollamaChatModel), queryProperties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "rag.query.self-querying-enabled", havingValue = "true")
+    QueryAnalyzer queryAnalyzer(
+            ChatClient.Builder chatClientBuilder, OllamaChatModel ollamaChatModel, JsonMapper jsonMapper) {
+        return new QueryAnalyzer(queryTaskChatClientBuilder(chatClientBuilder, ollamaChatModel), jsonMapper);
+    }
+
+    /**
+     * Returns a {@link ChatClient.Builder} that overrides the Ollama model to
+     * {@code rag.query.model} when that property is set, leaving all other
+     * auto-configured defaults (base URL, timeouts, etc.) untouched.
+     */
+    private ChatClient.Builder queryTaskChatClientBuilder(
+            ChatClient.Builder chatClientBuilder, OllamaChatModel ollamaChatModel) {
+        String queryModel = queryProperties.getModel();
+        if (queryModel != null && !queryModel.isBlank()) {
+            return chatClientBuilder.defaultOptions(OllamaChatOptions.builder().model(queryModel));
+        }
+        return chatClientBuilder;
     }
 }

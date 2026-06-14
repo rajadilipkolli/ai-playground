@@ -2,7 +2,9 @@ package com.learning.ai.llmragwithspringai.rag.retrieval;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.learning.ai.llmragwithspringai.rag.join.RRFDocumentJoiner;
 import java.util.Collections;
@@ -17,6 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
+import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 
 @ExtendWith(MockitoExtension.class)
 class HybridDocumentRetrieverTest {
@@ -51,7 +55,7 @@ class HybridDocumentRetrieverTest {
 
         assertThat(results).containsExactly(joinedDoc);
         verify(documentJoiner).join(argThat(map -> {
-            List<List<Document>> lists = (List<List<Document>>) map.get(query);
+            List<List<Document>> lists = map.get(query);
             return lists.size() == 2;
         }));
     }
@@ -74,7 +78,7 @@ class HybridDocumentRetrieverTest {
 
         assertThat(results).containsExactly(joinedDoc);
         verify(documentJoiner).join(argThat(map -> {
-            List<List<Document>> lists = (List<List<Document>>) map.get(query);
+            List<List<Document>> lists = map.get(query);
             return lists.size() == 1; // only keyword results
         }));
     }
@@ -97,7 +101,7 @@ class HybridDocumentRetrieverTest {
 
         assertThat(results).containsExactly(joinedDoc);
         verify(documentJoiner).join(argThat(map -> {
-            List<List<Document>> lists = (List<List<Document>>) map.get(query);
+            List<List<Document>> lists = map.get(query);
             return lists.size() == 1; // only vector results
         }));
     }
@@ -118,14 +122,14 @@ class HybridDocumentRetrieverTest {
 
         assertThat(results).isEmpty();
         verify(documentJoiner).join(argThat(map -> {
-            List<List<Document>> lists = (List<List<Document>>) map.get(query);
+            List<List<Document>> lists = map.get(query);
             return lists.isEmpty(); // both failed
         }));
     }
 
     @Test
     void shouldPropagateFilterContextToAsyncThreads() {
-        AtomicReference<String> vectorFilter = new AtomicReference<>();
+        AtomicReference<Filter.Expression> vectorFilter = new AtomicReference<>();
         DocumentRetriever customVectorRetriever = q -> {
             vectorFilter.set(FilterContext.getFilterExpression());
             return Collections.emptyList();
@@ -134,9 +138,16 @@ class HybridDocumentRetrieverTest {
         HybridDocumentRetriever retriever =
                 new HybridDocumentRetriever(customVectorRetriever, keywordRetriever, documentJoiner, directExecutor);
 
-        ScopedValue.where(FilterContext.FILTER_EXPRESSION, "test == 'value'").run(() -> {
-            retriever.retrieve(new Query("test"));
-            assertThat(vectorFilter.get()).isEqualTo("test == 'value'");
-        });
+        ScopedValue.where(
+                        FilterContext.FILTER_EXPRESSION,
+                        new FilterExpressionBuilder().eq("test", "value").build())
+                .run(() -> {
+                    retriever.retrieve(new Query("test"));
+                    Filter.Expression expr = vectorFilter.get();
+                    assertThat(expr).isNotNull();
+                    assertThat(expr.type()).isEqualTo(Filter.ExpressionType.EQ);
+                    assertThat(((Filter.Key) expr.left()).key()).isEqualTo("test");
+                    assertThat(((Filter.Value) expr.right()).value()).isEqualTo("value");
+                });
     }
 }
