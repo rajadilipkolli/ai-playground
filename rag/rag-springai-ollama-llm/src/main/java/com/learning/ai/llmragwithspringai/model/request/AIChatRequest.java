@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
+import java.util.Map;
 
 public record AIChatRequest(
         @NotBlank(message = "Query cannot be empty")
@@ -21,5 +22,8 @@ public record AIChatRequest(
 
         @Size(max = 100, message = "Category exceeds maximum length")
         @Pattern(regexp = "^[a-zA-Z0-9_-]*$", message = "Invalid characters in category")
-        String category)
+        String category,
+
+        @Size(max = 10, message = "Too many filters")
+        Map<String, @Size(max = 50) @Pattern(regexp = "^[a-zA-Z0-9_-]*$") String> filters)
         implements Serializable {}

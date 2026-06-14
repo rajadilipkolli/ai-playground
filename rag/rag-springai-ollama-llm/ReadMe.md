@@ -49,7 +49,9 @@ flowchart TD
 
     %% Nodes for Retrieval
     User(["User Query + Metadata Filter"]):::userReq
+    Analyzer["QueryAnalyzer<br/><i>Extracts Filters & Cleans Query</i>"]:::coordinator
     Advisor["RetrievalAugmentationAdvisor<br/><i>Coordinates the RAG process</i>"]:::coordinator
+    MultiQuery["MultiQueryExpander<br/><i>Generates Query Variations</i>"]:::coordinator
     Cache["CachingDocumentRetriever<br/><i>Caffeine Cache Layer</i>"]:::cache
     HybridRetriever["HybridDocumentRetriever<br/><i>Runs searches in parallel</i>"]:::coordinator
     
@@ -68,26 +70,28 @@ flowchart TD
     Splitter -->|3. Store Chunked Data| DB
     
     %% Retrieval Flow
-    User -->|4. Asks question| Advisor
-    Advisor -->|5. Requests context| Cache
+    User -->|4a. Asks question| Analyzer
+    Analyzer -->|4b. Cleans Query & Adds Filters| Advisor
+    Advisor -->|5. Transforms Query| MultiQuery
+    MultiQuery -->|6. Requests context| Cache
     
-    Cache -- 6a. Cache Hit --> Advisor
-    Cache -->|6b. Cache Miss| HybridRetriever
+    Cache -- 7a. Cache Hit --> Advisor
+    Cache -->|7b. Cache Miss| HybridRetriever
     
-    HybridRetriever -->|7a. Keyword Search| KeywordSearch
-    HybridRetriever -->|7b. Vector Search| VectorSearch
+    HybridRetriever -->|8a. Keyword Search| KeywordSearch
+    HybridRetriever -->|8b. Vector Search| VectorSearch
     
-    KeywordSearch -.->|8a. Matched docs| Joiner
-    VectorSearch -.->|8b. Similar docs| Joiner
+    KeywordSearch -.->|9a. Matched docs| Joiner
+    VectorSearch -.->|9b. Similar docs| Joiner
     
-    Joiner -->|9. Combines results| Reranker
-    Reranker -->|10. Scores and reranks| HybridRetriever
-    HybridRetriever -->|11. Returns fused context| Cache
-    Cache -.->|12. Stores in cache| Cache
-    Cache -->|13. Returns context| Advisor
+    Joiner -->|10. Combines results| Reranker
+    Reranker -->|11. Scores and reranks| HybridRetriever
+    HybridRetriever -->|12. Returns fused context| Cache
+    Cache -.->|13. Stores in cache| Cache
+    Cache -->|14. Returns context| Advisor
     
-    Advisor -->|14. Sends query + context| Ollama
-    Ollama -->|15. Generates final answer| Response
+    Advisor -->|15. Sends query + context| Ollama
+    Ollama -->|16. Generates final answer| Response
 ```
 
 ---
@@ -100,7 +104,8 @@ flowchart TD
 4. **HNSW Indexing**: ON. Uses a highly optimized indexing algorithm in PostgreSQL.
 5. **Section-Aware Chunking**: Available but token-based chunking is the default. Intelligently splits your documents.
 6. **Metadata Filtering**: ON. You can tag uploaded documents and search strictly within those categories.
-7. **Guardrails**: ON. Intercepts queries on restricted topics (politics, violence, etc.) and halts the request gracefully.
+7. **Self-Querying**: ON. Automatically analyzes user questions to extract metadata filters (like year, category, document type) before searching.
+8. **Guardrails**: ON. Intercepts queries on restricted topics (politics, violence, etc.) and halts the request gracefully.
 
 ---
 
@@ -192,6 +197,13 @@ All properties are configured in `application.properties` using `@ConfigurationP
 | `rag.cache.enabled` | `true` | Enable Caffeine retrieval cache |
 | `rag.cache.ttl-seconds` | `3600` | Cache entry time-to-live |
 | `rag.cache.max-size` | `1000` | Maximum cache entries |
+
+### Query Transformation (`rag.query.*`)
+
+| Property | Default | Description |
+|---|---|---|
+| `rag.query.multiquery.enabled` | `false` | Enable Multi-Query generation via LLM |
+| `rag.query.multiquery.variations` | `3` | Number of variations to generate |
 
 ### Guardrails (`guardrails.*`)
 

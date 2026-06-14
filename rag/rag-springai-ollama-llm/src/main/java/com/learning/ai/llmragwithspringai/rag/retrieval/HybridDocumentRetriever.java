@@ -36,13 +36,14 @@ public class HybridDocumentRetriever implements DocumentRetriever {
     @Override
     public List<Document> retrieve(Query query) {
         log.debug("Executing hybrid retrieval for query: {}", query.text());
-        final String safeFilter = FilterContext.FILTER_EXPRESSION.orElse("");
+        final org.springframework.ai.vectorstore.filter.Filter.Expression safeFilter =
+                FilterContext.getFilterExpression();
 
         CompletableFuture<List<Document>> vectorFuture = CompletableFuture.supplyAsync(
                         () -> {
                             try {
-                                return ScopedValue.where(FilterContext.FILTER_EXPRESSION, safeFilter)
-                                        .call(() -> {
+                                return executeWithFilter(
+                                        () -> {
                                             List<Document> docs = vectorRetriever.retrieve(query);
                                             return docs.stream()
                                                     .map(d -> Document.builder()
@@ -53,11 +54,12 @@ public class HybridDocumentRetriever implements DocumentRetriever {
                                                             .metadata("retrieval_source", "vector")
                                                             .build())
                                                     .collect(Collectors.toList());
-                                        });
+                                        },
+                                        safeFilter);
                             } catch (RuntimeException | Error e) {
                                 throw e;
-                            } catch (Throwable t) {
-                                throw new RuntimeException(t);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
                             }
                         },
                         executor)
@@ -69,8 +71,8 @@ public class HybridDocumentRetriever implements DocumentRetriever {
         CompletableFuture<List<Document>> keywordFuture = CompletableFuture.supplyAsync(
                         () -> {
                             try {
-                                return ScopedValue.where(FilterContext.FILTER_EXPRESSION, safeFilter)
-                                        .call(() -> {
+                                return executeWithFilter(
+                                        () -> {
                                             List<Document> docs = keywordRetriever.retrieve(query);
                                             return docs.stream()
                                                     .map(d -> Document.builder()
@@ -81,11 +83,12 @@ public class HybridDocumentRetriever implements DocumentRetriever {
                                                             .metadata("retrieval_source", "keyword")
                                                             .build())
                                                     .collect(Collectors.toList());
-                                        });
+                                        },
+                                        safeFilter);
                             } catch (RuntimeException | Error e) {
                                 throw e;
-                            } catch (Throwable t) {
-                                throw new RuntimeException(t);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
                             }
                         },
                         executor)
@@ -111,5 +114,16 @@ public class HybridDocumentRetriever implements DocumentRetriever {
         joinerInput.put(query, allDocs);
 
         return documentJoiner.join(joinerInput);
+    }
+
+    private List<Document> executeWithFilter(
+            java.util.concurrent.Callable<List<Document>> task,
+            org.springframework.ai.vectorstore.filter.Filter.Expression filter)
+            throws Exception {
+        if (filter != null) {
+            return ScopedValue.where(FilterContext.FILTER_EXPRESSION, filter).call(() -> task.call());
+        } else {
+            return task.call();
+        }
     }
 }

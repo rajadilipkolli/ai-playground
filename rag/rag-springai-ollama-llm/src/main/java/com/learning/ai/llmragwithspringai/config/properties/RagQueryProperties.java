@@ -1,0 +1,66 @@
+package com.learning.ai.llmragwithspringai.config.properties;
+
+import jakarta.validation.Valid;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
+
+@Validated
+@Configuration
+@ConfigurationProperties(prefix = "rag.query")
+public class RagQueryProperties {
+
+    private boolean selfQueryingEnabled = false;
+
+    private String model;
+
+    @Valid
+    @NestedConfigurationProperty
+    private MultiQuery multiquery = new MultiQuery();
+
+    public boolean isSelfQueryingEnabled() {
+        return selfQueryingEnabled;
+    }
+
+    public void setSelfQueryingEnabled(boolean selfQueryingEnabled) {
+        this.selfQueryingEnabled = selfQueryingEnabled;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public MultiQuery getMultiquery() {
+        return multiquery;
+    }
+
+    public void setMultiquery(MultiQuery multiquery) {
+        this.multiquery = multiquery;
+    }
+
+    public static class MultiQuery {
+        private boolean enabled = false;
+        private int variations = 3;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getVariations() {
+            return variations;
+        }
+
+        public void setVariations(int variations) {
+            this.variations = variations;
+        }
+    }
+}
