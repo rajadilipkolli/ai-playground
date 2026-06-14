@@ -2,10 +2,13 @@ package com.learning.ai.llmragwithspringai.util;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 
 public class FilterExpressionBuilderUtil {
+
+    private static final Pattern VALID_KEY_PATTERN = Pattern.compile("^\\w+$");
 
     /**
      * Builds a filter expression from a map of filter key/value pairs.
@@ -21,11 +24,15 @@ public class FilterExpressionBuilderUtil {
         FilterExpressionBuilder.Op expression = null;
 
         for (Map.Entry<String, Object> entry : filters.entrySet()) {
-            String value = toStringValue(entry.getValue());
-            if (value == null || value.isBlank()) {
+            String key = entry.getKey();
+            if (key == null || key.isBlank() || !VALID_KEY_PATTERN.matcher(key).matches()) {
                 continue;
             }
-            FilterExpressionBuilder.Op eq = b.eq(entry.getKey(), value);
+            Object value = unwrapValue(entry.getValue());
+            if (value == null || (value instanceof String str && str.isBlank())) {
+                continue;
+            }
+            FilterExpressionBuilder.Op eq = b.eq(key, value);
             if (expression == null) {
                 expression = eq;
             } else {
@@ -36,14 +43,17 @@ public class FilterExpressionBuilderUtil {
         return expression == null ? null : expression.build();
     }
 
-    /** Converts a filter value to a String, unwrapping single-element collections. */
-    private static String toStringValue(Object value) {
+    /** Unwraps single-element collections, preserving original types (e.g. Number, Boolean). */
+    private static Object unwrapValue(Object value) {
         if (value == null) {
             return null;
         }
         if (value instanceof Collection<?> col) {
-            return col.isEmpty() ? null : col.iterator().next().toString();
+            if (col.isEmpty()) {
+                return null;
+            }
+            return col.iterator().next();
         }
-        return value.toString();
+        return value;
     }
 }

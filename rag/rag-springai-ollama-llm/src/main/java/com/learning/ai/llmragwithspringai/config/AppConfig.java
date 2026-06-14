@@ -177,7 +177,7 @@ public class AppConfig {
 
     @Bean
     @ConditionalOnProperty(name = "rag.query.multiquery.enabled", havingValue = "true")
-    MultiQueryExpander MultiQueryExpander(ChatClient.Builder chatClientBuilder, OllamaChatModel ollamaChatModel) {
+    MultiQueryExpander multiQueryExpander(ChatClient.Builder chatClientBuilder, OllamaChatModel ollamaChatModel) {
         return new MultiQueryExpander(queryTaskChatClientBuilder(chatClientBuilder, ollamaChatModel), queryProperties);
     }
 
@@ -197,9 +197,7 @@ public class AppConfig {
             ChatClient.Builder chatClientBuilder, OllamaChatModel ollamaChatModel) {
         String queryModel = queryProperties.getModel();
         if (queryModel != null && !queryModel.isBlank()) {
-            OllamaChatOptions.Builder optionsBuilder =
-                    OllamaChatOptions.builder().model(queryModel);
-            return ChatClient.builder(ollamaChatModel).defaultOptions(optionsBuilder);
+            return chatClientBuilder.defaultOptions(OllamaChatOptions.builder().model(queryModel));
         }
         return chatClientBuilder;
     }

@@ -1,6 +1,7 @@
 package com.learning.ai.llmragwithspringai.config.properties;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Configuration;
@@ -45,6 +46,8 @@ public class RagQueryProperties {
 
     public static class MultiQuery {
         private boolean enabled = false;
+
+        @Min(value = 1, message = "rag.query.multiquery.variations must be >= 1")
         private int variations = 3;
 
         public boolean isEnabled() {

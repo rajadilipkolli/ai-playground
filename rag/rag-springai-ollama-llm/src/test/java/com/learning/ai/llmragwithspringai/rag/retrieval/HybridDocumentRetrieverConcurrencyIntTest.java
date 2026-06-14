@@ -34,32 +34,37 @@ class HybridDocumentRetrieverConcurrencyIntTest extends AbstractIntegrationTest 
     void shouldHandleConcurrentRequestsWithoutExceptions() throws Exception {
         int numConcurrentRequests = 50;
         ExecutorService executorService = Executors.newFixedThreadPool(10);
-        List<CompletableFuture<AIChatResponse>> futures = new ArrayList<>();
+        try {
+            List<CompletableFuture<AIChatResponse>> futures = new ArrayList<>();
 
-        for (int i = 0; i < numConcurrentRequests; i++) {
-            CompletableFuture<AIChatResponse> future = CompletableFuture.supplyAsync(
-                    () -> {
-                        AIChatRequest request =
-                                new AIChatRequest("Who is Rohit Sharma?", null, "cricket_board", "sports", null);
-                        return aiChatService.chat(request, false);
-                    },
-                    executorService);
-            futures.add(future);
+            for (int i = 0; i < numConcurrentRequests; i++) {
+                CompletableFuture<AIChatResponse> future = CompletableFuture.supplyAsync(
+                        () -> {
+                            AIChatRequest request =
+                                    new AIChatRequest("Who is Rohit Sharma?", null, "cricket_board", "sports", null);
+                            return aiChatService.chat(request, false);
+                        },
+                        executorService);
+                futures.add(future);
+            }
+
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            // Allow up to 15 minutes for 50 requests if they process sequentially
+            // depending on Ollama container specs.
+            allFutures.get(15, TimeUnit.MINUTES);
+
+            for (CompletableFuture<AIChatResponse> future : futures) {
+                AIChatResponse response = future.getNow(null);
+
+                // Assert all requests complete without exceptions
+                assertThat(response).isNotNull();
+                assertThat(response.queryResponse()).isNotBlank();
+            }
+        } finally {
+            executorService.shutdownNow();
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
         }
-
-        CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-        // Allow up to 15 minutes for 50 requests if they process sequentially
-        // depending on Ollama container specs.
-        allFutures.get(15, TimeUnit.MINUTES);
-
-        for (CompletableFuture<AIChatResponse> future : futures) {
-            AIChatResponse response = future.join();
-
-            // Assert all requests complete without exceptions
-            assertThat(response).isNotNull();
-            assertThat(response.queryResponse()).isNotBlank();
-        }
-
-        executorService.shutdown();
     }
 }

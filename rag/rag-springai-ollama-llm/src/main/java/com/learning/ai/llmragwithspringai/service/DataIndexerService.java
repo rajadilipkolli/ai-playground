@@ -6,13 +6,11 @@ import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.annotation.Observed;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -136,7 +134,20 @@ public class DataIndexerService {
                 return documents;
             };
 
-            List<Document> docsToIngest = metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get()));
+            List<Document> docsToIngest = metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get())).stream()
+                    .map(d -> {
+                        String deterministicId = UUID.nameUUIDFromBytes(
+                                        (contentHash + d.getText()).getBytes(StandardCharsets.UTF_8))
+                                .toString();
+                        return Document.builder()
+                                .id(deterministicId)
+                                .text(d.getText())
+                                .metadata(d.getMetadata())
+                                .media(d.getMedia())
+                                .build();
+                    })
+                    .toList();
+
             vectorStore.accept(docsToIngest);
 
             stopWatch.stop();

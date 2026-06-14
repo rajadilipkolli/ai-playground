@@ -143,7 +143,11 @@ class HybridDocumentRetrieverTest {
                         new FilterExpressionBuilder().eq("test", "value").build())
                 .run(() -> {
                     retriever.retrieve(new Query("test"));
-                    assertThat(vectorFilter.get().toString()).contains("test");
+                    Filter.Expression expr = vectorFilter.get();
+                    assertThat(expr).isNotNull();
+                    assertThat(expr.type()).isEqualTo(Filter.ExpressionType.EQ);
+                    assertThat(((Filter.Key) expr.left()).key()).isEqualTo("test");
+                    assertThat(((Filter.Value) expr.right()).value()).isEqualTo("value");
                 });
     }
 }

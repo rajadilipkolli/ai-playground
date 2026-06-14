@@ -3,11 +3,15 @@ package com.learning.ai.llmragwithspringai.rag.query;
 import com.learning.ai.llmragwithspringai.config.properties.RagQueryProperties;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.preretrieval.query.expansion.QueryExpander;
 
 public class MultiQueryExpander implements QueryExpander {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MultiQueryExpander.class);
 
     private final ChatClient chatClient;
     private final RagQueryProperties queryProperties;
@@ -32,22 +36,27 @@ public class MultiQueryExpander implements QueryExpander {
                 Original question: %s
                 """, variationsCount, query.text());
 
-        String response = chatClient.prompt().user(prompt).call().content();
-
         List<Query> queries = new ArrayList<>();
         // Always include the original query
         queries.add(query);
-
-        if (response != null && !response.isBlank()) {
-            String[] generatedQueries = response.split("\\r?\\n");
-            for (String generated : generatedQueries) {
-                String cleanQuery = generated.trim();
-                // Basic cleanup of list artifacts like "1. ", "- ", etc.
-                cleanQuery = cleanQuery.replaceAll("^(?:\\d+\\.|[-*])\\s+", "");
-                if (!cleanQuery.isBlank() && !cleanQuery.equals(query.text())) {
-                    queries.add(new Query(cleanQuery));
+        String response;
+        try {
+            response = chatClient.prompt().user(prompt).call().content();
+            if (response != null && !response.isBlank()) {
+                String[] generatedQueries = response.split("\\r?\\n");
+                for (String generated : generatedQueries) {
+                    String cleanQuery = generated.trim();
+                    // Basic cleanup of list artifacts like "1. ", "- ", etc.
+                    cleanQuery = cleanQuery.replaceAll("^(?:\\d+\\.|[-*])\\s+", "");
+                    if (!cleanQuery.isBlank() && !cleanQuery.equals(query.text())) {
+                        queries.add(new Query(cleanQuery));
+                    }
                 }
             }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to expand query, falling back to original query: {}", e.getMessage());
+            queries.clear();
+            queries.add(query);
         }
 
         return queries;

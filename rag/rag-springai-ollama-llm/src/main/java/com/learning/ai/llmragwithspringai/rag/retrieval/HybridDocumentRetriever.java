@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
+import org.springframework.ai.vectorstore.filter.Filter;
 
 public class HybridDocumentRetriever implements DocumentRetriever {
 
@@ -116,12 +118,9 @@ public class HybridDocumentRetriever implements DocumentRetriever {
         return documentJoiner.join(joinerInput);
     }
 
-    private List<Document> executeWithFilter(
-            java.util.concurrent.Callable<List<Document>> task,
-            org.springframework.ai.vectorstore.filter.Filter.Expression filter)
-            throws Exception {
+    private List<Document> executeWithFilter(Callable<List<Document>> task, Filter.Expression filter) throws Exception {
         if (filter != null) {
-            return ScopedValue.where(FilterContext.FILTER_EXPRESSION, filter).call(() -> task.call());
+            return ScopedValue.where(FilterContext.FILTER_EXPRESSION, filter).call(task::call);
         } else {
             return task.call();
         }

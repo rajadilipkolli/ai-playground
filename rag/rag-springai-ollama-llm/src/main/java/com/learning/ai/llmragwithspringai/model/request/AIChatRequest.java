@@ -25,5 +25,8 @@ public record AIChatRequest(
         String category,
 
         @Size(max = 10, message = "Too many filters")
-        Map<String, @Size(max = 50) @Pattern(regexp = "^[a-zA-Z0-9_-]*$") String> filters)
+        Map<
+                        @Size(max = 50) @Pattern(regexp = "^[a-zA-Z0-9_-]*$") String,
+                        @Size(max = 50) @Pattern(regexp = "^[a-zA-Z0-9_-]*$") String>
+                filters)
         implements Serializable {}

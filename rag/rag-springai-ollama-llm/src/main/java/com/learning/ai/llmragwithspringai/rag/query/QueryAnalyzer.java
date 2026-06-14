@@ -42,8 +42,13 @@ public class QueryAnalyzer {
                 No markdown, no code fences, no extra text. Only the raw JSON object.
                 """;
 
-        String rawResponse =
-                chatClient.prompt().system(prompt).user(query).call().content();
+        String rawResponse;
+        try {
+            rawResponse = chatClient.prompt().system(prompt).user(query).call().content();
+        } catch (Exception e) {
+            LOGGER.warn("Query analysis failed, falling back to original query: {}", e.getMessage());
+            return new QueryAnalysisResult(query, Map.of());
+        }
         LOGGER.debug("Raw QueryAnalyzer response: {}", rawResponse);
         return parse(rawResponse, query);
     }
@@ -115,9 +120,10 @@ public class QueryAnalyzer {
         if (result == null) {
             return new QueryAnalysisResult(originalQuery, Map.of());
         }
-        if (result.cleanedQuery() == null || result.cleanedQuery().isBlank()) {
-            return new QueryAnalysisResult(originalQuery, result.filters() != null ? result.filters() : Map.of());
-        }
-        return result;
+        String cleaned = (result.cleanedQuery() == null || result.cleanedQuery().isBlank())
+                ? originalQuery
+                : result.cleanedQuery();
+        Map<String, Object> filters = result.filters() != null ? result.filters() : Map.of();
+        return new QueryAnalysisResult(cleaned, filters);
     }
 }

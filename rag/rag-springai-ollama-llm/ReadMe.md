@@ -170,66 +170,68 @@ All properties are configured in `application.properties` using `@ConfigurationP
 
 ### Retrieval Pipeline (`rag.retrieval.*`)
 
-| Property | Default | Description |
-|---|---|---|
-| `rag.retrieval.mode` | `hybrid` | Retrieval strategy: `vector`, `keyword`, or `hybrid` |
-| `rag.retrieval.top-k` | `3` | Number of documents for vector search |
-| `rag.retrieval.similarity-threshold` | `0.6` | Minimum cosine similarity for vector results |
-| `rag.retrieval.keyword.top-k` | `3` | Number of documents for keyword search |
-| `rag.retrieval.rrf.k` | `60` | RRF constant (higher = more uniform weighting) |
-| `rag.retrieval.hybrid.top-k` | `3` | Final result count after fusion |
-| `rag.retrieval.rerank.enabled` | `true` | Enable keyword-overlap reranking |
-| `rag.retrieval.rerank.top-k` | `3` | Documents to keep after reranking |
+| Property                             | Default  | Description                                          |
+|--------------------------------------|----------|------------------------------------------------------|
+| `rag.retrieval.mode`                 | `hybrid` | Retrieval strategy: `vector`, `keyword`, or `hybrid` |
+| `rag.retrieval.top-k`                | `3`      | Number of documents for vector search                |
+| `rag.retrieval.similarity-threshold` | `0.6`    | Minimum cosine similarity for vector results         |
+| `rag.retrieval.keyword.top-k`        | `3`      | Number of documents for keyword search               |
+| `rag.retrieval.rrf.k`                | `60`     | RRF constant (higher = more uniform weighting)       |
+| `rag.retrieval.hybrid.top-k`         | `3`      | Final result count after fusion                      |
+| `rag.retrieval.rerank.enabled`       | `true`   | Enable keyword-overlap reranking                     |
+| `rag.retrieval.rerank.top-k`         | `3`      | Documents to keep after reranking                    |
 
 ### Chunking (`rag.chunking.*`)
 
-| Property | Default | Description |
-|---|---|---|
-| `rag.chunking.strategy` | `token` | `token` or `section` |
-| `rag.chunking.size` | `300` | Max chunk size in tokens |
-| `rag.chunking.min-size` | `100` | Min chunk size in characters |
+| Property                       | Default               | Description                                          |
+|--------------------------------|-----------------------|------------------------------------------------------|
+| `rag.chunking.strategy`        | `token`               | `token` or `section`                                 |
+| `rag.chunking.size`            | `300`                 | Max chunk size in tokens                             |
+| `rag.chunking.min-size`        | `100`                 | Min chunk size in characters                         |
 | `rag.chunking.section.pattern` | `(^#+\s+.*$)\|(\n\n)` | Regex for section boundaries (when strategy=section) |
 
 ### Cache (`rag.cache.*`)
 
-| Property | Default | Description |
-|---|---|---|
-| `rag.cache.enabled` | `true` | Enable Caffeine retrieval cache |
-| `rag.cache.ttl-seconds` | `3600` | Cache entry time-to-live |
-| `rag.cache.max-size` | `1000` | Maximum cache entries |
+| Property                | Default | Description                     |
+|-------------------------|---------|---------------------------------|
+| `rag.cache.enabled`     | `true`  | Enable Caffeine retrieval cache |
+| `rag.cache.ttl-seconds` | `3600`  | Cache entry time-to-live        |
+| `rag.cache.max-size`    | `1000`  | Maximum cache entries           |
 
 ### Query Transformation (`rag.query.*`)
 
-| Property | Default | Description |
-|---|---|---|
-| `rag.query.multiquery.enabled` | `false` | Enable Multi-Query generation via LLM |
-| `rag.query.multiquery.variations` | `3` | Number of variations to generate |
+| Property                          | Default | Description                                                 |
+|-----------------------------------|---------|-------------------------------------------------------------|
+| `rag.query.multiquery.enabled`    | `false` | Enable Multi-Query generation via LLM                       |
+| `rag.query.multiquery.variations` | `3`     | Number of variations to generate                            |
+| `rag.query.self-querying-enabled` | `false` | Enable Self-Querying / QueryAnalyzer feature                |
+| `rag.query.model`                 | `null`  | Optional override for the LLM used in query transformations |
 
 ### Guardrails (`guardrails.*`)
 
-| Property | Default | Description |
-|---|---|---|
-| `guardrails.sensitive-words` | `politics,religion,...` | Comma-separated blocked words |
-| `guardrails.failure-message` | `I'm sorry, but I...` | Response when query is blocked |
-| `guardrails.logging.enabled` | `true` | Enable prompt/response logging |
+| Property                     | Default                 | Description                    |
+|------------------------------|-------------------------|--------------------------------|
+| `guardrails.sensitive-words` | `politics,religion,...` | Comma-separated blocked words  |
+| `guardrails.failure-message` | `I'm sorry, but I...`   | Response when query is blocked |
+| `guardrails.logging.enabled` | `true`                  | Enable prompt/response logging |
 
 ### Observability
 
-| Property | Default | Description |
-|---|---|---|
+| Property                                    | Default                          | Description                |
+|---------------------------------------------|----------------------------------|----------------------------|
 | `management.endpoints.web.exposure.include` | `health,info,metrics,prometheus` | Exposed actuator endpoints |
-| `management.tracing.sampling.probability` | `1.0` | Trace sampling rate |
+| `management.tracing.sampling.probability`   | `1.0`                            | Trace sampling rate        |
 
 ---
 
 ## 🛡️ Guardrails
 
-| Feature | Implemented | Description |
-|---|---|---|
-| Input Validation | Yes | Rejects empty, overly long, or malformed queries. |
-| Sensitive Topic Filtering | Yes | Blocks queries containing defined restricted words (e.g. politics, violence). |
-| PII Redaction | No | Does not yet detect or strip Personally Identifiable Information from inputs. |
-| Output Content Filtering | No | Does not review the LLM's response for safety violations. |
+| Feature                   | Implemented | Description                                                                   |
+|---------------------------|-------------|-------------------------------------------------------------------------------|
+| Input Validation          | Yes         | Rejects empty, overly long, or malformed queries.                             |
+| Sensitive Topic Filtering | Yes         | Blocks queries containing defined restricted words (e.g. politics, violence). |
+| PII Redaction             | No          | Does not yet detect or strip Personally Identifiable Information from inputs. |
+| Output Content Filtering  | No          | Does not review the LLM's response for safety violations.                     |
 
 ---
 

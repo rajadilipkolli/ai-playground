@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
+import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.ai.vectorstore.pgvector.PgVectorFilterExpressionConverter;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
@@ -30,8 +32,12 @@ public class CachingDocumentRetriever implements DocumentRetriever {
 
     @Override
     public List<Document> retrieve(Query query) {
-        org.springframework.ai.vectorstore.filter.Filter.Expression filter = FilterContext.getFilterExpression();
-        String filterString = filter != null ? filter.toString() : "";
+        Filter.Expression filter = FilterContext.getFilterExpression();
+        String filterString = "";
+        if (filter != null) {
+            PgVectorFilterExpressionConverter converter = new PgVectorFilterExpressionConverter();
+            filterString = converter.convertExpression(filter);
+        }
         String rawKey = "query:" + query.text() + "|filter:" + filterString;
         String cacheKey = ContentHashUtil.getSha256Hash(rawKey);
 
