@@ -2,6 +2,7 @@ package com.learning.ai.llmragwithspringai.evaluation;
 
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -26,7 +27,7 @@ public class ContextRecallEvaluator implements Evaluator {
     }
 
     @Override
-    public EvaluationResponse evaluate(EvaluationRequest request) {
+    public EvaluationResponse evaluate(@NonNull EvaluationRequest request) {
         String groundTruth = null;
         if (request instanceof RagasEvaluationRequest r) {
             groundTruth = r.getGroundTruthAnswer();
@@ -65,6 +66,9 @@ public class ContextRecallEvaluator implements Evaluator {
                 .call()
                 .content();
 
+        if (jsonResponse == null || jsonResponse.isBlank()) {
+            return new EvaluationResponse(false, 0.0f, "Context Recall", Map.of());
+        }
         long trueCount = countOccurrences(jsonResponse.toLowerCase(), "true");
         long falseCount = countOccurrences(jsonResponse.toLowerCase(), "false");
         long totalStatements = trueCount + falseCount;

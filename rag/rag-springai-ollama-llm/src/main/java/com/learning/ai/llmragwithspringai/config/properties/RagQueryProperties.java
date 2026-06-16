@@ -2,6 +2,7 @@ package com.learning.ai.llmragwithspringai.config.properties;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,7 @@ public class RagQueryProperties {
 
     private boolean selfQueryingEnabled = false;
 
+    @Nullable
     private String model;
 
     @Valid
@@ -28,11 +30,11 @@ public class RagQueryProperties {
         this.selfQueryingEnabled = selfQueryingEnabled;
     }
 
-    public String getModel() {
+    public @Nullable String getModel() {
         return model;
     }
 
-    public void setModel(String model) {
+    public void setModel(@Nullable String model) {
         this.model = model;
     }
 

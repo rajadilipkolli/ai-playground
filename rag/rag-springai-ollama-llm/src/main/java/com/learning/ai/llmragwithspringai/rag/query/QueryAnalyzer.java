@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -107,7 +108,7 @@ public class QueryAnalyzer {
     }
 
     /** Returns the substring between the first '{' and the matching last '}', or {@code null}. */
-    private static String extractJsonBlock(String text) {
+    private @Nullable String extractJsonBlock(String text) {
         int start = text.indexOf('{');
         int end = text.lastIndexOf('}');
         if (start != -1 && end > start) {
@@ -116,13 +117,11 @@ public class QueryAnalyzer {
         return null;
     }
 
-    private static QueryAnalysisResult withFallbackQuery(QueryAnalysisResult result, String originalQuery) {
+    private QueryAnalysisResult withFallbackQuery(@Nullable QueryAnalysisResult result, String originalQuery) {
         if (result == null) {
             return new QueryAnalysisResult(originalQuery, Map.of());
         }
-        String cleaned = (result.cleanedQuery() == null || result.cleanedQuery().isBlank())
-                ? originalQuery
-                : result.cleanedQuery();
+        String cleaned = result.cleanedQuery().isBlank() ? originalQuery : result.cleanedQuery();
         Map<String, Object> filters = result.filters() != null ? result.filters() : Map.of();
         return new QueryAnalysisResult(cleaned, filters);
     }

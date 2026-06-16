@@ -2,6 +2,7 @@ package com.learning.ai.llmragwithspringai.evaluation;
 
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -26,16 +27,14 @@ public class FaithfulnessEvaluator implements Evaluator {
     }
 
     @Override
-    public EvaluationResponse evaluate(EvaluationRequest request) {
+    public EvaluationResponse evaluate(@NonNull EvaluationRequest request) {
         String answer = "";
         if (request instanceof RagasEvaluationRequest r) {
             answer = r.getAnswer();
         }
         List<Document> contextDocs = request.getDataList();
-        String context = contextDocs == null
-                ? ""
-                : String.join(
-                        "\n\n", contextDocs.stream().map(Document::getText).toList());
+        String context =
+                String.join("\n\n", contextDocs.stream().map(Document::getText).toList());
 
         String prompt = """
                 You are an expert evaluator. Your task is to evaluate the faithfulness of an answer given a context.
@@ -59,6 +58,9 @@ public class FaithfulnessEvaluator implements Evaluator {
                 .call()
                 .content();
 
+        if (jsonResponse == null || jsonResponse.isBlank()) {
+            return new EvaluationResponse(false, 0.0f, "Faithfulness", Map.of());
+        }
         long trueCount = countOccurrences(jsonResponse.toLowerCase(), "true");
         long falseCount = countOccurrences(jsonResponse.toLowerCase(), "false");
         long totalClaims = trueCount + falseCount;

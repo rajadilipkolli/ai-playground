@@ -36,7 +36,7 @@ public class RelevanceDocumentReranker {
         List<Document> rerankedDocs = new ArrayList<>();
 
         for (Document doc : documents) {
-            String docText = doc.getText().toLowerCase();
+            String docText = doc.getText() != null ? doc.getText().toLowerCase() : "";
             Set<String> docTokens = new HashSet<>(Arrays.asList(docText.split("\\W+")));
             docTokens.remove("");
 

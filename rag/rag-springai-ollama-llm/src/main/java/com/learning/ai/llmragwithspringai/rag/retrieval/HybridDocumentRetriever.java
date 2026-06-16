@@ -9,6 +9,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -36,7 +37,7 @@ public class HybridDocumentRetriever implements DocumentRetriever {
     }
 
     @Override
-    public List<Document> retrieve(Query query) {
+    public List<Document> retrieve(@NonNull Query query) {
         log.debug("Executing hybrid retrieval for query: {}", query.text());
         final Filter.Expression safeFilter = FilterContext.getFilterExpression();
 
@@ -104,10 +105,10 @@ public class HybridDocumentRetriever implements DocumentRetriever {
         log.debug("Retrieved {} vector docs and {} keyword docs", vectorDocs.size(), keywordDocs.size());
 
         List<List<Document>> allDocs = new ArrayList<>();
-        if (vectorDocs != null && !vectorDocs.isEmpty()) {
+        if (!vectorDocs.isEmpty()) {
             allDocs.add(vectorDocs);
         }
-        if (keywordDocs != null && !keywordDocs.isEmpty()) {
+        if (!keywordDocs.isEmpty()) {
             allDocs.add(keywordDocs);
         }
 

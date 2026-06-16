@@ -2,6 +2,7 @@ package com.learning.ai.llmragwithspringai.rag.retrieval;
 
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -17,6 +18,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 public class KeywordDocumentRetriever implements DocumentRetriever {
 
+    private static final PgVectorFilterExpressionConverter VECTOR_FILTER_EXPRESSION_CONVERTER =
+            new PgVectorFilterExpressionConverter();
     private static final Logger log = LoggerFactory.getLogger(KeywordDocumentRetriever.class);
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
 
@@ -34,20 +37,17 @@ public class KeywordDocumentRetriever implements DocumentRetriever {
     }
 
     @Override
-    public List<Document> retrieve(Query query) {
+    public List<Document> retrieve(@NonNull Query query) {
         Filter.Expression filter = FilterContext.getFilterExpression();
         String metadataFilterSql = "";
         if (filter != null) {
-            PgVectorFilterExpressionConverter converter = new PgVectorFilterExpressionConverter();
-            metadataFilterSql = " AND (" + converter.convertExpression(filter) + ")";
+            metadataFilterSql = " AND (" + VECTOR_FILTER_EXPRESSION_CONVERTER.convertExpression(filter) + ")";
         }
 
-        String sql = "SELECT id, content, metadata, ts_rank(content_tsv, plainto_tsquery('english', ?)) as rank "
-                + "FROM vector_store "
-                + "WHERE content_tsv @@ plainto_tsquery('english', ?) "
-                + metadataFilterSql
-                + " " + "ORDER BY rank DESC "
-                + "LIMIT ?";
+        String sql = """
+                    SELECT id, content, metadata, ts_rank(content_tsv, plainto_tsquery('english', ?)) as rank
+                    FROM vector_store WHERE content_tsv @@ plainto_tsquery('english', ?) %s ORDER BY rank DESC LIMIT ?
+                    """.formatted(metadataFilterSql);
 
         String text = query.text();
         log.debug("Executing keyword search for query: {}, topK: {}, filter: {}", text, topK, filter);
