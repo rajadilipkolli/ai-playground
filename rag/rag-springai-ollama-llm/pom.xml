@@ -19,7 +19,7 @@
         <spring-ai.version>2.0.0</spring-ai.version>
         <datasource-micrometer.version>2.2.1</datasource-micrometer.version>
         <otelInstrumentation.version>2.10.0-alpha</otelInstrumentation.version>
-        <spotless.version>3.6.0</spotless.version>
+        <spotless.version>3.7.0</spotless.version>
     </properties>
 
     <dependencies>
