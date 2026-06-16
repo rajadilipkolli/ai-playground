@@ -197,7 +197,8 @@ public class AppConfig {
             ChatClient.Builder chatClientBuilder, OllamaChatModel ollamaChatModel) {
         String queryModel = queryProperties.getModel();
         if (queryModel != null && !queryModel.isBlank()) {
-            return chatClientBuilder.defaultOptions(OllamaChatOptions.builder().model(queryModel));
+            OllamaChatOptions defaultOptions = ollamaChatModel.getOptions();
+            return chatClientBuilder.defaultOptions(defaultOptions.mutate().model(queryModel));
         }
         return chatClientBuilder;
     }

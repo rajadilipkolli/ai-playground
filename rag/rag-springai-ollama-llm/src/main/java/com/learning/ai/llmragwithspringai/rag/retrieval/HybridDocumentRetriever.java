@@ -38,8 +38,7 @@ public class HybridDocumentRetriever implements DocumentRetriever {
     @Override
     public List<Document> retrieve(Query query) {
         log.debug("Executing hybrid retrieval for query: {}", query.text());
-        final org.springframework.ai.vectorstore.filter.Filter.Expression safeFilter =
-                FilterContext.getFilterExpression();
+        final Filter.Expression safeFilter = FilterContext.getFilterExpression();
 
         CompletableFuture<List<Document>> vectorFuture = CompletableFuture.supplyAsync(
                         () -> {

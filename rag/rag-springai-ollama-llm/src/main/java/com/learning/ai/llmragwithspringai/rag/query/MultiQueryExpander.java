@@ -2,7 +2,9 @@ package com.learning.ai.llmragwithspringai.rag.query;
 
 import com.learning.ai.llmragwithspringai.config.properties.RagQueryProperties;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -37,8 +39,11 @@ public class MultiQueryExpander implements QueryExpander {
                 """, variationsCount, query.text());
 
         List<Query> queries = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
         // Always include the original query
         queries.add(query);
+        seen.add(query.text().toLowerCase());
+
         String response;
         try {
             response = chatClient.prompt().user(prompt).call().content();
@@ -48,7 +53,7 @@ public class MultiQueryExpander implements QueryExpander {
                     String cleanQuery = generated.trim();
                     // Basic cleanup of list artifacts like "1. ", "- ", etc.
                     cleanQuery = cleanQuery.replaceAll("^(?:\\d+\\.|[-*])\\s+", "");
-                    if (!cleanQuery.isBlank() && !cleanQuery.equals(query.text())) {
+                    if (!cleanQuery.isBlank() && seen.add(cleanQuery.toLowerCase())) {
                         queries.add(new Query(cleanQuery));
                     }
                 }

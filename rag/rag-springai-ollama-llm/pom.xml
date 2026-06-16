@@ -215,6 +215,7 @@
                         <exclude>**/*IntTest*</exclude>
                         <exclude>**/*IntegrationTest*</exclude>
                     </excludes>
+                    <excludedGroups>${test.excludedTags}</excludedGroups>
                 </configuration>
             </plugin>
             <plugin>
@@ -231,6 +232,7 @@
                     </includes>
                     <parallel>classes</parallel>
                     <threadCount>4</threadCount>
+                    <excludedGroups>${test.excludedTags}</excludedGroups>
                 </configuration>
                 <executions>
                     <execution>
@@ -293,5 +295,24 @@
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
+
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <test.excludedTags>performance</test.excludedTags>
+            </properties>
+        </profile>
+        <profile>
+            <id>full</id>
+            <properties>
+                <!-- Run all tests including performance tests -->
+                <test.excludedTags>none</test.excludedTags>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

@@ -12,12 +12,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("performance")
 class HybridDocumentRetrieverConcurrencyIntTest extends AbstractIntegrationTest {
 
     @Value("classpath:Rohit_Gurunath_Sharma.pdf")

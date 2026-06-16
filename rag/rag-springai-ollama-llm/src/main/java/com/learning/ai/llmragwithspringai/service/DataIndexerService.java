@@ -10,7 +10,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -148,7 +152,12 @@ public class DataIndexerService {
                     })
                     .toList();
 
-            vectorStore.accept(docsToIngest);
+            try {
+                vectorStore.accept(docsToIngest);
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                LOGGER.warn("Concurrent insertion detected for document {}, skipping ingestion.", filename);
+                return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
+            }
 
             stopWatch.stop();
             LOGGER.info(
@@ -178,7 +187,7 @@ public class DataIndexerService {
             sql += " AND metadata->>'category' = ?";
         }
 
-        var args = new ArrayList<Object>();
+        var args = new ArrayList<String>();
         args.add(hash);
         if (documentType != null) {
             args.add(documentType);
@@ -205,7 +214,7 @@ public class DataIndexerService {
             sql += " AND metadata->>'category' = ?";
         }
 
-        var args = new ArrayList<Object>();
+        var args = new ArrayList<String>();
         args.add(filename);
         if (documentType != null) {
             args.add(documentType);
