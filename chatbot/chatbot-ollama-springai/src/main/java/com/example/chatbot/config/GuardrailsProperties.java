@@ -1,4 +1,4 @@
-package com.learning.ai.llmragwithspringai.config.properties;
+package com.example.chatbot.config;
 
 import java.util.ArrayList;
 import java.util.List;
