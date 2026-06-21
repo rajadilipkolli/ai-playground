@@ -103,6 +103,11 @@
             <artifactId>opentelemetry-logback-appender-1.0</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api-incubator</artifactId>
+            <version>1.62.0-alpha</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -215,6 +220,7 @@
                         <exclude>**/*IntTest*</exclude>
                         <exclude>**/*IntegrationTest*</exclude>
                     </excludes>
+                    <excludedGroups>${test.excludedTags}</excludedGroups>
                 </configuration>
             </plugin>
             <plugin>
@@ -229,6 +235,7 @@
                         <include>**/*IntTest*</include>
                         <include>**/*IntegrationTest*</include>
                     </includes>
+                    <excludedGroups>${test.excludedTags}</excludedGroups>
                 </configuration>
                 <executions>
                     <execution>
@@ -291,5 +298,24 @@
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
+
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <test.excludedTags>performance</test.excludedTags>
+            </properties>
+        </profile>
+        <profile>
+            <id>full</id>
+            <properties>
+                <!-- Run all tests including performance tests -->
+                <test.excludedTags>none</test.excludedTags>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

@@ -49,9 +49,19 @@ class CachingDocumentRetrieverTest {
 
         when(delegate.retrieve(any())).thenReturn(docs1, docs2);
 
-        ScopedValue.where(FilterContext.FILTER_EXPRESSION, "type == 'A'").run(() -> retriever.retrieve(query));
+        ScopedValue.where(
+                        FilterContext.FILTER_EXPRESSION,
+                        new org.springframework.ai.vectorstore.filter.FilterExpressionBuilder()
+                                .eq("type", "A")
+                                .build())
+                .run(() -> retriever.retrieve(query));
 
-        ScopedValue.where(FilterContext.FILTER_EXPRESSION, "type == 'B'").run(() -> retriever.retrieve(query));
+        ScopedValue.where(
+                        FilterContext.FILTER_EXPRESSION,
+                        new org.springframework.ai.vectorstore.filter.FilterExpressionBuilder()
+                                .eq("type", "B")
+                                .build())
+                .run(() -> retriever.retrieve(query));
 
         verify(delegate, times(2)).retrieve(any());
     }

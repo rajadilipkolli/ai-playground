@@ -41,7 +41,7 @@ class RelevanceDocumentRerankerTest {
         List<Document> result = reranker.rerank(List.of(doc1), new Query("test"));
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getMetadata()).containsKey("rerank_score");
-        assertThat((Double) result.get(0).getMetadata().get("rerank_score")).isGreaterThan(0.0);
+        assertThat(result.getFirst().getMetadata()).containsKey("rerank_score");
+        assertThat((Double) result.getFirst().getMetadata().get("rerank_score")).isGreaterThan(0.0);
     }
 }

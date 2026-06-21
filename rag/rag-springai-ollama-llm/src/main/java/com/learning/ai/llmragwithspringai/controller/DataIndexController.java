@@ -4,6 +4,7 @@ import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.service.DataIndexerService;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -22,7 +23,7 @@ class DataIndexController {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataIndexController.class);
 
     private final DataIndexerService dataIndexerService;
-    private final CacheManager cacheManager;
+    private final @Nullable CacheManager cacheManager;
 
     public DataIndexController(
             DataIndexerService dataIndexerService, ObjectProvider<CacheManager> cacheManagerProvider) {

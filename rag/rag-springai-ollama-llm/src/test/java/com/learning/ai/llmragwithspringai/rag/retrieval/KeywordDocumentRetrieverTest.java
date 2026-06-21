@@ -58,9 +58,14 @@ class KeywordDocumentRetrieverTest {
                     return List.of(mockDoc);
                 });
 
-        ScopedValue.where(FilterContext.FILTER_EXPRESSION, "category == 'tech'").run(() -> {
-            List<Document> results = retriever.retrieve(query);
-            assertThat(results).hasSize(1);
-        });
+        ScopedValue.where(
+                        FilterContext.FILTER_EXPRESSION,
+                        new org.springframework.ai.vectorstore.filter.FilterExpressionBuilder()
+                                .eq("category", "tech")
+                                .build())
+                .run(() -> {
+                    List<Document> results = retriever.retrieve(query);
+                    assertThat(results).hasSize(1);
+                });
     }
 }

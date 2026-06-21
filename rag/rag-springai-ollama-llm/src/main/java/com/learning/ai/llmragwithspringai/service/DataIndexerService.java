@@ -6,6 +6,7 @@ import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.annotation.Observed;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -26,9 +28,11 @@ import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.StopWatch;
 
 @Service
@@ -136,8 +140,28 @@ public class DataIndexerService {
                 return documents;
             };
 
-            List<Document> docsToIngest = metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get()));
-            vectorStore.accept(docsToIngest);
+            List<Document> docsToIngest = metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get())).stream()
+                    .map(d -> {
+                        String deterministicId = UUID.nameUUIDFromBytes(
+                                        (contentHash + d.getText()).getBytes(StandardCharsets.UTF_8))
+                                .toString();
+                        return Document.builder()
+                                .id(deterministicId)
+                                .text(d.getText())
+                                .metadata(d.getMetadata())
+                                .media(d.getMedia())
+                                .build();
+                    })
+                    .toList();
+
+            try {
+                vectorStore.accept(docsToIngest);
+            } catch (DuplicateKeyException e) {
+                LOGGER.warn("Concurrent insertion detected for document {}, skipping ingestion.", filename);
+                // Roll back to restore any deleted chunks
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
+            }
 
             stopWatch.stop();
             LOGGER.info(
@@ -167,7 +191,7 @@ public class DataIndexerService {
             sql += " AND metadata->>'category' = ?";
         }
 
-        var args = new ArrayList<Object>();
+        var args = new ArrayList<String>();
         args.add(hash);
         if (documentType != null) {
             args.add(documentType);
@@ -194,7 +218,7 @@ public class DataIndexerService {
             sql += " AND metadata->>'category' = ?";
         }
 
-        var args = new ArrayList<Object>();
+        var args = new ArrayList<String>();
         args.add(filename);
         if (documentType != null) {
             args.add(documentType);

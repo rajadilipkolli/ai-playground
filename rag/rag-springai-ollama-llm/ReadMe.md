@@ -49,7 +49,9 @@ flowchart TD
 
     %% Nodes for Retrieval
     User(["User Query + Metadata Filter"]):::userReq
+    Analyzer["QueryAnalyzer<br/><i>Extracts Filters & Cleans Query</i>"]:::coordinator
     Advisor["RetrievalAugmentationAdvisor<br/><i>Coordinates the RAG process</i>"]:::coordinator
+    MultiQuery["MultiQueryExpander<br/><i>Generates Query Variations</i>"]:::coordinator
     Cache["CachingDocumentRetriever<br/><i>Caffeine Cache Layer</i>"]:::cache
     HybridRetriever["HybridDocumentRetriever<br/><i>Runs searches in parallel</i>"]:::coordinator
     
@@ -68,26 +70,28 @@ flowchart TD
     Splitter -->|3. Store Chunked Data| DB
     
     %% Retrieval Flow
-    User -->|4. Asks question| Advisor
-    Advisor -->|5. Requests context| Cache
+    User -->|4a. Asks question| Analyzer
+    Analyzer -->|4b. Cleans Query & Adds Filters| Advisor
+    Advisor -->|5. Transforms Query| MultiQuery
+    MultiQuery -->|6. Requests context| Cache
     
-    Cache -- 6a. Cache Hit --> Advisor
-    Cache -->|6b. Cache Miss| HybridRetriever
+    Cache -- 7a. Cache Hit --> Advisor
+    Cache -->|7b. Cache Miss| HybridRetriever
     
-    HybridRetriever -->|7a. Keyword Search| KeywordSearch
-    HybridRetriever -->|7b. Vector Search| VectorSearch
+    HybridRetriever -->|8a. Keyword Search| KeywordSearch
+    HybridRetriever -->|8b. Vector Search| VectorSearch
     
-    KeywordSearch -.->|8a. Matched docs| Joiner
-    VectorSearch -.->|8b. Similar docs| Joiner
+    KeywordSearch -.->|9a. Matched docs| Joiner
+    VectorSearch -.->|9b. Similar docs| Joiner
     
-    Joiner -->|9. Combines results| Reranker
-    Reranker -->|10. Scores and reranks| HybridRetriever
-    HybridRetriever -->|11. Returns fused context| Cache
-    Cache -.->|12. Stores in cache| Cache
-    Cache -->|13. Returns context| Advisor
+    Joiner -->|10. Combines results| Reranker
+    Reranker -->|11. Scores and reranks| HybridRetriever
+    HybridRetriever -->|12. Returns fused context| Cache
+    Cache -.->|13. Stores in cache| Cache
+    Cache -->|14. Returns context| Advisor
     
-    Advisor -->|14. Sends query + context| Ollama
-    Ollama -->|15. Generates final answer| Response
+    Advisor -->|15. Sends query + context| Ollama
+    Ollama -->|16. Generates final answer| Response
 ```
 
 ---
@@ -100,7 +104,8 @@ flowchart TD
 4. **HNSW Indexing**: ON. Uses a highly optimized indexing algorithm in PostgreSQL.
 5. **Section-Aware Chunking**: Available but token-based chunking is the default. Intelligently splits your documents.
 6. **Metadata Filtering**: ON. You can tag uploaded documents and search strictly within those categories.
-7. **Guardrails**: ON. Intercepts queries on restricted topics (politics, violence, etc.) and halts the request gracefully.
+7. **Self-Querying**: ON. Automatically analyzes user questions to extract metadata filters (like year, category, document type) before searching.
+8. **Guardrails**: ON. Intercepts queries on restricted topics (politics, violence, etc.) and halts the request gracefully.
 
 ---
 
@@ -165,59 +170,68 @@ All properties are configured in `application.properties` using `@ConfigurationP
 
 ### Retrieval Pipeline (`rag.retrieval.*`)
 
-| Property | Default | Description |
-|---|---|---|
-| `rag.retrieval.mode` | `hybrid` | Retrieval strategy: `vector`, `keyword`, or `hybrid` |
-| `rag.retrieval.top-k` | `3` | Number of documents for vector search |
-| `rag.retrieval.similarity-threshold` | `0.6` | Minimum cosine similarity for vector results |
-| `rag.retrieval.keyword.top-k` | `3` | Number of documents for keyword search |
-| `rag.retrieval.rrf.k` | `60` | RRF constant (higher = more uniform weighting) |
-| `rag.retrieval.hybrid.top-k` | `3` | Final result count after fusion |
-| `rag.retrieval.rerank.enabled` | `true` | Enable keyword-overlap reranking |
-| `rag.retrieval.rerank.top-k` | `3` | Documents to keep after reranking |
+| Property                             | Default  | Description                                          |
+|--------------------------------------|----------|------------------------------------------------------|
+| `rag.retrieval.mode`                 | `hybrid` | Retrieval strategy: `vector`, `keyword`, or `hybrid` |
+| `rag.retrieval.top-k`                | `3`      | Number of documents for vector search                |
+| `rag.retrieval.similarity-threshold` | `0.6`    | Minimum cosine similarity for vector results         |
+| `rag.retrieval.keyword.top-k`        | `3`      | Number of documents for keyword search               |
+| `rag.retrieval.rrf.k`                | `60`     | RRF constant (higher = more uniform weighting)       |
+| `rag.retrieval.hybrid.top-k`         | `3`      | Final result count after fusion                      |
+| `rag.retrieval.rerank.enabled`       | `true`   | Enable keyword-overlap reranking                     |
+| `rag.retrieval.rerank.top-k`         | `3`      | Documents to keep after reranking                    |
 
 ### Chunking (`rag.chunking.*`)
 
-| Property | Default | Description |
-|---|---|---|
-| `rag.chunking.strategy` | `token` | `token` or `section` |
-| `rag.chunking.size` | `300` | Max chunk size in tokens |
-| `rag.chunking.min-size` | `100` | Min chunk size in characters |
+| Property                       | Default               | Description                                          |
+|--------------------------------|-----------------------|------------------------------------------------------|
+| `rag.chunking.strategy`        | `token`               | `token` or `section`                                 |
+| `rag.chunking.size`            | `300`                 | Max chunk size in tokens                             |
+| `rag.chunking.min-size`        | `100`                 | Min chunk size in characters                         |
 | `rag.chunking.section.pattern` | `(^#+\s+.*$)\|(\n\n)` | Regex for section boundaries (when strategy=section) |
 
 ### Cache (`rag.cache.*`)
 
-| Property | Default | Description |
-|---|---|---|
-| `rag.cache.enabled` | `true` | Enable Caffeine retrieval cache |
-| `rag.cache.ttl-seconds` | `3600` | Cache entry time-to-live |
-| `rag.cache.max-size` | `1000` | Maximum cache entries |
+| Property                | Default | Description                     |
+|-------------------------|---------|---------------------------------|
+| `rag.cache.enabled`     | `true`  | Enable Caffeine retrieval cache |
+| `rag.cache.ttl-seconds` | `3600`  | Cache entry time-to-live        |
+| `rag.cache.max-size`    | `1000`  | Maximum cache entries           |
+
+### Query Transformation (`rag.query.*`)
+
+| Property                          | Default | Description                                                 |
+|-----------------------------------|---------|-------------------------------------------------------------|
+| `rag.query.multiquery.enabled`    | `false` | Enable Multi-Query generation via LLM                       |
+| `rag.query.multiquery.variations` | `3`     | Number of variations to generate                            |
+| `rag.query.self-querying-enabled` | `false` | Enable Self-Querying / QueryAnalyzer feature                |
+| `rag.query.model`                 | `null`  | Optional override for the LLM used in query transformations |
 
 ### Guardrails (`guardrails.*`)
 
-| Property | Default | Description |
-|---|---|---|
-| `guardrails.sensitive-words` | `politics,religion,...` | Comma-separated blocked words |
-| `guardrails.failure-message` | `I'm sorry, but I...` | Response when query is blocked |
-| `guardrails.logging.enabled` | `true` | Enable prompt/response logging |
+| Property                     | Default                 | Description                    |
+|------------------------------|-------------------------|--------------------------------|
+| `guardrails.sensitive-words` | `politics,religion,...` | Comma-separated blocked words  |
+| `guardrails.failure-message` | `I'm sorry, but I...`   | Response when query is blocked |
+| `guardrails.logging.enabled` | `true`                  | Enable prompt/response logging |
 
 ### Observability
 
-| Property | Default | Description |
-|---|---|---|
+| Property                                    | Default                          | Description                |
+|---------------------------------------------|----------------------------------|----------------------------|
 | `management.endpoints.web.exposure.include` | `health,info,metrics,prometheus` | Exposed actuator endpoints |
-| `management.tracing.sampling.probability` | `1.0` | Trace sampling rate |
+| `management.tracing.sampling.probability`   | `1.0`                            | Trace sampling rate        |
 
 ---
 
 ## 🛡️ Guardrails
 
-| Feature | Implemented | Description |
-|---|---|---|
-| Input Validation | Yes | Rejects empty, overly long, or malformed queries. |
-| Sensitive Topic Filtering | Yes | Blocks queries containing defined restricted words (e.g. politics, violence). |
-| PII Redaction | No | Does not yet detect or strip Personally Identifiable Information from inputs. |
-| Output Content Filtering | No | Does not review the LLM's response for safety violations. |
+| Feature                   | Implemented | Description                                                                   |
+|---------------------------|-------------|-------------------------------------------------------------------------------|
+| Input Validation          | Yes         | Rejects empty, overly long, or malformed queries.                             |
+| Sensitive Topic Filtering | Yes         | Blocks queries containing defined restricted words (e.g. politics, violence). |
+| PII Redaction             | No          | Does not yet detect or strip Personally Identifiable Information from inputs. |
+| Output Content Filtering  | No          | Does not review the LLM's response for safety violations.                     |
 
 ---
 

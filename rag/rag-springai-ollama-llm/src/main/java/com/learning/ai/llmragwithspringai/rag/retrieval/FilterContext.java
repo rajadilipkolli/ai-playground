@@ -1,9 +1,11 @@
 package com.learning.ai.llmragwithspringai.rag.retrieval;
 
-public class FilterContext {
-    public static final ScopedValue<String> FILTER_EXPRESSION = ScopedValue.newInstance();
+import org.springframework.ai.vectorstore.filter.Filter;
 
-    public static String getFilterExpression() {
+public class FilterContext {
+    public static final ScopedValue<Filter.Expression> FILTER_EXPRESSION = ScopedValue.newInstance();
+
+    public static Filter.Expression getFilterExpression() {
         return FILTER_EXPRESSION.isBound() ? FILTER_EXPRESSION.get() : null;
     }
 }
