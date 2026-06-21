@@ -59,6 +59,11 @@ public class ContextPrecisionEvaluator implements Evaluator {
                 .call()
                 .content();
 
+        if (jsonResponse == null || jsonResponse.isBlank()) {
+            LOGGER.info("ContextPrecisionEvaluator - Empty evaluator output. Score: 0.0, Pass: false");
+            return new EvaluationResponse(false, 0.0f, "Context Precision", Map.of());
+        }
+
         long trueCount = countOccurrences(jsonResponse.toLowerCase(), "true");
         long falseCount = countOccurrences(jsonResponse.toLowerCase(), "false");
         long totalChunks = trueCount + falseCount;

@@ -12,6 +12,7 @@ import com.learning.ai.llmragwithspringai.util.FilterExpressionBuilderUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.annotation.Observed;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.springframework.core.Ordered;
 import org.springframework.stereotype.Service;
 
 @Service
+@SuppressWarnings("NullAway")
 public class AIChatService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AIChatService.class);
@@ -117,10 +119,12 @@ public class AIChatService {
                         }
                         if (guardrailsProperties.getSensitiveWords() != null
                                 && !guardrailsProperties.getSensitiveWords().isEmpty()) {
+                            List<String> words = guardrailsProperties.getSensitiveWords().stream()
+                                    .flatMap(w -> Arrays.stream(w.split(",")))
+                                    .map(String::trim)
+                                    .toList();
                             advisors.add(new SafeGuardAdvisor(
-                                    guardrailsProperties.getSensitiveWords(),
-                                    guardrailsProperties.getFailureMessage(),
-                                    Ordered.HIGHEST_PRECEDENCE));
+                                    words, guardrailsProperties.getFailureMessage(), Ordered.HIGHEST_PRECEDENCE));
                         }
 
                         ChatClient.ChatClientRequestSpec callRequestSpec = aiClient.prompt()
@@ -179,7 +183,8 @@ public class AIChatService {
                                         if (vectorScore instanceof Number n) originalScore = n.doubleValue();
                                         else if (keywordScore instanceof Number n) originalScore = n.doubleValue();
 
-                                        Double rrfScore = rrfScoreObj instanceof Number n ? n.doubleValue() : null;
+                                        String text = d.getText() != null ? d.getText() : "";
+                                        Double rrfScore = rrfScoreObj instanceof Number n ? n.doubleValue() : 0.0;
                                         String source = sourceObj instanceof String s ? s : "unknown";
 
                                         LOGGER.debug(
@@ -187,7 +192,7 @@ public class AIChatService {
                                                 source,
                                                 rrfScore,
                                                 originalScore);
-                                        return new RetrievalDiagnostic(d.getText(), originalScore, rrfScore, source);
+                                        return new RetrievalDiagnostic(text, originalScore, rrfScore, source);
                                     })
                                     .toList();
                             meterRegistry.counter("rag.documents.retrieved").increment(docs.size());

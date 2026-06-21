@@ -103,6 +103,11 @@
             <artifactId>opentelemetry-logback-appender-1.0</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api-incubator</artifactId>
+            <version>1.62.0-alpha</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -230,8 +235,6 @@
                         <include>**/*IntTest*</include>
                         <include>**/*IntegrationTest*</include>
                     </includes>
-                    <parallel>classes</parallel>
-                    <threadCount>4</threadCount>
                     <excludedGroups>${test.excludedTags}</excludedGroups>
                 </configuration>
                 <executions>

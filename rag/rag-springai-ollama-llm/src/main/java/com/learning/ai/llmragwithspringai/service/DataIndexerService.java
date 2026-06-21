@@ -28,9 +28,11 @@ import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.StopWatch;
 
 @Service
@@ -154,8 +156,10 @@ public class DataIndexerService {
 
             try {
                 vectorStore.accept(docsToIngest);
-            } catch (org.springframework.dao.DuplicateKeyException e) {
+            } catch (DuplicateKeyException e) {
                 LOGGER.warn("Concurrent insertion detected for document {}, skipping ingestion.", filename);
+                // Roll back to restore any deleted chunks
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
             }
 

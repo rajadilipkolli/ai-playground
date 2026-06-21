@@ -1,15 +1,19 @@
-package com.example.chatbot.config;
+package com.learning.ai.llmragwithspringai.config.properties;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConfigurationProperties(prefix = "guardrails")
 public class GuardrailsProperties {
 
-    private List<String> sensitiveWords;
-    private String failureMessage;
+    private List<String> sensitiveWords = new ArrayList<>();
+    private String failureMessage = "";
+
+    @NestedConfigurationProperty
     private Logging logging = new Logging();
 
     public List<String> getSensitiveWords() {
