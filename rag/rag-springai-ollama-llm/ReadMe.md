@@ -62,6 +62,9 @@ flowchart TD
     Reranker["RelevanceDocumentReranker<br/><i>Keyword Overlap Reranker</i>"]:::fusion
     
     Ollama["ChatClient<br/><i>Large Language Model (LLM)</i>"]:::llm
+    ToolCurrentDate(["currentDateTool<br/><i>Date & Time</i>"]):::coordinator
+    ToolCalculator(["calculatorTool<br/><i>Math Expressions</i>"]):::coordinator
+    ToolKnowledge(["knowledgeSearchTool<br/><i>Retrieval Search</i>"]):::coordinator
     Response(["Generated Answer & Diagnostics"]):::userReq
 
     %% Ingestion Flow
@@ -76,22 +79,35 @@ flowchart TD
     MultiQuery -->|6. Requests context| Cache
     
     Cache -- 7a. Cache Hit --> Advisor
-    Cache -->|7b. Cache Miss| HybridRetriever
+    Cache -->|7b. Cache Miss| Reranker
     
-    HybridRetriever -->|8a. Keyword Search| KeywordSearch
-    HybridRetriever -->|8b. Vector Search| VectorSearch
+    Reranker -->|8. Calls Retriever| HybridRetriever
     
-    KeywordSearch -.->|9a. Matched docs| Joiner
-    VectorSearch -.->|9b. Similar docs| Joiner
+    HybridRetriever -- 9a. Check ScopedValue Cache --> HybridRetriever
+    HybridRetriever -->|9b. Keyword Search on Cache Miss| KeywordSearch
+    HybridRetriever -->|9c. Vector Search on Cache Miss| VectorSearch
     
-    Joiner -->|10. Combines results| Reranker
-    Reranker -->|11. Scores and reranks| HybridRetriever
-    HybridRetriever -->|12. Returns fused context| Cache
-    Cache -.->|13. Stores in cache| Cache
-    Cache -->|14. Returns context| Advisor
+    KeywordSearch -.->|10a. Matched docs| Joiner
+    VectorSearch -.->|10b. Similar docs| Joiner
+    
+    Joiner -->|11. Combines results| HybridRetriever
+    
+    HybridRetriever -.->|12a. Stores in ScopedValue| HybridRetriever
+    HybridRetriever -->|12b. Returns joined docs| Reranker
+    Reranker -->|13. Scores and reranks| Cache
+    
+    Cache -.->|14. Stores in cache| Cache
+    Cache -->|15. Returns context| Advisor
     
     Advisor -->|15. Sends query + context| Ollama
-    Ollama -->|16. Generates final answer| Response
+    
+    %% Tool Calling
+    Ollama <-->|16a. LLM invokes tools iteratively| ToolCurrentDate
+    Ollama <-->|16b. LLM invokes tools iteratively| ToolCalculator
+    Ollama <-->|16c. LLM invokes tools iteratively| ToolKnowledge
+    ToolKnowledge -->|16d. Searches context| HybridRetriever
+    
+    Ollama -->|17. Generates final answer| Response
 ```
 
 ---
@@ -105,7 +121,24 @@ flowchart TD
 5. **Section-Aware Chunking**: Available but token-based chunking is the default. Intelligently splits your documents.
 6. **Metadata Filtering**: ON. You can tag uploaded documents and search strictly within those categories.
 7. **Self-Querying**: ON. Automatically analyzes user questions to extract metadata filters (like year, category, document type) before searching.
-8. **Guardrails**: ON. Intercepts queries on restricted topics (politics, violence, etc.) and halts the request gracefully.
+8. **Agentic Tool Calling (ReAct)**: ON. The LLM acts as an agent, autonomously deciding when to fetch the current date, perform math calculations, or trigger additional targeted searches.
+9. **Guardrails**: ON. Intercepts queries on restricted topics (politics, violence, etc.) and halts the request gracefully.
+
+---
+
+## 🤖 ReAct / Agentic Capabilities
+
+This application supports the ReAct (Reasoning and Acting) pattern. Instead of a traditional single-pass RAG (where context is retrieved once and appended to the prompt), the ChatClient acts as an intelligent agent. 
+
+The LLM continuously evaluates the user's question, **reasons** about what information it needs, **acts** by invoking registered tools, observes the results, and synthesizes a final answer. This iterative loop complements automatic RAG context injection by granting the LLM agency over explicit searches, date retrieval, and mathematical calculations.
+
+### Available Tools
+
+When interacting with the `ChatClient`, the LLM has access to the following specialized tools:
+
+- **`currentDateTool`**: Returns the current date. The LLM invokes this when a user asks time-sensitive questions involving terms like "today", "now", or "yesterday".
+- **`calculatorTool`**: Evaluates mathematical expressions using `exp4j`. The LLM invokes this to safely and accurately calculate numeric formulas (e.g., pricing, discounts, aggregates) instead of guessing the arithmetic.
+- **`knowledgeSearchTool`**: Performs an explicit search against the knowledge base by delegating back to the existing `HybridDocumentRetriever`. The LLM invokes this tool when it determines it needs more domain-specific information than what was provided in the initial prompt context.
 
 ---
 
@@ -138,6 +171,16 @@ curl -X POST -F "file=@manual.pdf" \
 ```
 Supported formats: `.pdf`, `.txt`, `.json`
 
+### Upload Sample Data (for ReAct Testing)
+We provide sample data to test the agentic capabilities (calculations and date references).
+```bash
+curl -X POST -F "file=@src/main/resources/sample-data/company-policies.txt" \
+  "http://localhost:8080/api/data/v1/upload?documentType=policy&category=hr"
+
+curl -X POST -F "file=@src/main/resources/sample-data/events.txt" \
+  "http://localhost:8080/api/data/v1/upload?documentType=event&category=general"
+```
+
 ### Chat
 ```bash
 curl -X POST http://localhost:8080/api/ai/chat \
@@ -150,6 +193,22 @@ curl -X POST http://localhost:8080/api/ai/chat \
 curl -X POST "http://localhost:8080/api/ai/chat?includeDiagnostics=true" \
   -H "Content-Type: application/json" \
   -d '{"question": "How to reboot?"}'
+```
+
+### Agentic Tool Invocation: Date Example
+Demonstrates the LLM invoking the `currentDateTool` to determine today's date.
+```bash
+curl -X POST http://localhost:8080/api/ai/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is the date today?"}'
+```
+
+### Agentic Tool Invocation: Calculation & Knowledge Search
+Demonstrates the LLM invoking the `knowledgeSearchTool` to look up product pricing context, and then invoking the `calculatorTool` to apply the requested discount.
+```bash
+curl -X POST http://localhost:8080/api/ai/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question": "If product X costs $1,250 and I need 3 units with 10% bulk discount, what is the total?"}'
 ```
 
 ### Clear Cache
@@ -167,6 +226,11 @@ curl http://localhost:8080/api/data/v1/count
 ## ⚙️ Configuration Reference
 
 All properties are configured in `application.properties` using `@ConfigurationProperties` binding.
+
+### Tool Configuration
+- **Auto-Discovery**: Tools are defined as standard Spring `@Bean`s returning `ToolCallback` (e.g., in `ToolConfiguration.java`). The `AIChatService` automatically discovers them from the Spring context.
+- **Enabled by Default**: Tool calling is automatically enabled whenever these beans are present in the context.
+- **RAG vs Explicit Tool**: `RetrievalAugmentationAdvisor` handles *automatic* background context injection for every prompt. In contrast, `knowledgeSearchTool` enables *explicit*, LLM-initiated searches when the LLM decides it needs more context.
 
 ### Retrieval Pipeline (`rag.retrieval.*`)
 
