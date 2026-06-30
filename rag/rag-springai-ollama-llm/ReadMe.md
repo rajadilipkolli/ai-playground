@@ -62,7 +62,7 @@ flowchart TD
     Reranker["RelevanceDocumentReranker<br/><i>Keyword Overlap Reranker</i>"]:::fusion
     
     Ollama["ChatClient<br/><i>Large Language Model (LLM)</i>"]:::llm
-    ToolCurrentDate(["currentDateTool<br/><i>Date & Time</i>"]):::coordinator
+    ToolCurrentDate(["currentDateTimeTool<br/><i>Date & Time</i>"]):::coordinator
     ToolCalculator(["calculatorTool<br/><i>Math Expressions</i>"]):::coordinator
     ToolKnowledge(["knowledgeSearchTool<br/><i>Retrieval Search</i>"]):::coordinator
     Response(["Generated Answer & Diagnostics"]):::userReq
@@ -136,7 +136,7 @@ The LLM continuously evaluates the user's question, **reasons** about what infor
 
 When interacting with the `ChatClient`, the LLM has access to the following specialized tools:
 
-- **`currentDateTool`**: Returns the current date. The LLM invokes this when a user asks time-sensitive questions involving terms like "today", "now", or "yesterday".
+- **`currentDateTimeTool`**: Returns the current date. The LLM invokes this when a user asks time-sensitive questions involving terms like "today", "now", or "yesterday".
 - **`calculatorTool`**: Evaluates mathematical expressions using `exp4j`. The LLM invokes this to safely and accurately calculate numeric formulas (e.g., pricing, discounts, aggregates) instead of guessing the arithmetic.
 - **`knowledgeSearchTool`**: Performs an explicit search against the knowledge base by delegating back to the existing `HybridDocumentRetriever`. The LLM invokes this tool when it determines it needs more domain-specific information than what was provided in the initial prompt context.
 
@@ -196,7 +196,7 @@ curl -X POST "http://localhost:8080/api/ai/chat?includeDiagnostics=true" \
 ```
 
 ### Agentic Tool Invocation: Date Example
-Demonstrates the LLM invoking the `currentDateTool` to determine today's date.
+Demonstrates the LLM invoking the `currentDateTimeTool` to determine today's date.
 ```bash
 curl -X POST http://localhost:8080/api/ai/chat \
   -H "Content-Type: application/json" \
