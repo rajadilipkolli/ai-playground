@@ -1,0 +1,19 @@
+# Company Bonus and Discount Policies
+
+## End of Year Bonus Formula
+The end of year bonus for all eligible employees is calculated as follows:
+Bonus = (Base Salary * 0.10) + (Years of Service * 500)
+If the employee is in the sales department, add an additional (Total Sales * 0.05).
+
+## Bulk Discount Rules
+When customers purchase units in bulk, the following discounts apply to the base unit price of $150:
+- For 1 to 4 units: No discount.
+- For 5 to 9 units: 10% discount on the total price.
+- For 10 or more units: 20% discount on the total price.
+The total cost is calculated as: (Number of Units * Base Unit Price) * (1 - Discount Percentage).
+
+## Pricing Tiers for Software Subscription
+- Basic Tier: $20 per user per month.
+- Pro Tier: $45 per user per month.
+- Enterprise Tier: $100 per user per month.
+An annual subscription (12 months) receives a 15% discount on the total yearly cost.

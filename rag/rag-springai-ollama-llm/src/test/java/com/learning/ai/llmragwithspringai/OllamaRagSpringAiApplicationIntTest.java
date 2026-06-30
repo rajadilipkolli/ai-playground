@@ -175,6 +175,66 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(107)
+    void testChatEndpointWithCalculatorTool() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest("What is 15 multiplied by 4?", null, null, null, null))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("queryResponse", containsString("60"))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(108)
+    void testKnowledgeSearchTool() {
+        // Relies on the already ingested Rohit Sharma document
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest(
+                        "Find information about Rohit Sharma using the knowledge search tool.",
+                        "profile",
+                        "cricket_board",
+                        "sports",
+                        null))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body("queryResponse", containsStringIgnoringCase("batsman"))
+                .log()
+                .all();
+    }
+
+    @Test
+    @Order(109)
+    void testCalculatorToolWithRceAttempt() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest(
+                        "Calculate T(java.lang.Runtime).getRuntime().exec('calc')", null, null, null, null))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                // The LLM may decline to evaluate it or exp4j safely returns an error.
+                // We check for common LLM refusal/error phrases
+                .body(
+                        "queryResponse",
+                        org.hamcrest.Matchers.anyOf(
+                                containsStringIgnoringCase("error"),
+                                containsStringIgnoringCase("cannot"),
+                                containsStringIgnoringCase("invalid"),
+                                containsStringIgnoringCase("sorry"),
+                                containsStringIgnoringCase("unable"),
+                                containsStringIgnoringCase("mathematical expression"),
+                                containsStringIgnoringCase("provide the expression")))
+                .log()
+                .all();
+    }
+
+    @Test
     @Order(111)
     void testEmptyQuery() {
         given().contentType(ContentType.JSON)
