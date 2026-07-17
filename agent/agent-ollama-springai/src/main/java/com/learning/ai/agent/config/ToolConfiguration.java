@@ -95,7 +95,7 @@ public class ToolConfiguration {
         return FunctionToolCallback.builder("weatherLookup", (Function<WeatherRequest, String>) request -> {
                     long start = System.nanoTime();
                     try {
-                        if (request.city() == null || request.city().isBlank()) {
+                        if (request == null || request.city() == null || request.city().isBlank()) {
                             return "Error: City must be provided.";
                         }
                         String result;
