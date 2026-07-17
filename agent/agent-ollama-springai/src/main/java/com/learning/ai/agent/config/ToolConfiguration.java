@@ -25,7 +25,7 @@ public class ToolConfiguration {
                     long start = System.nanoTime();
                     try {
                         String pattern =
-                                request.format() != null && !request.format().isBlank()
+                                request != null && request.format() != null && !request.format().isBlank()
                                         ? request.format()
                                         : "yyyy-MM-dd HH:mm:ss";
                         String result = LocalDateTime.now().format(DateTimeFormatter.ofPattern(pattern));
