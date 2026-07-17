@@ -53,8 +53,11 @@ public class ToolConfiguration {
         return FunctionToolCallback.builder("calculator", (Function<CalculatorRequest, String>) request -> {
                     long start = System.nanoTime();
                     try {
+                        if (request.operation() == null || request.operation().isBlank()) {
+                            throw new IllegalArgumentException("Operation must not be null or empty.");
+                        }
                         // Guard against unsafe operation patterns (e.g., trying to inject SpEL or scripts)
-                        if (request.operation() != null && request.operation().matches(".*[().;'{}\\[\\]].*")) {
+                        if (request.operation().matches(".*[().;'{}\\[\\]].*")) {
                             throw new IllegalArgumentException("Unsafe or invalid operation detected.");
                         }
                         String result =

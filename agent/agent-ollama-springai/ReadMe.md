@@ -48,22 +48,22 @@ This module uses a JDBC-backed `MessageWindowChatMemory` repository.
 
 ## Configuration Reference
 
-| Property | Default | Description |
-| -------- | ------- | ----------- |
-| `spring.ai.ollama.base-url` | `http://localhost:11434` | Ollama API endpoint |
-| `spring.ai.ollama.chat.options.model` | `llama3.1` | The tool-capable model used |
-| `spring.datasource.url` | `jdbc:postgresql://localhost:5432/agent_db` | Postgres connection string |
-| `spring.ai.retry.max-attempts` | `3` | AI client retry count |
+| Property                       | Default                                     | Description                 |
+|--------------------------------|---------------------------------------------|-----------------------------|
+| `spring.ai.ollama.base-url`    | `http://localhost:11434`                    | Ollama API endpoint         |
+| `spring.ai.ollama.chat.model`  | `llama3.1`                                  | The tool-capable model used |
+| `spring.datasource.url`        | `jdbc:postgresql://localhost:5432/agent_db` | Postgres connection string  |
+| `spring.ai.retry.max-attempts` | `3`                                         | AI client retry count       |
 
 ## Production Readiness
-| Feature | Implemented | Rationale |
-| ------- | ----------- | --------- |
-| **Error Handling** | Yes | Clean 5xx `ProblemDetail` responses via `GlobalExceptionHandler` |
-| **Retry (transient)** | Yes | Configured via Spring AI properties |
-| **Timeouts** | Yes | Explicit HTTP connect/read timeouts |
-| **Tool-call error handling** | Yes | Internal exceptions are caught and returned as strings |
-| **Observability** | Yes | Configured with `management.opentelemetry.*` and `ObservedAspect` |
-| **Agent State** | Yes | Persistent JDBC/Postgres storage |
-| **Rate Limiting** | No | Relies on API gateway in production |
-| **Output Moderation** | No | Requires dedicated moderation model/layer |
-| **Circuit Breaking** | No | Minimal required; transient retries are sufficient |
+| Feature                      | Implemented | Rationale                                                         |
+|------------------------------|-------------|-------------------------------------------------------------------|
+| **Error Handling**           | Yes         | Clean 5xx `ProblemDetail` responses via `GlobalExceptionHandler`  |
+| **Retry (transient)**        | Yes         | Configured via Spring AI properties                               |
+| **Timeouts**                 | Yes         | Explicit HTTP connect/read timeouts                               |
+| **Tool-call error handling** | Yes         | Internal exceptions are caught and returned as strings            |
+| **Observability**            | Yes         | Configured with `management.opentelemetry.*` and `ObservedAspect` |
+| **Agent State**              | Yes         | Persistent JDBC/Postgres storage                                  |
+| **Rate Limiting**            | No          | Relies on API gateway in production                               |
+| **Output Moderation**        | No          | Requires dedicated moderation model/layer                         |
+| **Circuit Breaking**         | No          | Minimal required; transient retries are sufficient                |

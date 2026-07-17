@@ -10,11 +10,11 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PersistentChatMemoryIT extends AbstractIntegrationTest {
 
     @Test
     @Order(1)
-    @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
     void step1_writeMemory() {
         String conversationId = "persist-session-1";
         String reply1 = agentService.chat(conversationId, "Remember the secret word: APPLE.");

@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleGenericException(Exception ex) {
         log.error("Unhandled exception in agent interaction", ex);
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR, "An internal error occurred: " + ex.getMessage());
+                HttpStatus.INTERNAL_SERVER_ERROR, "An internal error occurred while processing the request.");
         problemDetail.setTitle("Internal Server Error");
         problemDetail.setType(URI.create("about:blank"));
         problemDetail.setProperty("timestamp", Instant.now());

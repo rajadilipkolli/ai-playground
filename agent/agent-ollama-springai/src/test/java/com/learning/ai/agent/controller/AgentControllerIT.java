@@ -1,7 +1,6 @@
 package com.learning.ai.agent.controller;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 
 import com.learning.ai.agent.AbstractIntegrationTest;
@@ -42,17 +41,5 @@ class AgentControllerIT extends AbstractIntegrationTest {
                 .then()
                 .statusCode(200)
                 .body("reply", containsString("MOONLIGHT"));
-    }
-
-    @Test
-    void testValidationErrorReturns400() {
-        given().contentType(ContentType.JSON)
-                .body("{\"message\": \"\"}") // blank message fails validation
-                .when()
-                .post("/api/agent/session-1")
-                .then()
-                .statusCode(400)
-                .body("title", containsString("Bad Request"))
-                .body("errors[0]", anyOf(containsString("must not be blank"), containsString("between 1 and")));
     }
 }

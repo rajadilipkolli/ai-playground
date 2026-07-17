@@ -66,7 +66,8 @@ class AgentHardeningTest {
                 .convertTo(ProblemDetail.class)
                 .satisfies(problemDetail -> {
                     assertThat(problemDetail.getTitle()).contains("Internal Server Error");
-                    assertThat(problemDetail.getDetail()).contains("Unknown runtime issue");
+                    assertThat(problemDetail.getDetail())
+                            .contains("An internal error occurred while processing the request.");
                 });
     }
 }
