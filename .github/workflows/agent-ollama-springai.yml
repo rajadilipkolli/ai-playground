@@ -1,0 +1,25 @@
+name: agent-ollama-springai
+
+on:
+  push:
+    paths:
+      - 'agent/agent-ollama-springai/**'
+      - '.github/workflows/agent-ollama-springai.yml'
+  pull_request:
+    paths:
+      - 'agent/agent-ollama-springai/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build and Test
+        working-directory: agent/agent-ollama-springai
+        run: ./mvnw clean verify
