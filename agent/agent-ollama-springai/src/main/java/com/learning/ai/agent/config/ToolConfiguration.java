@@ -24,10 +24,11 @@ public class ToolConfiguration {
         return FunctionToolCallback.builder("currentDateTime", (Function<DateTimeRequest, String>) request -> {
                     long start = System.nanoTime();
                     try {
-                        String pattern =
-                                request != null && request.format() != null && !request.format().isBlank()
-                                        ? request.format()
-                                        : "yyyy-MM-dd HH:mm:ss";
+                        String pattern = request != null
+                                        && request.format() != null
+                                        && !request.format().isBlank()
+                                ? request.format()
+                                : "yyyy-MM-dd HH:mm:ss";
                         String result = LocalDateTime.now().format(DateTimeFormatter.ofPattern(pattern));
                         meterRegistry
                                 .timer("agent.tool.latency", "tool", "currentDateTime")
@@ -95,7 +96,9 @@ public class ToolConfiguration {
         return FunctionToolCallback.builder("weatherLookup", (Function<WeatherRequest, String>) request -> {
                     long start = System.nanoTime();
                     try {
-                        if (request == null || request.city() == null || request.city().isBlank()) {
+                        if (request == null
+                                || request.city() == null
+                                || request.city().isBlank()) {
                             return "Error: City must be provided.";
                         }
                         String result;
