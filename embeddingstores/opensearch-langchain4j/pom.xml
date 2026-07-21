@@ -21,7 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <langchain4j.version>0.36.2</langchain4j.version>
-        <opensearch.version>3.1.0</opensearch.version>
+        <opensearch.version>3.1.1</opensearch.version>
         <tinylog.version>2.7.0</tinylog.version>
     </properties>
 
