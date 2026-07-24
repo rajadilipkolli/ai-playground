@@ -10,7 +10,6 @@ import com.learning.ai.llmragwithspringai.rag.join.RRFDocumentJoiner;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,12 +33,10 @@ class HybridDocumentRetrieverTest {
     @Mock
     private RRFDocumentJoiner documentJoiner;
 
-    private final Executor directExecutor = Runnable::run;
-
     @Test
     void shouldCombineResultsFromBothRetrievers() {
         HybridDocumentRetriever retriever =
-                new HybridDocumentRetriever(vectorRetriever, keywordRetriever, documentJoiner, directExecutor);
+                new HybridDocumentRetriever(vectorRetriever, keywordRetriever, documentJoiner, Runnable::run);
 
         Query query = new Query("test");
         Document doc1 = Document.builder().id("1").text("vector").build();
@@ -63,7 +60,7 @@ class HybridDocumentRetrieverTest {
     @Test
     void shouldHandleVectorRetrieverFailure() {
         HybridDocumentRetriever retriever =
-                new HybridDocumentRetriever(vectorRetriever, keywordRetriever, documentJoiner, directExecutor);
+                new HybridDocumentRetriever(vectorRetriever, keywordRetriever, documentJoiner, Runnable::run);
 
         Query query = new Query("test");
         Document doc2 = Document.builder().id("2").text("keyword").build();
@@ -86,7 +83,7 @@ class HybridDocumentRetrieverTest {
     @Test
     void shouldHandleKeywordRetrieverFailure() {
         HybridDocumentRetriever retriever =
-                new HybridDocumentRetriever(vectorRetriever, keywordRetriever, documentJoiner, directExecutor);
+                new HybridDocumentRetriever(vectorRetriever, keywordRetriever, documentJoiner, Runnable::run);
 
         Query query = new Query("test");
         Document doc1 = Document.builder().id("1").text("vector").build();
@@ -109,7 +106,7 @@ class HybridDocumentRetrieverTest {
     @Test
     void shouldHandleBothRetrieversFailure() {
         HybridDocumentRetriever retriever =
-                new HybridDocumentRetriever(vectorRetriever, keywordRetriever, documentJoiner, directExecutor);
+                new HybridDocumentRetriever(vectorRetriever, keywordRetriever, documentJoiner, Runnable::run);
 
         Query query = new Query("test");
 
@@ -136,7 +133,7 @@ class HybridDocumentRetrieverTest {
         };
 
         HybridDocumentRetriever retriever =
-                new HybridDocumentRetriever(customVectorRetriever, keywordRetriever, documentJoiner, directExecutor);
+                new HybridDocumentRetriever(customVectorRetriever, keywordRetriever, documentJoiner, Runnable::run);
 
         ScopedValue.where(
                         FilterContext.FILTER_EXPRESSION,

@@ -40,3 +40,17 @@ databaseChangeLog:
             sql: |
               CREATE INDEX IF NOT EXISTS vector_store_embedding_hnsw_idx 
               ON vector_store USING hnsw (embedding vector_cosine_ops) WITH (m = 24, ef_construction = 128);
+  - changeSet:
+      id: 3
+      author: ai
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE IF NOT EXISTS agent_memory (
+                  id SERIAL PRIMARY KEY,
+                  session_id VARCHAR(255) NOT NULL,
+                  role VARCHAR(50) NOT NULL,
+                  content TEXT NOT NULL,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE INDEX IF NOT EXISTS agent_memory_session_id_idx ON agent_memory(session_id);
