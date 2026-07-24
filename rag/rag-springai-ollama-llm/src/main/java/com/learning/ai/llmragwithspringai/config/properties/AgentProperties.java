@@ -106,9 +106,14 @@ public class AgentProperties {
 
     public static class Orchestrator {
         @Positive
+        @jakarta.validation.constraints.Max(Long.MAX_VALUE / 1000)
         private long stepTimeoutSeconds = 30;
 
+        @Min(0)
         private int maxToolCallsPerStep = 3;
+
+        @Min(1)
+        private int maxPlanningCycles = 10;
 
         public long getStepTimeoutSeconds() {
             return stepTimeoutSeconds;
@@ -124,6 +129,14 @@ public class AgentProperties {
 
         public void setMaxToolCallsPerStep(int maxToolCallsPerStep) {
             this.maxToolCallsPerStep = maxToolCallsPerStep;
+        }
+
+        public int getMaxPlanningCycles() {
+            return maxPlanningCycles;
+        }
+
+        public void setMaxPlanningCycles(int maxPlanningCycles) {
+            this.maxPlanningCycles = maxPlanningCycles;
         }
     }
 

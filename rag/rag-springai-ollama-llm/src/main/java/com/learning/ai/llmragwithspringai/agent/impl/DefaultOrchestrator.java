@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +70,8 @@ public class DefaultOrchestrator implements Orchestrator {
                 int maxToolCalls = orchestratorProps.getMaxToolCallsPerStep();
 
                 while (true) {
-                    if (System.currentTimeMillis() - startTime > timeoutMs) {
+                    long remainingMs = timeoutMs - (System.currentTimeMillis() - startTime);
+                    if (remainingMs <= 0) {
                         log.warn("Orchestrator timed out for session {}", sessionId);
                         return new AgentResult("Execution timed out.", allProvenance);
                     }
@@ -75,7 +79,11 @@ public class DefaultOrchestrator implements Orchestrator {
                     String context = buildContext(sessionId);
                     List<PlanStep> plan;
                     try {
-                        plan = planner.plan(new AgentGoal(query.text()), context);
+                        plan = CompletableFuture.supplyAsync(() -> planner.plan(new AgentGoal(query.text()), context))
+                                .get(remainingMs, TimeUnit.MILLISECONDS);
+                    } catch (TimeoutException e) {
+                        log.warn("Orchestrator timed out for session {}", sessionId);
+                        return new AgentResult("Execution timed out.", allProvenance);
                     } catch (Exception e) {
                         log.error("Planning failed", e);
                         return new AgentResult(
@@ -98,12 +106,27 @@ public class DefaultOrchestrator implements Orchestrator {
                             memoryStore.add(sessionId, new MemoryEntry("assistant", finalAnswer));
                             break;
                         } else if ("retrieval".equalsIgnoreCase(step.type())) {
-                            List<Document> docs = retrievalAction.retrieve(step.prompt());
-                            FilterContext.setRetrievedDocuments(docs); // update global context if needed
-                            allProvenance.addAll(RetrievalAction.mapToDiagnostics(docs));
-                            String content =
-                                    docs.stream().map(Document::getText).collect(Collectors.joining("\n"));
-                            memoryStore.add(sessionId, new MemoryEntry("system", "Retrieval Result: " + content));
+                            remainingMs = timeoutMs - (System.currentTimeMillis() - startTime);
+                            if (remainingMs <= 0) {
+                                log.warn("Orchestrator timed out for session {}", sessionId);
+                                return new AgentResult("Execution timed out.", allProvenance);
+                            }
+                            try {
+                                List<Document> docs = CompletableFuture.supplyAsync(
+                                                () -> retrievalAction.retrieve(step.prompt()))
+                                        .get(remainingMs, TimeUnit.MILLISECONDS);
+                                FilterContext.setRetrievedDocuments(docs); // update global context if needed
+                                allProvenance.addAll(RetrievalAction.mapToDiagnostics(docs));
+                                String content =
+                                        docs.stream().map(Document::getText).collect(Collectors.joining("\n"));
+                                memoryStore.add(sessionId, new MemoryEntry("system", "Retrieval Result: " + content));
+                            } catch (TimeoutException e) {
+                                log.warn("Orchestrator timed out for session {}", sessionId);
+                                return new AgentResult("Execution timed out.", allProvenance);
+                            } catch (Exception e) {
+                                memoryStore.add(
+                                        sessionId, new MemoryEntry("system", "Retrieval Error: " + e.getMessage()));
+                            }
                         } else if ("tool".equalsIgnoreCase(step.type())) {
                             if (toolCallsThisStep >= maxToolCalls) {
                                 log.warn("Max tool calls reached for this step.");
@@ -115,8 +138,15 @@ public class DefaultOrchestrator implements Orchestrator {
                             toolCallsThisStep++;
                             String toolName = step.toolName();
                             if (toolRegistry.hasTool(toolName)) {
+                                remainingMs = timeoutMs - (System.currentTimeMillis() - startTime);
+                                if (remainingMs <= 0) {
+                                    log.warn("Orchestrator timed out for session {}", sessionId);
+                                    return new AgentResult("Execution timed out.", allProvenance);
+                                }
                                 try {
-                                    Optional<ToolResult> result = toolRegistry.execute(toolName, step.args());
+                                    Optional<ToolResult> result = CompletableFuture.supplyAsync(
+                                                    () -> toolRegistry.execute(toolName, step.args()))
+                                            .get(remainingMs, TimeUnit.MILLISECONDS);
                                     if (result.isPresent()) {
                                         memoryStore.add(
                                                 sessionId,
@@ -131,6 +161,9 @@ public class DefaultOrchestrator implements Orchestrator {
                                                         "system",
                                                         "Tool Result (" + toolName + "): Execution returned empty."));
                                     }
+                                } catch (TimeoutException e) {
+                                    log.warn("Orchestrator timed out for session {}", sessionId);
+                                    return new AgentResult("Execution timed out.", allProvenance);
                                 } catch (Exception e) {
                                     memoryStore.add(
                                             sessionId,
@@ -152,7 +185,7 @@ public class DefaultOrchestrator implements Orchestrator {
                     }
 
                     stepCount++;
-                    if (stepCount >= 10) {
+                    if (stepCount >= orchestratorProps.getMaxPlanningCycles()) {
                         log.warn("Max orchestrator loops reached.");
                         return new AgentResult(
                                 "I reached the maximum number of steps without finishing.", allProvenance);

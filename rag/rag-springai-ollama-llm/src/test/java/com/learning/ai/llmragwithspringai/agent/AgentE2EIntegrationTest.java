@@ -44,7 +44,13 @@ public class AgentE2EIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(result).isNotNull();
         assertThat(result.answer()).isNotBlank();
-        // Since we explicitly index data, the agent should ideally use a retrieval step and retrieve it
-        // Depending on LLM, it might vary, but we can check if it returns something
+
+        // Verify that the indexed document influenced the execution by checking provenance
+        assertThat(result.provenance()).isNotEmpty();
+        boolean foundRelevantDoc = result.provenance().stream()
+                .anyMatch(p -> p.text() != null && p.text().contains("intelligent agents with memory"));
+        assertThat(foundRelevantDoc)
+                .as("Expected the indexed document to be retrieved as provenance")
+                .isTrue();
     }
 }

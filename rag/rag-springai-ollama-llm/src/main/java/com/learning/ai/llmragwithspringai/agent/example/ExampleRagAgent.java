@@ -24,12 +24,16 @@ public class ExampleRagAgent implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         log.info("Running Example Rag Agent...");
         String query = "What is the current time and what is 5 plus 5?";
-        AgentResult result =
-                orchestrator.run(new AgentQuery(query, UUID.randomUUID().toString()));
-        log.info("Agent Answer: {}", result.answer());
-        log.info("Provenance items: {}", result.provenance().size());
+        try {
+            AgentResult result =
+                    orchestrator.run(new AgentQuery(query, UUID.randomUUID().toString()));
+            log.info("Agent Answer: {}", result.answer());
+            log.info("Provenance items: {}", result.provenance().size());
+        } catch (Exception e) {
+            log.error("ExampleRagAgent failed to complete the request: {}", e.getMessage(), e);
+        }
     }
 }

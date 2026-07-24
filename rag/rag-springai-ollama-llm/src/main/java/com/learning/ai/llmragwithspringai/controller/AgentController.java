@@ -23,13 +23,22 @@ public class AgentController {
     }
 
     @PostMapping("/run")
-    public ResponseEntity<AgentResult> runAgent(@RequestBody AgentRunRequest request) {
+    public ResponseEntity<?> runAgent(@RequestBody AgentRunRequest request) {
         if (request == null || request.query() == null || request.query().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
 
-        AgentQuery query = new AgentQuery(request.query(), request.sessionId());
-        AgentResult result = orchestrator.run(query);
-        return ResponseEntity.ok(result);
+        try {
+            AgentQuery query = new AgentQuery(request.query(), request.sessionId());
+            AgentResult result = orchestrator.run(query);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of(
+                            "error",
+                            "Agent execution failed",
+                            "message",
+                            e.getMessage() != null ? e.getMessage() : "Unknown error"));
+        }
     }
 }

@@ -16,33 +16,6 @@ import org.springframework.core.io.ByteArrayResource;
 class AgentToolConfiguration {
     private static final Logger log = LoggerFactory.getLogger(AgentToolConfiguration.class);
 
-    public record WebSearchInput(String query) {}
-
-    @Bean
-    @ConditionalOnProperty(name = "rag.agent.tools.web-search.enabled", havingValue = "true")
-    ToolCallback webSearchTool() {
-        return FunctionToolCallback.builder("webSearchTool", (Function<WebSearchInput, String>) input -> {
-                    log.info("Simulating web search for query: {}", input.query());
-                    return "Simulated web search result for: " + input.query();
-                })
-                .description("Search the web for real-time information.")
-                .inputType(WebSearchInput.class)
-                .build();
-    }
-
-    public record CodeLookupInput(String className) {}
-
-    @Bean
-    ToolCallback codeLookupTool() {
-        return FunctionToolCallback.builder("codeLookupTool", (Function<CodeLookupInput, String>) input -> {
-                    log.info("Simulating code lookup for class: {}", input.className());
-                    return "Simulated source code for: " + input.className();
-                })
-                .description("Look up source code details for a given class name.")
-                .inputType(CodeLookupInput.class)
-                .build();
-    }
-
     public record KnowledgeInserterInput(String documentText) {}
 
     @Bean
@@ -61,6 +34,7 @@ class AgentToolConfiguration {
                                 dataIndexerService.loadData(resource, "agent-inserted", "agent", "knowledge");
                                 return "Document successfully inserted into the knowledge base.";
                             } catch (Exception e) {
+                                log.error("Failed to insert document", e);
                                 return "Failed to insert document: " + e.getMessage();
                             }
                         })

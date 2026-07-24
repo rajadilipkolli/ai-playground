@@ -35,7 +35,7 @@ public class InMemoryMemoryStore implements MemoryStore {
     @Override
     public List<MemoryEntry> get(String sessionId) {
         List<MemoryEntry> entries = cache.getIfPresent(sessionId);
-        return entries != null ? Collections.unmodifiableList(entries) : Collections.emptyList();
+        return entries != null ? List.copyOf(entries) : Collections.emptyList();
     }
 
     @Override
