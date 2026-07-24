@@ -20,8 +20,8 @@ class InMemoryMemoryStoreTest {
 
         List<MemoryEntry> entries = store.get("session1");
         assertThat(entries).hasSize(1);
-        assertThat(entries.get(0).role()).isEqualTo("user");
-        assertThat(entries.get(0).content()).isEqualTo("test");
+        assertThat(entries.getFirst().role()).isEqualTo("user");
+        assertThat(entries.getFirst().content()).isEqualTo("test");
 
         store.clear("session1");
         assertThat(store.get("session1")).isEmpty();

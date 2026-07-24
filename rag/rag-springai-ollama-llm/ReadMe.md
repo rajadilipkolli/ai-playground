@@ -142,6 +142,33 @@ When interacting with the `ChatClient`, the LLM has access to the following spec
 
 ---
 
+## 🧩 Embabel-style Agentic Integration
+
+This module introduces an advanced abstraction surface inspired by Embabel for building autonomous agents. The `rag.agent` configuration enables an Action Loop that continuously plans, acts, and reasons until a goal is achieved.
+
+### Key Concepts
+
+- **Planner (`LlmPlanner`)**: Evaluates a goal against the accumulated context (memory and previous findings) and decomposes it into an ordered list of steps (sub-goals) mapped to explicit actions (retrieval, tool invocation, reasoning, or finish).
+- **Tool Registry (`SpringAiToolRegistry`)**: Dynamically loads Spring AI `ToolCallback` beans, executing tools requested by the Planner. Includes safety controls and argument validation.
+- **Memory Store (`MemoryStore`)**: Retains short-term and long-term context across steps. Supports an `InMemoryMemoryStore` (Caffeine cache) and a `PersistentMemoryStore` (PostgreSQL) for cross-session continuity.
+- **Orchestrator (`DefaultOrchestrator`)**: The action loop engine that coordinates the Planner, ToolRegistry, and MemoryStore. It executes steps sequentially, manages timeouts, caps infinite loops, and accumulates provenance for the final response.
+
+### Example REST API Usage
+
+You can trigger the full agent action loop using the `/api/agent/run` endpoint:
+
+```bash
+curl -X POST http://localhost:8080/api/agent/run \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Search for the latest product manual and then calculate the cost of 5 units at $100 each."}'
+```
+
+### Extension Points & Safety
+- **Custom Planners**: Implement the `Planner` interface to integrate alternative reasoning models or non-LLM rule engines.
+- **Safety Controls**: The agent action loop is secured with `rag.agent.planner.max-steps`, `rag.agent.orchestrator.step-timeout-seconds`, and `rag.agent.orchestrator.max-tool-calls-per-step` to prevent runaway executions and limit API usage. Tools are individually gated via configuration flags (e.g., `rag.agent.tools.web-search.enabled`).
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -270,6 +297,21 @@ All properties are configured in `application.properties` using `@ConfigurationP
 | `rag.query.multiquery.variations` | `3`     | Number of variations to generate                            |
 | `rag.query.self-querying-enabled` | `false` | Enable Self-Querying / QueryAnalyzer feature                |
 | `rag.query.model`                 | `null`  | Optional override for the LLM used in query transformations |
+
+### Agent Configuration (`rag.agent.*`)
+
+| Property                                           | Default | Description                                              |
+|----------------------------------------------------|---------|----------------------------------------------------------|
+| `rag.agent.enabled`                                | `false` | Enable Embabel-style Agentic features                    |
+| `rag.agent.planner.max-steps`                      | `5`     | Maximum number of steps per plan iteration               |
+| `rag.agent.planner.temperature`                    | `0.0`   | Planner LLM temperature                                  |
+| `rag.agent.planner.model`                          | `null`  | Optional LLM model override for planner                  |
+| `rag.agent.orchestrator.step-timeout-seconds`      | `30`    | Execution timeout for the agent action loop              |
+| `rag.agent.orchestrator.max-tool-calls-per-step`   | `3`     | Maximum tool invocations permitted in a single step      |
+| `rag.agent.retrieval.top-k`                        | `3`     | Number of documents to retrieve in 'retrieval' steps     |
+| `rag.agent.memory.persistent`                      | `false` | Enable persistent memory store in PostgreSQL             |
+| `rag.agent.memory.ttl-seconds`                     | `3600`  | TTL for in-memory store                                  |
+| `rag.agent.memory.max-size`                        | `1000`  | Max size for in-memory store                             |
 
 ### Guardrails (`guardrails.*`)
 

@@ -19,6 +19,7 @@ class AgentToolConfiguration {
     public record KnowledgeInserterInput(String documentText) {}
 
     @Bean
+    @ConditionalOnProperty(name = "rag.agent.tools.knowledge-inserter.enabled", havingValue = "true")
     ToolCallback knowledgeInserterTool(DataIndexerService dataIndexerService) {
         return FunctionToolCallback.builder("knowledgeInserterTool", (Function<KnowledgeInserterInput, String>)
                         input -> {
@@ -35,7 +36,7 @@ class AgentToolConfiguration {
                                 return "Document successfully inserted into the knowledge base.";
                             } catch (Exception e) {
                                 log.error("Failed to insert document", e);
-                                return "Failed to insert document: " + e.getMessage();
+                                return "Failed to insert document due to an internal error.";
                             }
                         })
                 .description("Insert a new document or information into the knowledge base.")

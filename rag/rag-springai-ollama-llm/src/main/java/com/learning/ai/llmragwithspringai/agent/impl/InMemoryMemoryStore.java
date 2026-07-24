@@ -24,18 +24,16 @@ public class InMemoryMemoryStore implements MemoryStore {
     @Override
     public void add(String sessionId, MemoryEntry entry) {
         cache.asMap().compute(sessionId, (k, v) -> {
-            if (v == null) {
-                v = new ArrayList<>();
-            }
-            v.add(entry);
-            return v;
+            List<MemoryEntry> newList = v == null ? new ArrayList<>() : new ArrayList<>(v);
+            newList.add(entry);
+            return List.copyOf(newList);
         });
     }
 
     @Override
     public List<MemoryEntry> get(String sessionId) {
         List<MemoryEntry> entries = cache.getIfPresent(sessionId);
-        return entries != null ? List.copyOf(entries) : Collections.emptyList();
+        return entries != null ? entries : Collections.emptyList();
     }
 
     @Override
