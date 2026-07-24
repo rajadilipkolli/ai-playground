@@ -19,7 +19,16 @@
         <spring-ai.version>2.0.0</spring-ai.version>
         <datasource-micrometer.version>2.2.1</datasource-micrometer.version>
         <otelInstrumentation.version>2.10.0-alpha</otelInstrumentation.version>
+        <project.testresult.directory>${project.build.directory}/test-results</project.testresult.directory>
         <spotless.version>3.8.0</spotless.version>
+        <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
+        <jacoco.minimum.coverage>0.80</jacoco.minimum.coverage>
+        <jacoco.utReportFolder>${project.build.directory}/jacoco/test</jacoco.utReportFolder>
+        <jacoco.utReportFile>${jacoco.utReportFolder}/test.exec</jacoco.utReportFile>
+        <jacoco.itReportFolder>${project.build.directory}/jacoco/integrationTest</jacoco.itReportFolder>
+        <jacoco.itReportFile>${jacoco.itReportFolder}/integrationTest.exec</jacoco.itReportFile>
+        <junit.utReportFolder>${project.testresult.directory}/test</junit.utReportFolder>
+        <junit.itReportFolder>${project.testresult.directory}/integrationTest</junit.itReportFolder>
     </properties>
 
     <dependencies>
