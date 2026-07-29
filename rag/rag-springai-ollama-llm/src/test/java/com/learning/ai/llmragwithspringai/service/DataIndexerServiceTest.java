@@ -7,10 +7,12 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.learning.ai.llmragwithspringai.config.properties.RagIngestionProperties;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import io.micrometer.core.instrument.Counter;
@@ -20,6 +22,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +41,8 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.MimeTypeUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,10 +67,16 @@ class DataIndexerServiceTest {
     private Counter counter;
 
     @Mock
+    private RagIngestionProperties ragIngestionProperties;
+
+    @Mock
     private ChatClient.Builder chatClientBuilder;
 
     @Mock
     private ChatClient chatClient;
+
+    @Mock
+    private TransactionTemplate transactionTemplate;
 
     private DataIndexerService dataIndexerService;
 
@@ -73,12 +84,30 @@ class DataIndexerServiceTest {
     void setUp() {
         lenient().when(meterRegistry.timer(anyString())).thenReturn(timer);
         lenient().when(meterRegistry.counter(anyString())).thenReturn(counter);
-        // Use a deep-stub ChatClient so we can stub chained prompt().call().content()
-        chatClient = Mockito.mock(ChatClient.class, Mockito.RETURNS_DEEP_STUBS);
+
+        chatClient = mock(ChatClient.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
         lenient().when(chatClientBuilder.build()).thenReturn(chatClient);
+        lenient().when(ragIngestionProperties.getPdf()).thenReturn(new RagIngestionProperties.Pdf());
+
+        lenient()
+                .doAnswer(invocation -> {
+                    Consumer<TransactionStatus> callback = invocation.getArgument(0);
+                    callback.accept(null);
+                    return null;
+                })
+                .when(transactionTemplate)
+                .executeWithoutResult(org.mockito.ArgumentMatchers.any());
 
         dataIndexerService = new DataIndexerService(
-                tokenTextSplitter, vectorStore, meterRegistry, jdbcTemplate, chatClientBuilder, false, "llava");
+                tokenTextSplitter,
+                vectorStore,
+                meterRegistry,
+                jdbcTemplate,
+                chatClientBuilder,
+                transactionTemplate,
+                ragIngestionProperties,
+                false,
+                "llava");
     }
 
     @Test
@@ -189,7 +218,16 @@ class DataIndexerServiceTest {
         // Create a small subclass to simulate the vision flow without using PDFBox/BufferedImage
         class TestService extends DataIndexerService {
             public TestService() {
-                super(tokenTextSplitter, vectorStore, meterRegistry, jdbcTemplate, chatClientBuilder, true, "llava");
+                super(
+                        tokenTextSplitter,
+                        vectorStore,
+                        meterRegistry,
+                        jdbcTemplate,
+                        chatClientBuilder,
+                        transactionTemplate,
+                        ragIngestionProperties,
+                        true,
+                        "llava");
             }
 
             @Override

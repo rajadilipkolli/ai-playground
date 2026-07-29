@@ -1,5 +1,6 @@
 package com.learning.ai.llmragwithspringai.service;
 
+import com.learning.ai.llmragwithspringai.config.properties.RagIngestionProperties;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
@@ -49,8 +50,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StopWatch;
 
@@ -64,6 +64,8 @@ public class DataIndexerService {
     private final MeterRegistry meterRegistry;
     private final JdbcTemplate jdbcTemplate;
     private final ChatClient chatClient;
+    private final TransactionTemplate transactionTemplate;
+    private final RagIngestionProperties ragIngestionProperties;
     private final boolean visionEnabled;
     private final String visionModel;
 
@@ -73,6 +75,8 @@ public class DataIndexerService {
             MeterRegistry meterRegistry,
             JdbcTemplate jdbcTemplate,
             ChatClient.Builder chatClientBuilder,
+            TransactionTemplate transactionTemplate,
+            RagIngestionProperties ragIngestionProperties,
             @Value("${rag.ingestion.vision.enabled:false}") boolean visionEnabled,
             @Value("${rag.ingestion.vision.model:llava}") String visionModel) {
         this.tokenTextSplitter = tokenTextSplitter;
@@ -80,12 +84,13 @@ public class DataIndexerService {
         this.meterRegistry = meterRegistry;
         this.jdbcTemplate = jdbcTemplate;
         this.chatClient = chatClientBuilder.build();
+        this.transactionTemplate = transactionTemplate;
+        this.ragIngestionProperties = ragIngestionProperties;
         this.visionEnabled = visionEnabled;
         this.visionModel = visionModel;
     }
 
     @Observed(name = "rag.ingest", contextualName = "rag-ingest")
-    @Transactional
     public IngestionResult loadData(Resource documentResource, String documentType, String owner, String category) {
         String filename = documentResource.getFilename();
         if (filename == null) {
@@ -132,15 +137,17 @@ public class DataIndexerService {
         List<Document> rawDocuments = null;
 
         if (lowerFilename.endsWith(".pdf")) {
-            LOGGER.info("Loading PDF document");
             if (visionEnabled) {
                 LOGGER.info("Vision-based ingestion is enabled. Extracting images from PDF.");
                 rawDocuments = readPdfWithVision(rereadableResource);
             } else {
+                LOGGER.info("Loading PDF document");
                 PdfDocumentReaderConfig pdfDocumentReaderConfig = PdfDocumentReaderConfig.builder()
                         .withPageExtractedTextFormatter(ExtractedTextFormatter.builder()
-                                .withNumberOfBottomTextLinesToDelete(3)
-                                .withNumberOfTopPagesToSkipBeforeDelete(1)
+                                .withNumberOfBottomTextLinesToDelete(
+                                        ragIngestionProperties.getPdf().getBottomLinesToDelete())
+                                .withNumberOfTopPagesToSkipBeforeDelete(
+                                        ragIngestionProperties.getPdf().getTopPagesToSkip())
                                 .build())
                         .withPagesPerDocument(1)
                         .build();
@@ -157,7 +164,7 @@ public class DataIndexerService {
         }
 
         if (rawDocuments != null && !rawDocuments.isEmpty()) {
-            LOGGER.info("Loading document content to vector database");
+            LOGGER.info("Loading text document to vector database");
             DocumentTransformer metadataEnricher = documents -> {
                 final String finalFilename =
                         rereadableResource.getFilename() != null ? rereadableResource.getFilename() : "unknown";
@@ -189,10 +196,11 @@ public class DataIndexerService {
                     .toList();
 
             try {
-                vectorStore.accept(docsToIngest);
+                transactionTemplate.executeWithoutResult(status -> {
+                    vectorStore.accept(docsToIngest);
+                });
             } catch (DuplicateKeyException e) {
                 LOGGER.warn("Concurrent insertion detected for document {}, skipping ingestion.", filename);
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
             }
 

@@ -42,8 +42,8 @@ class HybridDocumentRetrieverConcurrencyIntTest extends AbstractIntegrationTest 
             for (int i = 0; i < numConcurrentRequests; i++) {
                 CompletableFuture<AIChatResponse> future = CompletableFuture.supplyAsync(
                         () -> {
-                            AIChatRequest request =
-                                    new AIChatRequest("Who is Rohit Sharma?", null, "cricket_board", "sports", null);
+                            AIChatRequest request = new AIChatRequest(
+                                    "Who is Rohit Sharma?", null, "cricket_board", "sports", null, null);
                             return aiChatService.chat(request, false);
                         },
                         executorService);
