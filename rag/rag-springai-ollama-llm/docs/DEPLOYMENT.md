@@ -7,6 +7,9 @@ This document describes how to deploy the `rag-springai-ollama-llm` application 
 - **Java 25+**: Ensure Java 25 is installed.
 - **PostgreSQL 15+**: A PostgreSQL instance with the `pgvector` extension installed.
 - **Ollama**: An Ollama server running with the necessary models pulled (e.g., `llama3.2` and `all-minilm`).
+- **Ollama**: An Ollama server running with the necessary models pulled (e.g., `llama3.2`, `all-minilm`, and `llava` for PDF vision).
+
+Note: This project registers the `llava` vision model in `spring.ai.ollama.init.chat.additional-models` so the application will attempt to pull/initialize it on startup (when `spring.ai.ollama.init.pull-model-strategy` is set to `WHEN_MISSING`). Ensure your Ollama instance can pull `llava` or that you pre-pull the model in your Ollama Docker setup before starting the application if you expect vision-based PDF ingestion to run immediately.
 
 ## Environment Variables
 
