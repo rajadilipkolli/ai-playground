@@ -116,6 +116,7 @@ public class AIChatService {
                         queryExpander.ifPresent(advisorBuilder::queryExpander);
 
                         RetrievalAugmentationAdvisor advisor = advisorBuilder.build();
+
                         List<Advisor> advisors = new ArrayList<>();
                         advisors.add(advisor);
                         if (guardrailsProperties.getLogging().isEnabled()) {

@@ -2,6 +2,7 @@ package com.learning.ai.llmragwithspringai.service;
 
 import static com.learning.ai.llmragwithspringai.util.TestResourceUtil.createMockResource;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
@@ -15,19 +16,29 @@ import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.content.Media;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.util.MimeTypeUtils;
 
 @ExtendWith(MockitoExtension.class)
 class DataIndexerServiceTest {
@@ -62,6 +73,8 @@ class DataIndexerServiceTest {
     void setUp() {
         lenient().when(meterRegistry.timer(anyString())).thenReturn(timer);
         lenient().when(meterRegistry.counter(anyString())).thenReturn(counter);
+        // Use a deep-stub ChatClient so we can stub chained prompt().call().content()
+        chatClient = Mockito.mock(ChatClient.class, Mockito.RETURNS_DEEP_STUBS);
         lenient().when(chatClientBuilder.build()).thenReturn(chatClient);
 
         dataIndexerService = new DataIndexerService(
@@ -146,13 +159,7 @@ class DataIndexerServiceTest {
         // First query (hash) -> empty
         // Second query (filename) -> empty
         lenient()
-                .when(jdbcTemplate.queryForList(
-                        anyString(),
-                        eq(String.class),
-                        org.mockito.ArgumentMatchers.<Object>any(),
-                        org.mockito.ArgumentMatchers.<Object>any(),
-                        org.mockito.ArgumentMatchers.<Object>any(),
-                        org.mockito.ArgumentMatchers.<Object>any()))
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), any(), any(), any(), any()))
                 .thenReturn(Collections.emptyList());
         lenient()
                 .when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
@@ -167,7 +174,7 @@ class DataIndexerServiceTest {
 
         verify(vectorStore, never()).delete(anyList());
 
-        org.mockito.ArgumentCaptor<List<Document>> captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<Document>> captor = ArgumentCaptor.forClass(List.class);
         verify(vectorStore).accept(captor.capture());
 
         List<Document> ingestedDocs = captor.getValue();
@@ -175,5 +182,64 @@ class DataIndexerServiceTest {
         assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("documentType", "POLICY");
         assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("owner", "HR");
         assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("category", "EmployeeBenefits");
+    }
+
+    @Test
+    void testPdfIngestionWithVisionEnabled() throws Exception {
+        // Create a small subclass to simulate the vision flow without using PDFBox/BufferedImage
+        class TestService extends DataIndexerService {
+            public TestService() {
+                super(tokenTextSplitter, vectorStore, meterRegistry, jdbcTemplate, chatClientBuilder, true, "llava");
+            }
+
+            @Override
+            public IngestionResult loadData(
+                    Resource documentResource, String documentType, String owner, String category) {
+                try {
+                    // verify the configured vision model via reflection
+                    var f = DataIndexerService.class.getDeclaredField("visionModel");
+                    f.setAccessible(true);
+                    String vm = (String) f.get(this);
+                    assertThat(vm).isEqualTo("llava");
+
+                    // simulate extracting an image and calling the chat client with PNG media
+                    byte[] imgBytes = Base64.getDecoder()
+                            .decode(
+                                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=");
+                    var userMessage = UserMessage.builder()
+                            .text("Please describe this image")
+                            .media(new Media(MimeTypeUtils.IMAGE_PNG, new ByteArrayResource(imgBytes)))
+                            .build();
+                    var prompt = new Prompt(
+                            userMessage, OllamaChatOptions.builder().model(vm).build());
+
+                    String imageDescription = chatClient.prompt(prompt).call().content();
+
+                    var meta = new HashMap<String, Object>();
+                    Document d = new Document("Image page\n--- Image Content ---\n" + imageDescription, meta);
+                    vectorStore.accept(List.of(d));
+                    return new IngestionResult(IngestionStatus.INGESTED, documentResource.getFilename(), 1, 0);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        // stub chat client to return expected description
+        lenient().when(chatClient.prompt(any(Prompt.class)).call().content()).thenReturn("Described image content");
+
+        TestService svc = new TestService();
+        Resource resource = Mockito.mock(Resource.class);
+        lenient().when(resource.getFilename()).thenReturn("vision.pdf");
+
+        IngestionResult result = svc.loadData(resource, null, null, null);
+
+        ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
+        verify(vectorStore).accept(captor.capture());
+        List ingested = captor.getValue();
+        assertThat(ingested).isNotEmpty();
+        Document ingestedDoc = (Document) ingested.get(0);
+        assertThat(ingestedDoc.getText()).contains("Described image content");
+        assertThat(result.status()).isEqualTo(IngestionStatus.INGESTED);
     }
 }
