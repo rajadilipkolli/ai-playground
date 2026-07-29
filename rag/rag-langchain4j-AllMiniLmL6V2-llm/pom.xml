@@ -19,14 +19,14 @@
         <java.version>25</java.version>
         <langchain4j.version>0.36.2</langchain4j.version>
         <langchain4j.springboot.version>0.36.2</langchain4j.springboot.version>
-        <spotless.version>3.6.0</spotless.version>
+        <spotless.version>3.9.0</spotless.version>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>io.rest-assured</groupId>
                 <artifactId>rest-assured</artifactId>
-                <version>6.0.0</version>
+                <version>6.0.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

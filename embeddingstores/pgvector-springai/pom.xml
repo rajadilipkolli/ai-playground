@@ -20,7 +20,7 @@
         <java.version>25</java.version>
         <spring-ai.version>2.0.0</spring-ai.version>
 
-        <spotless.version>3.6.0</spotless.version>
+        <spotless.version>3.9.0</spotless.version>
     </properties>
 
     <dependencies>
@@ -83,7 +83,7 @@
             <dependency>
                 <groupId>io.rest-assured</groupId>
                 <artifactId>rest-assured</artifactId>
-                <version>6.0.0</version>
+                <version>6.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.ai</groupId>
@@ -112,7 +112,6 @@
                         </palantirJavaFormat>
                         <importOrder />
                         <removeUnusedImports />
-                        <formatAnnotations />
                     </java>
                 </configuration>
                 <executions>

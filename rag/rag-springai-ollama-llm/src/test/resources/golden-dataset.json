@@ -1,16 +1,20 @@
-[
   {
-    "question": "What team does Rohit Sharma play for in the IPL?",
-    "expectedAnswerKeywords": ["Mumbai Indians"],
-    "expectedContextKeywords": ["Mumbai Indians", "IPL"]
+    "question": "What is Rohit Sharma's favorite video game?",
+    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedContextKeywords": [],
+    "groundTruthAnswer": null
+  },
+    "groundTruthAnswer": "Rohit Sharma plays for the Mumbai Indians in the IPL."
   },
   {
     "question": "How many centuries does Rohit Sharma have at Cricket World Cups?",
     "expectedAnswerKeywords": ["7", "seven"],
-    "expectedContextKeywords": ["World Cups", "centuries"]
+    "expectedContextKeywords": ["World Cups", "centuries"],
+    "groundTruthAnswer": "Rohit Sharma has scored 7 centuries at Cricket World Cups."
   },
   {
     "question": "What is Rohit Sharma's favorite video game?",
+<<<<<<< HEAD
     "expectedAnswerKeywords": ["not mention", "no information", "not specified", "not available", "doesn't contain", "doesn't provide", "isn't mentioned", "not in the context", "doesn't say", "doesn't have", "does not specify", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
     "expectedContextKeywords": []
   },
@@ -63,5 +67,10 @@
     "question": "Tell me about something not mentioned in the document?",
     "expectedAnswerKeywords": ["not mention", "no information", "not specified", "not available", "doesn't contain", "doesn't provide", "isn't mentioned", "not in the context", "doesn't say", "doesn't have", "does not specify", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
     "expectedContextKeywords": []
+=======
+    "expectedAnswerKeywords": ["not mention", "no information", "cannot answer", "do not have", "don't have", "does not provide", "do not contain", "not provided", "does not include", "sorry", "i don't know", "does not have", "does not state", "unable to answer"],
+    "expectedContextKeywords": [],
+    "groundTruthAnswer": null
+>>>>>>> origin/main
   }
 ]

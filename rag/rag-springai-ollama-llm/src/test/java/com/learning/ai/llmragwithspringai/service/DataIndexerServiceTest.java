@@ -78,7 +78,7 @@ class DataIndexerServiceTest {
         when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
                 .thenReturn(List.of("doc-123"));
 
-        IngestionResult result = dataIndexerService.loadData(resource);
+        IngestionResult result = dataIndexerService.loadData(resource, null, null, null);
 
         assertThat(result.status()).isEqualTo(IngestionStatus.SKIPPED_DUPLICATE);
         assertThat(result.filename()).isEqualTo("test.txt");
@@ -104,7 +104,7 @@ class DataIndexerServiceTest {
                 .thenReturn(Collections.emptyList())
                 .thenReturn(List.of("doc-123"));
 
-        IngestionResult result = dataIndexerService.loadData(resource);
+        IngestionResult result = dataIndexerService.loadData(resource, null, null, null);
 
         assertThat(result.status()).isEqualTo(IngestionStatus.REPLACED);
         assertThat(result.filename()).isEqualTo("test.txt");
@@ -125,7 +125,7 @@ class DataIndexerServiceTest {
         when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
                 .thenReturn(List.of("doc-999"));
 
-        IngestionResult result = dataIndexerService.loadData(resource);
+        IngestionResult result = dataIndexerService.loadData(resource, null, null, null);
 
         assertThat(result.status()).isEqualTo(IngestionStatus.SKIPPED_DUPLICATE);
         assertThat(result.filename()).isEqualTo("new-file.txt");
@@ -145,10 +145,20 @@ class DataIndexerServiceTest {
 
         // First query (hash) -> empty
         // Second query (filename) -> empty
-        when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
+        lenient()
+                .when(jdbcTemplate.queryForList(
+                        anyString(),
+                        eq(String.class),
+                        org.mockito.ArgumentMatchers.<Object>any(),
+                        org.mockito.ArgumentMatchers.<Object>any(),
+                        org.mockito.ArgumentMatchers.<Object>any(),
+                        org.mockito.ArgumentMatchers.<Object>any()))
+                .thenReturn(Collections.emptyList());
+        lenient()
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
                 .thenReturn(Collections.emptyList());
 
-        IngestionResult result = dataIndexerService.loadData(resource);
+        IngestionResult result = dataIndexerService.loadData(resource, "POLICY", "HR", "EmployeeBenefits");
 
         assertThat(result.status()).isEqualTo(IngestionStatus.INGESTED);
         assertThat(result.filename()).isEqualTo("brand-new.txt");
@@ -156,6 +166,14 @@ class DataIndexerServiceTest {
         assertThat(result.chunksDeleted()).isEqualTo(0);
 
         verify(vectorStore, never()).delete(anyList());
-        verify(vectorStore).accept(anyList());
+
+        org.mockito.ArgumentCaptor<List<Document>> captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(vectorStore).accept(captor.capture());
+
+        List<Document> ingestedDocs = captor.getValue();
+        assertThat(ingestedDocs).hasSize(1);
+        assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("documentType", "POLICY");
+        assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("owner", "HR");
+        assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("category", "EmployeeBenefits");
     }
 }
