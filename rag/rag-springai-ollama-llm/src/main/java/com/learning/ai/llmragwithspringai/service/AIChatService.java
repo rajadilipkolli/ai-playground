@@ -27,7 +27,6 @@ import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
-import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.preretrieval.query.expansion.QueryExpander;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
 import org.springframework.ai.tool.ToolCallback;
@@ -95,19 +94,6 @@ public class AIChatService {
                 }
             }
         }
-        if (ragQueryProperties != null && ragQueryProperties.isSelfQueryingEnabled() && queryAnalyzer.isPresent()) {
-            QueryAnalysisResult analysisResult = queryAnalyzer.get().analyze(request.question());
-            if (analysisResult != null) {
-                if (analysisResult.cleanedQuery() != null
-                        && !analysisResult.cleanedQuery().isBlank()) {
-                    finalQuestion = analysisResult.cleanedQuery();
-                }
-                if (analysisResult.filters() != null) {
-                    mergedFilters.putAll(analysisResult.filters());
-                }
->>>>>>> origin/main
-            }
-        }
 
         mergedFilters.putAll(explicitFilters);
 
@@ -118,20 +104,7 @@ public class AIChatService {
             FilterContext.clearRetrievedDocuments();
             return ScopedValue.where(FilterContext.FILTER_EXPRESSION, filterExpression)
                     .call(() -> {
-                        var queryAugmenter = ContextualQueryAugmenter.builder()
-                                .allowEmptyContext(true)
-                                .build();
-
-                        var advisorBuilder = RetrievalAugmentationAdvisor.builder()
-                                .documentRetriever(documentRetriever)
-                                .queryAugmenter(queryAugmenter);
-
-                        queryExpander.ifPresent(advisorBuilder::queryExpander);
-
-                        RetrievalAugmentationAdvisor advisor = advisorBuilder.build();
-
                         List<Advisor> advisors = new ArrayList<>();
-                        advisors.add(advisor);
                         if (guardrailsProperties.getLogging().isEnabled()) {
                             advisors.add(new SimpleLoggerAdvisor());
                         }

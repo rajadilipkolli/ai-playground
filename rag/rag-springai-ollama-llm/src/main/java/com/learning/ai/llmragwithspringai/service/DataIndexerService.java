@@ -1,60 +1,5 @@
 package com.learning.ai.llmragwithspringai.service;
 
-import com.learning.ai.llmragwithspringai.config.properties.RagIngestionProperties;
-import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
-import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
-import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.observation.annotation.Observed;
-<<<<<<< HEAD
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-=======
-import java.nio.charset.StandardCharsets;
->>>>>>> origin/main
-import java.time.Duration;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-<<<<<<< HEAD
-import java.util.HashMap;
-=======
->>>>>>> origin/main
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-<<<<<<< HEAD
-import javax.imageio.ImageIO;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDResources;
-import org.apache.pdfbox.pdmodel.graphics.PDXObject;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
-import org.apache.pdfbox.text.PDFTextStripper;
-=======
-import java.util.UUID;
->>>>>>> origin/main
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.content.Media;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.document.DocumentReader;
-import org.springframework.ai.document.DocumentTransformer;
-import org.springframework.ai.ollama.api.OllamaChatOptions;
-import org.springframework.ai.reader.ExtractedTextFormatter;
-import org.springframework.ai.reader.JsonReader;
-import org.springframework.ai.reader.TextReader;
-import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
-import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
-import org.springframework.ai.transformer.splitter.TextSplitter;
-import org.springframework.ai.vectorstore.VectorStore;
-package com.learning.ai.llmragwithspringai.service;
-
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
@@ -304,7 +249,8 @@ public class DataIndexerService {
                                 OllamaChatOptions.builder().model(visionModel).build());
 
                         LOGGER.info("Calling Ollama vision model ({}) for image on page {}", visionModel, i + 1);
-                        String imageDescription = chatClient.prompt(prompt).call().content();
+                        String imageDescription =
+                                chatClient.prompt(prompt).call().content();
 
                         pageContent.append("\n\n--- Image Content ---\n");
                         pageContent.append(imageDescription);
@@ -349,45 +295,6 @@ public class DataIndexerService {
         }
 
         return jdbcTemplate.queryForList(sql, String.class, args.toArray());
-    }
-
-    private List<String> findDocumentsByFilename(String filename, String documentType, String owner, String category) {
-        String sql = "SELECT id FROM vector_store WHERE metadata->>'source_filename' = ?";
-        if (documentType != null) {
-            sql += " AND metadata->>'documentType' = ?";
-        }
-        if (owner != null) {
-            sql += " AND metadata->>'owner' = ?";
-        }
-        if (category != null) {
-            sql += " AND metadata->>'category' = ?";
-        }
-
-        var args = new ArrayList<String>();
-        args.add(filename);
-        if (documentType != null) {
-            args.add(documentType);
-        }
-        if (owner != null) {
-            args.add(owner);
-        }
-        if (category != null) {
-            args.add(category);
-        }
-
-        return jdbcTemplate.queryForList(sql, String.class, args.toArray());
-    }
-
-    @Observed(name = "rag.count", contextualName = "rag-count")
-    public long count() {
-        Long count = this.jdbcTemplate.queryForObject("SELECT COUNT(1) FROM vector_store", Long.class);
-        return count != null ? count : 0L;
-    }
-
-    public boolean isEmpty() {
-        return count() == 0;
-    }
-}
     }
 
     private List<String> findDocumentsByFilename(String filename, String documentType, String owner, String category) {
