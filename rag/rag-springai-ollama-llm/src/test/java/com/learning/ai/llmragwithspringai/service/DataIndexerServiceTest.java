@@ -18,9 +18,7 @@ import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import java.util.Base64;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,22 +26,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.content.Media;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.MimeTypeUtils;
 
 @ExtendWith(MockitoExtension.class)
 class DataIndexerServiceTest {
@@ -215,62 +209,37 @@ class DataIndexerServiceTest {
 
     @Test
     void testPdfIngestionWithVisionEnabled() throws Exception {
-        // Create a small subclass to simulate the vision flow without using PDFBox/BufferedImage
-        class TestService extends DataIndexerService {
-            public TestService() {
-                super(
-                        tokenTextSplitter,
-                        vectorStore,
-                        meterRegistry,
-                        jdbcTemplate,
-                        chatClientBuilder,
-                        transactionTemplate,
-                        ragIngestionProperties,
-                        true,
-                        "llava");
-            }
+        DataIndexerService visionService = new DataIndexerService(
+                tokenTextSplitter,
+                vectorStore,
+                meterRegistry,
+                jdbcTemplate,
+                chatClientBuilder,
+                transactionTemplate,
+                ragIngestionProperties,
+                true,
+                "llava");
 
-            @Override
-            public IngestionResult loadData(
-                    Resource documentResource, String documentType, String owner, String category) {
-                try {
-                    // verify the configured vision model via reflection
-                    var f = DataIndexerService.class.getDeclaredField("visionModel");
-                    f.setAccessible(true);
-                    String vm = (String) f.get(this);
-                    assertThat(vm).isEqualTo("llava");
+        Resource resource = new org.springframework.core.io.FileSystemResource("src/test/resources/minimal-vision.pdf");
 
-                    // simulate extracting an image and calling the chat client with PNG media
-                    byte[] imgBytes = Base64.getDecoder()
-                            .decode(
-                                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=");
-                    var userMessage = UserMessage.builder()
-                            .text("Please describe this image")
-                            .media(new Media(MimeTypeUtils.IMAGE_PNG, new ByteArrayResource(imgBytes)))
-                            .build();
-                    var prompt = new Prompt(
-                            userMessage, OllamaChatOptions.builder().model(vm).build());
+        // First query (hash) -> empty
+        // Second query (filename) -> empty
+        lenient()
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        lenient()
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
+                .thenReturn(Collections.emptyList());
 
-                    String imageDescription = chatClient.prompt(prompt).call().content();
-
-                    var meta = new HashMap<String, Object>();
-                    Document d = new Document("Image page\n--- Image Content ---\n" + imageDescription, meta);
-                    vectorStore.accept(List.of(d));
-                    return new IngestionResult(IngestionStatus.INGESTED, documentResource.getFilename(), 1, 0);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
+        lenient().when(tokenTextSplitter.apply(anyList())).thenAnswer(inv -> inv.getArgument(0));
 
         // stub chat client to return expected description
-        lenient().when(chatClient.prompt(any(Prompt.class)).call().content()).thenReturn("Described image content");
+        ArgumentCaptor<Prompt> promptCaptor = ArgumentCaptor.forClass(Prompt.class);
+        lenient()
+                .when(chatClient.prompt(promptCaptor.capture()).call().content())
+                .thenReturn("Described image content");
 
-        TestService svc = new TestService();
-        Resource resource = Mockito.mock(Resource.class);
-        lenient().when(resource.getFilename()).thenReturn("vision.pdf");
-
-        IngestionResult result = svc.loadData(resource, null, null, null);
+        IngestionResult result = visionService.loadData(resource, null, null, null);
 
         ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
         verify(vectorStore).accept(captor.capture());
@@ -278,6 +247,20 @@ class DataIndexerServiceTest {
         assertThat(ingested).isNotEmpty();
         Document ingestedDoc = (Document) ingested.get(0);
         assertThat(ingestedDoc.getText()).contains("Described image content");
+        assertThat(ingestedDoc.getText()).contains("Vision Model Test Document");
+        assertThat(ingestedDoc.getText()).contains("Here is a pie chart");
+        assertThat(ingestedDoc.getText()).contains("Language");
+        assertThat(ingestedDoc.getText()).contains("Java");
         assertThat(result.status()).isEqualTo(IngestionStatus.INGESTED);
+
+        Prompt capturedPrompt = promptCaptor.getValue();
+        // Since OllamaChatOptions is used in the codebase, we should verify that.
+        // We know we passed options.getModel()
+        // It's possible getOptions is castable to OllamaChatOptions
+        if (capturedPrompt.getOptions() instanceof OllamaChatOptions opts) {
+            assertThat(opts.getModel()).isEqualTo("llava");
+        }
+        assertThat(((UserMessage) capturedPrompt.getInstructions().get(0)).getMedia())
+                .isNotEmpty();
     }
 }

@@ -8,7 +8,6 @@ import com.learning.ai.llmragwithspringai.agent.api.Orchestrator;
 import com.learning.ai.llmragwithspringai.config.AbstractIntegrationTest;
 import com.learning.ai.llmragwithspringai.service.DataIndexerService;
 import java.util.UUID;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
@@ -41,11 +40,9 @@ class AgentE2EIntegrationTest extends AbstractIntegrationTest {
         assertThat(result).isNotNull();
         assertThat(result.answer()).isNotBlank();
 
-        // The llama3.2:1b model occasionally fails to output a valid JSON array, causing a planning error.
-        // Skip the test in this scenario rather than failing it, since it's a model hallucination flake.
-        Assumptions.assumeFalse(
-                result.answer().contains("error while planning"),
-                "Skipping test because the local LLM failed to generate a valid JSON plan.");
+        assertThat(result.answer())
+                .as("Agent failed with a planning error. Answer returned: %s", result.answer())
+                .doesNotContain("error while planning");
 
         // Verify that the indexed test-agent-doc.txt document influenced the execution via provenance
         assertThat(result.provenance()).isNotEmpty();
