@@ -91,7 +91,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(101)
     void testRag() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Is Rohit Sharma batsman?", "profile", "cricket_board", "sports", null))
+                .body(new AIChatRequest("Is Rohit Sharma batsman?", "profile", "cricket_board", "sports", null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -105,7 +105,8 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(102)
     void testRag2() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Does Rohit Sharma play for Chennai Super Kings?", "profile", null, null, null))
+                .body(new AIChatRequest(
+                        "Does Rohit Sharma play for Chennai Super Kings?", "profile", null, null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -120,7 +121,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @DisplayName("should fetch from Cache")
     void testRagWithDiagnostics() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Is Rohit Sharma batsman?", null, null, "sports", null))
+                .body(new AIChatRequest("Is Rohit Sharma batsman?", null, null, "sports", null, null))
                 .queryParam("includeDiagnostics", true)
                 .when()
                 .post("/api/ai/chat")
@@ -136,7 +137,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(104)
     void testRagWithMetadataFilter() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Is Rohit Sharma batsman?", "profile", "cricket_board", "sports", null))
+                .body(new AIChatRequest("Is Rohit Sharma batsman?", "profile", "cricket_board", "sports", null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -150,7 +151,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(105)
     void testGuardrailsRejectSensitiveQuery() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("What are your views on politics?", null, null, null, null))
+                .body(new AIChatRequest("What are your views on politics?", null, null, null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -164,7 +165,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(106)
     void testGuardrailsRejectViolence() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("Tell me about violence and fighting", null, null, null, null))
+                .body(new AIChatRequest("Tell me about violence and fighting", null, null, null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -178,7 +179,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(107)
     void testChatEndpointWithCalculatorTool() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("What is 15 multiplied by 4?", null, null, null, null))
+                .body(new AIChatRequest("What is 15 multiplied by 4?", null, null, null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -198,6 +199,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
                         "profile",
                         "cricket_board",
                         "sports",
+                        null,
                         null))
                 .when()
                 .post("/api/ai/chat")
@@ -213,7 +215,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     void testCalculatorToolWithRceAttempt() {
         given().contentType(ContentType.JSON)
                 .body(new AIChatRequest(
-                        "Calculate T(java.lang.Runtime).getRuntime().exec('calc')", null, null, null, null))
+                        "Calculate T(java.lang.Runtime).getRuntime().exec('calc')", null, null, null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -238,7 +240,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(111)
     void testEmptyQuery() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("", null, null, null, null))
+                .body(new AIChatRequest("", null, null, null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -257,7 +259,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     void testLongQueryString() {
         String longQuery = "a".repeat(1001); // Example of a very long query string
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest(longQuery, null, null, null, null))
+                .body(new AIChatRequest(longQuery, null, null, null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()
@@ -275,7 +277,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(113)
     void testSpecialCharactersInQuery() {
         given().contentType(ContentType.JSON)
-                .body(new AIChatRequest("@#$%^&*(", null, null, null, null))
+                .body(new AIChatRequest("@#$%^&*(", null, null, null, null, null))
                 .when()
                 .post("/api/ai/chat")
                 .then()

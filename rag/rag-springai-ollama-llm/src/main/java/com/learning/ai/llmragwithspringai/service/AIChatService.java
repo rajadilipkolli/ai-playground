@@ -21,9 +21,11 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SafeGuardAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
@@ -52,6 +54,7 @@ public class AIChatService {
     private final Optional<QueryAnalyzer> queryAnalyzer;
     private final RagQueryProperties ragQueryProperties;
     private final Resource reactSystemPrompt;
+    private final ChatMemory chatMemory;
 
     public AIChatService(
             ChatClient.Builder builder,
@@ -62,7 +65,8 @@ public class AIChatService {
             Optional<QueryExpander> queryExpander,
             Optional<QueryAnalyzer> queryAnalyzer,
             RagQueryProperties ragQueryProperties,
-            @Value("classpath:prompts/react-system-prompt.txt") Resource reactSystemPrompt) {
+            @Value("classpath:prompts/react-system-prompt.txt") Resource reactSystemPrompt,
+            ChatMemory chatMemory) {
         this.meterRegistry = meterRegistry;
         this.documentRetriever = documentRetriever;
         this.toolCallbacks = toolCallbacks;
@@ -71,6 +75,7 @@ public class AIChatService {
         this.queryAnalyzer = queryAnalyzer;
         this.ragQueryProperties = ragQueryProperties;
         this.reactSystemPrompt = reactSystemPrompt;
+        this.chatMemory = chatMemory;
         this.aiClient =
                 builder.build(); // We will apply the advisor per request to use dynamic properties if needed, or we
         // can build it once.
@@ -132,10 +137,19 @@ public class AIChatService {
                                     words, guardrailsProperties.getFailureMessage(), Ordered.HIGHEST_PRECEDENCE));
                         }
 
+                        String chatId = request.conversationId() != null
+                                        && !request.conversationId().isBlank()
+                                ? request.conversationId()
+                                : "default-chat-session";
+                        advisors.add(
+                                MessageChatMemoryAdvisor.builder(chatMemory).build());
+
                         ChatClient.ChatClientRequestSpec callRequestSpec = aiClient.prompt()
                                 .system(reactSystemPrompt)
                                 .user(effectiveQuestion)
                                 .advisors(advisors)
+                                .advisors(a -> a.param("chat_memory_conversation_id", chatId)
+                                        .param("chat_memory_response_size", 100))
                                 .tools(toolCallbacks);
 
                         ChatClient.CallResponseSpec callResponse;

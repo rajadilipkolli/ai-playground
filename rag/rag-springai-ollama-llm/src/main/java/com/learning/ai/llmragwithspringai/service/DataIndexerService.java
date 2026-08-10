@@ -6,20 +6,37 @@ import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.annotation.Observed;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import javax.imageio.ImageIO;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDResources;
+import org.apache.pdfbox.pdmodel.graphics.PDXObject;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.content.Media;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.document.DocumentReader;
 import org.springframework.ai.document.DocumentTransformer;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.JsonReader;
 import org.springframework.ai.reader.TextReader;
@@ -27,12 +44,14 @@ import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StopWatch;
 
 @Service
@@ -44,23 +63,34 @@ public class DataIndexerService {
     private final VectorStore vectorStore;
     private final MeterRegistry meterRegistry;
     private final JdbcTemplate jdbcTemplate;
+    private final ChatClient chatClient;
+    private final TransactionTemplate transactionTemplate;
     private final RagIngestionProperties ragIngestionProperties;
+    private final boolean visionEnabled;
+    private final String visionModel;
 
     public DataIndexerService(
             TextSplitter tokenTextSplitter,
             VectorStore vectorStore,
             MeterRegistry meterRegistry,
             JdbcTemplate jdbcTemplate,
-            RagIngestionProperties ragIngestionProperties) {
+            ChatClient.Builder chatClientBuilder,
+            TransactionTemplate transactionTemplate,
+            RagIngestionProperties ragIngestionProperties,
+            @Value("${rag.ingestion.vision.enabled:false}") boolean visionEnabled,
+            @Value("${rag.ingestion.vision.model:llava}") String visionModel) {
         this.tokenTextSplitter = tokenTextSplitter;
         this.vectorStore = vectorStore;
         this.meterRegistry = meterRegistry;
         this.jdbcTemplate = jdbcTemplate;
+        this.chatClient = chatClientBuilder.build();
+        this.transactionTemplate = transactionTemplate;
         this.ragIngestionProperties = ragIngestionProperties;
+        this.visionEnabled = visionEnabled;
+        this.visionModel = visionModel;
     }
 
     @Observed(name = "rag.ingest", contextualName = "rag-ingest")
-    @Transactional
     public IngestionResult loadData(Resource documentResource, String documentType, String owner, String category) {
         String filename = documentResource.getFilename();
         if (filename == null) {
@@ -104,18 +134,25 @@ public class DataIndexerService {
 
         String lowerFilename = filename.toLowerCase(Locale.ROOT);
         DocumentReader documentReader = null;
+        List<Document> rawDocuments = null;
+
         if (lowerFilename.endsWith(".pdf")) {
-            LOGGER.info("Loading PDF document");
-            PdfDocumentReaderConfig pdfDocumentReaderConfig = PdfDocumentReaderConfig.builder()
-                    .withPageExtractedTextFormatter(ExtractedTextFormatter.builder()
-                            .withNumberOfBottomTextLinesToDelete(
-                                    ragIngestionProperties.getPdf().getBottomLinesToDelete())
-                            .withNumberOfTopPagesToSkipBeforeDelete(
-                                    ragIngestionProperties.getPdf().getTopPagesToSkip())
-                            .build())
-                    .withPagesPerDocument(1)
-                    .build();
-            documentReader = new PagePdfDocumentReader(rereadableResource, pdfDocumentReaderConfig);
+            if (visionEnabled) {
+                LOGGER.info("Vision-based ingestion is enabled. Extracting images from PDF.");
+                rawDocuments = readPdfWithVision(rereadableResource);
+            } else {
+                LOGGER.info("Loading PDF document");
+                PdfDocumentReaderConfig pdfDocumentReaderConfig = PdfDocumentReaderConfig.builder()
+                        .withPageExtractedTextFormatter(ExtractedTextFormatter.builder()
+                                .withNumberOfBottomTextLinesToDelete(
+                                        ragIngestionProperties.getPdf().getBottomLinesToDelete())
+                                .withNumberOfTopPagesToSkipBeforeDelete(
+                                        ragIngestionProperties.getPdf().getTopPagesToSkip())
+                                .build())
+                        .withPagesPerDocument(1)
+                        .build();
+                documentReader = new PagePdfDocumentReader(rereadableResource, pdfDocumentReaderConfig);
+            }
         } else if (lowerFilename.endsWith(".txt")) {
             documentReader = new TextReader(rereadableResource);
         } else if (lowerFilename.endsWith(".json")) {
@@ -123,6 +160,10 @@ public class DataIndexerService {
         }
 
         if (documentReader != null) {
+            rawDocuments = documentReader.get();
+        }
+
+        if (rawDocuments != null && !rawDocuments.isEmpty()) {
             LOGGER.info("Loading text document to vector database");
             DocumentTransformer metadataEnricher = documents -> {
                 final String finalFilename =
@@ -140,7 +181,7 @@ public class DataIndexerService {
                 return documents;
             };
 
-            List<Document> docsToIngest = metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get())).stream()
+            List<Document> docsToIngest = metadataEnricher.apply(tokenTextSplitter.apply(rawDocuments)).stream()
                     .map(d -> {
                         String deterministicId = UUID.nameUUIDFromBytes(
                                         (contentHash + d.getText()).getBytes(StandardCharsets.UTF_8))
@@ -155,11 +196,11 @@ public class DataIndexerService {
                     .toList();
 
             try {
-                vectorStore.accept(docsToIngest);
+                transactionTemplate.executeWithoutResult(status -> {
+                    vectorStore.accept(docsToIngest);
+                });
             } catch (DuplicateKeyException e) {
                 LOGGER.warn("Concurrent insertion detected for document {}, skipping ingestion.", filename);
-                // Roll back to restore any deleted chunks
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
             }
 
@@ -176,6 +217,64 @@ public class DataIndexerService {
         }
 
         return new IngestionResult(IngestionStatus.UNSUPPORTED_FORMAT, filename, 0, 0); // fallback
+    }
+
+    private List<Document> readPdfWithVision(Resource resource) {
+        List<Document> documents = new ArrayList<>();
+        try (InputStream is = resource.getInputStream();
+                PDDocument document = Loader.loadPDF(is.readAllBytes())) {
+            PDFTextStripper stripper = new PDFTextStripper();
+
+            int pageCount = document.getNumberOfPages();
+            for (int i = 0; i < pageCount; i++) {
+                PDPage page = document.getPage(i);
+
+                stripper.setStartPage(i + 1);
+                stripper.setEndPage(i + 1);
+                String text = stripper.getText(document);
+
+                StringBuilder pageContent = new StringBuilder(text);
+
+                PDResources pdResources = page.getResources();
+                for (org.apache.pdfbox.cos.COSName cosName : pdResources.getXObjectNames()) {
+                    PDXObject xObject = pdResources.getXObject(cosName);
+                    if (xObject instanceof PDImageXObject image) {
+                        BufferedImage bufferedImage = image.getImage();
+
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        ImageIO.write(bufferedImage, "png", baos);
+                        byte[] imageBytes = baos.toByteArray();
+
+                        String promptText =
+                                "Please describe this image in detail. Extract any textual content, tables, or structural data exactly as they appear.";
+                        UserMessage userMessage = UserMessage.builder()
+                                .text(promptText)
+                                .media(new Media(MimeTypeUtils.IMAGE_PNG, new ByteArrayResource(imageBytes)))
+                                .build();
+
+                        Prompt prompt = new Prompt(
+                                userMessage,
+                                OllamaChatOptions.builder().model(visionModel).build());
+
+                        LOGGER.info("Calling Ollama vision model ({}) for image on page {}", visionModel, i + 1);
+                        String imageDescription =
+                                chatClient.prompt(prompt).call().content();
+
+                        pageContent.append("\n\n--- Image Content ---\n");
+                        pageContent.append(imageDescription);
+                        pageContent.append("\n---------------------\n");
+                    }
+                }
+
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("page_number", i + 1);
+                documents.add(new Document(pageContent.toString(), metadata));
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to extract text and images from PDF using vision model", e);
+            throw new IllegalStateException("Vision-based PDF ingestion failed", e);
+        }
+        return documents;
     }
 
     private List<String> findDocumentsByContentHashAndScope(
