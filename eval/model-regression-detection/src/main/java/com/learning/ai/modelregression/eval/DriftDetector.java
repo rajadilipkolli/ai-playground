@@ -18,16 +18,16 @@ public class DriftDetector {
     }
 
     public boolean hasSlowDrift(EvaluationRun currentRun) {
-        List<EvaluationRun> last7Runs = runRepository.getRecentRuns(7);
-        if (last7Runs.size() < 7) {
+        List<EvaluationRun> previousRuns = runRepository.getRecentRuns(6);
+        if (previousRuns.size() < 6) {
             return false; // Not enough history
         }
 
-        double sum = 0;
-        for (EvaluationRun r : last7Runs) {
+        double sum = currentRun.passRatePercent();
+        for (EvaluationRun r : previousRuns) {
             sum += r.passRatePercent();
         }
-        double movingAverage = sum / last7Runs.size();
+        double movingAverage = sum / 7.0;
 
         return movingAverage < thresholds.getDriftThreshold();
     }

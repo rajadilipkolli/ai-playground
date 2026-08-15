@@ -22,3 +22,4 @@ CREATE TABLE IF NOT EXISTS case_results (
 );
 
 CREATE INDEX IF NOT EXISTS idx_case_results_run_case ON case_results (run_id, case_id);
+CREATE INDEX IF NOT EXISTS idx_runs_timestamp ON runs(timestamp);

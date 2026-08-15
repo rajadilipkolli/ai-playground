@@ -4,6 +4,8 @@ import jakarta.validation.ConstraintViolationException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.retry.NonTransientAiException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -20,6 +22,17 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    ProblemDetail onException(IllegalArgumentException exception) {
+        ProblemDetail problemDetail =
+                ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(400), exception.getMessage());
+        problemDetail.setTitle("Invalid Request");
+        return problemDetail;
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     ProblemDetail onException(MethodArgumentNotValidException methodArgumentNotValidException) {
@@ -28,12 +41,16 @@ public class GlobalExceptionHandler {
         problemDetail.setTitle("Constraint Violation");
         List<ApiValidationError> validationErrorsList = methodArgumentNotValidException.getAllErrors().stream()
                 .map(objectError -> {
-                    FieldError fieldError = (FieldError) objectError;
+                    String field = objectError instanceof FieldError fieldError
+                            ? fieldError.getField()
+                            : objectError.getObjectName();
+                    Object rejectedValue =
+                            objectError instanceof FieldError fieldError ? fieldError.getRejectedValue() : null;
                     return new ApiValidationError(
-                            fieldError.getObjectName(),
-                            fieldError.getField(),
-                            fieldError.getRejectedValue(),
-                            Objects.requireNonNull(fieldError.getDefaultMessage(), ""));
+                            objectError.getObjectName(),
+                            field,
+                            rejectedValue,
+                            Objects.requireNonNullElse(objectError.getDefaultMessage(), ""));
                 })
                 .sorted(Comparator.comparing(ApiValidationError::field))
                 .toList();
@@ -62,10 +79,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NonTransientAiException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     ProblemDetail onException(NonTransientAiException nonTransientAiException) {
+        log.error("AI Service Error: {}", nonTransientAiException.getMessage(), nonTransientAiException);
         ProblemDetail problemDetail =
                 ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(503), "AI Service Unavailable.");
         problemDetail.setTitle("AI Error");
-        problemDetail.setDetail(nonTransientAiException.getMessage());
         return problemDetail;
     }
 

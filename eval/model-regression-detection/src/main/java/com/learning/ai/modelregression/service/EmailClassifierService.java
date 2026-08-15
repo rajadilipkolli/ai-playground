@@ -1,20 +1,16 @@
 package com.learning.ai.modelregression.service;
 
-import com.learning.ai.modelregression.model.Category;
 import com.learning.ai.modelregression.model.EmailClassification;
 import com.learning.ai.modelregression.model.PromptConfig;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
-import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
 
@@ -43,12 +39,7 @@ public class EmailClassifierService {
                 + "You must respond strictly in the requested JSON format.\n"
                 + "{format}";
 
-        PromptTemplate promptTemplate = new PromptTemplate(combinedSystemPrompt);
-        Prompt prompt = promptTemplate.create(Map.of("format", format));
-
-        // Add the user message directly to the prompt. Wait, PromptTemplate can create the system message,
-        // but we need to append the user email as a UserMessage.
-        // It's easier to use ChatClient's fluent API.
+        // Add the user message directly to the prompt.
 
         Timer.Sample sample = Timer.start(meterRegistry);
 
@@ -60,7 +51,7 @@ public class EmailClassifierService {
                     .call()
                     .chatResponse();
 
-            long latencyMs = sample.stop(meterRegistry.timer("email.classifier.latency"));
+            long latencyMs = sample.stop(meterRegistry.timer("email.classifier.latency")) / 1_000_000;
 
             Integer inputTokens = 0;
             Integer outputTokens = 0;
@@ -74,13 +65,12 @@ public class EmailClassifierService {
             String content = response.getResult().getOutput().getText();
 
             EmailClassification classification = parseAndValidate(content, outputParser);
-            return new ClassificationResult(classification, latencyMs, inputTokens, outputTokens);
+            return new ClassificationResult(classification, latencyMs, inputTokens, outputTokens, false);
 
         } catch (Exception e) {
             log.error("Failed to classify email, falling back.", e);
-            long latencyMs = sample.stop(meterRegistry.timer("email.classifier.latency", "error", "true"));
-            return new ClassificationResult(
-                    new EmailClassification(Category.GENERAL, "Fallback summary"), latencyMs, 0, 0);
+            long latencyMs = sample.stop(meterRegistry.timer("email.classifier.latency", "error", "true")) / 1_000_000;
+            return new ClassificationResult(null, latencyMs, 0, 0, true);
         }
     }
 
@@ -101,5 +91,5 @@ public class EmailClassifierService {
     }
 
     public record ClassificationResult(
-            EmailClassification classification, long latencyMs, int inputTokens, int outputTokens) {}
+            EmailClassification classification, long latencyMs, int inputTokens, int outputTokens, boolean error) {}
 }

@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.HtmlUtils;
 
 @Component
 public class HtmlReportGenerator {
@@ -33,35 +34,38 @@ public class HtmlReportGenerator {
         html.append("<h1>Model Regression Detection Report</h1>");
         html.append("<h2>Run Metadata</h2>");
         html.append("<ul>");
-        html.append("<li><strong>Run ID:</strong> ").append(currentRun.runId()).append("</li>");
+        html.append("<li><strong>Run ID:</strong> ")
+                .append(HtmlUtils.htmlEscape(currentRun.runId()))
+                .append("</li>");
         html.append("<li><strong>Timestamp:</strong> ")
                 .append(currentRun.timestamp())
                 .append("</li>");
         html.append("<li><strong>Prompt Version:</strong> ")
-                .append(currentRun.promptVersion())
+                .append(HtmlUtils.htmlEscape(currentRun.promptVersion()))
                 .append("</li>");
         html.append("<li><strong>Dataset Version:</strong> ")
-                .append(currentRun.datasetVersion())
+                .append(HtmlUtils.htmlEscape(currentRun.datasetVersion()))
                 .append("</li>");
-        html.append("<li><strong>Model:</strong> ").append(currentRun.model()).append("</li>");
+        html.append("<li><strong>Model:</strong> ")
+                .append(HtmlUtils.htmlEscape(currentRun.model()))
+                .append("</li>");
         html.append("<li><strong>Overall Pass Rate:</strong> ")
                 .append(String.format("%.2f%%", currentRun.passRatePercent()))
                 .append("</li>");
         html.append("<li><strong>Status:</strong> ").append(comparison.status()).append("</li>");
         if (driftStatus != null) {
             html.append("<li><strong>Drift Alert:</strong> <span class='warn'>")
-                    .append(driftStatus)
+                    .append(HtmlUtils.htmlEscape(driftStatus))
                     .append("</span></li>");
         }
         html.append("</ul>");
 
         html.append("<h2>Trend (Last 10 Runs)</h2>");
         html.append("<table><tr><th>Run ID</th><th>Timestamp</th><th>Pass Rate</th></tr>");
-        // We might just list them textually for simplicity, but a JS chart could go here.
         for (EvaluationRun r : recentRuns) {
             html.append("<tr>")
                     .append("<td>")
-                    .append(r.runId())
+                    .append(HtmlUtils.htmlEscape(r.runId()))
                     .append("</td>")
                     .append("<td>")
                     .append(r.timestamp())
@@ -80,20 +84,20 @@ public class HtmlReportGenerator {
             for (CaseResult cr : comparison.regressedCases()) {
                 html.append("<tr>")
                         .append("<td>")
-                        .append(cr.caseId())
+                        .append(HtmlUtils.htmlEscape(cr.caseId()))
                         .append("</td>")
                         .append("<td>")
-                        .append(cr.originalEmail())
+                        .append(HtmlUtils.htmlEscape(cr.originalEmail()))
                         .append("</td>")
                         .append("<td>")
-                        .append(cr.expectedCategory())
+                        .append(HtmlUtils.htmlEscape(cr.expectedCategory()))
                         .append("<br/>")
-                        .append(cr.expectedSummary())
+                        .append(HtmlUtils.htmlEscape(cr.expectedSummary()))
                         .append("</td>")
                         .append("<td>")
-                        .append(cr.actualCategory())
+                        .append(HtmlUtils.htmlEscape(cr.actualCategory()))
                         .append("<br/>")
-                        .append(cr.actualSummary())
+                        .append(HtmlUtils.htmlEscape(cr.actualSummary()))
                         .append("</td>")
                         .append("</tr>");
             }

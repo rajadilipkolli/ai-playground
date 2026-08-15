@@ -2,6 +2,7 @@ package com.learning.ai.modelregression.eval.scoring;
 
 import java.util.Map;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
@@ -18,6 +19,7 @@ public class SummaryRelevanceJudge {
                 .defaultSystem(
                         "You are an impartial judge evaluating the relevance of a customer support email summary. "
                                 + "Rate the summary from 1 to 5, where 1 is completely irrelevant or wrong, and 5 is perfectly accurate and concise.")
+                .defaultOptions(ChatOptions.builder().temperature(0.0))
                 .build();
     }
 
@@ -44,11 +46,11 @@ public class SummaryRelevanceJudge {
             String response = judgeClient.prompt(prompt).call().content();
             JudgeResult result = outputParser.convert(response);
             if (result == null || result.score() < 1 || result.score() > 5) {
-                return new JudgeResult(3, "Fallback due to invalid score"); // Fallback
+                return new JudgeResult(0, "Fallback due to invalid score"); // Fallback
             }
             return result;
         } catch (Exception e) {
-            return new JudgeResult(3, "Fallback due to exception: " + e.getMessage());
+            return new JudgeResult(0, "Fallback due to exception: " + e.getMessage());
         }
     }
 

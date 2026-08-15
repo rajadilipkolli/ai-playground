@@ -69,7 +69,8 @@ public class PipelineRunner implements CommandLineRunner {
             runRepository.saveRun(currentRun);
 
             String reportPath = htmlReportGenerator.generateReport(currentRun, comparison, driftStatus);
-            slackNotifier.notify(currentRun, comparison, isDrift, reportPath);
+            String reportUrl = publishReport(reportPath);
+            slackNotifier.notify(currentRun, comparison, isDrift, reportUrl);
 
             log.info(
                     "Pipeline finished. Status: {}, Drift: {}, Pass Rate: {}%",
@@ -86,5 +87,11 @@ public class PipelineRunner implements CommandLineRunner {
             log.error("Pipeline failed", e);
             System.exit(SpringApplication.exit(applicationContext, () -> 1));
         }
+    }
+
+    private String publishReport(String localPath) {
+        // Placeholder for publishing to an artifact store or web endpoint
+        // E.g. upload to S3 and return the public URL
+        return null;
     }
 }

@@ -2,6 +2,7 @@ package com.learning.ai.modelregression.config;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
+import com.learning.ai.modelregression.ModelRegressionDetectionApplication;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,7 +12,7 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest(
         webEnvironment = RANDOM_PORT,
         properties = {"spring.ai.ollama.init.timeout=15m", "eval.pipeline.enabled=false"},
-        classes = {TestcontainersConfiguration.class})
+        classes = {TestcontainersConfiguration.class, ModelRegressionDetectionApplication.class})
 public abstract class AbstractIntegrationTest {
 
     @Autowired

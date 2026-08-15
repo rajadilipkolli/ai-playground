@@ -37,6 +37,22 @@ public class SlackNotifier {
 
         String driftMsg = driftDetected ? "\n:chart_with_downwards_trend: *SLOW DRIFT DETECTED*" : "";
 
+        String actionsBlock = reportUrl != null && !reportUrl.isEmpty() ? String.format("""
+                ,
+                        {
+                            "type": "actions",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "View HTML Report"
+                                    },
+                                    "url": "%s"
+                                }
+                            ]
+                        }""", reportUrl) : "";
+
         String payload = String.format(
                 """
                 {
@@ -55,20 +71,7 @@ public class SlackNotifier {
                                 "type": "mrkdwn",
                                 "text": "*Model:* %s\\n*Pass Rate:* %.2f%% (%+.2f%%)\\n*Regressions:* %d%s"
                             }
-                        },
-                        {
-                            "type": "actions",
-                            "elements": [
-                                {
-                                    "type": "button",
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "View HTML Report"
-                                    },
-                                    "url": "%s"
-                                }
-                            ]
-                        }
+                        }%s
                     ]
                 }
                 """,
@@ -80,7 +83,7 @@ public class SlackNotifier {
                 comparisonResult.passRateDelta(),
                 comparisonResult.regressedCases().size(),
                 driftMsg,
-                reportUrl != null ? reportUrl : "https://github.com");
+                actionsBlock);
 
         try {
             restClient

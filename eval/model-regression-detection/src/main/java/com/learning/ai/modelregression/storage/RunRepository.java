@@ -49,19 +49,39 @@ public class RunRepository {
     public List<EvaluationRun> getRecentRuns(int limit) {
         return jdbcTemplate.query(
                 "SELECT * FROM runs ORDER BY timestamp DESC LIMIT ?",
-                (rs, rowNum) -> new EvaluationRun(
-                        rs.getString("run_id"),
-                        rs.getTimestamp("timestamp").toLocalDateTime(),
-                        rs.getString("prompt_version"),
-                        rs.getString("dataset_version"),
-                        rs.getString("model"),
-                        rs.getDouble("pass_rate_percent"),
-                        rs.getDouble("average_latency_ms"),
-                        rs.getInt("total_tokens"),
-                        List.of() // We don't fetch case results for historical runs in this simple implementation
-                        // unless needed
-                        ),
+                (rs, rowNum) -> {
+                    String runId = rs.getString("run_id");
+                    List<CaseResult> caseResults = getCaseResultsForRun(runId);
+                    return new EvaluationRun(
+                            runId,
+                            rs.getTimestamp("timestamp").toLocalDateTime(),
+                            rs.getString("prompt_version"),
+                            rs.getString("dataset_version"),
+                            rs.getString("model"),
+                            rs.getDouble("pass_rate_percent"),
+                            rs.getDouble("average_latency_ms"),
+                            rs.getInt("total_tokens"),
+                            caseResults);
+                },
                 limit);
+    }
+
+    private List<CaseResult> getCaseResultsForRun(String runId) {
+        return jdbcTemplate.query(
+                "SELECT * FROM case_results WHERE run_id = ?",
+                (rs, rowNum) -> new CaseResult(
+                        rs.getString("case_id"),
+                        rs.getBoolean("category_match"),
+                        rs.getInt("relevance_score"),
+                        rs.getLong("latency_ms"),
+                        rs.getInt("tokens"),
+                        rs.getBoolean("pass"),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null),
+                runId);
     }
 
     public Optional<EvaluationRun> getLatestRun() {

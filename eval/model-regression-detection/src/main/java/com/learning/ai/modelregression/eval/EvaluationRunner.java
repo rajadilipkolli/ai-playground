@@ -7,6 +7,7 @@ import com.learning.ai.modelregression.model.PromptConfig;
 import com.learning.ai.modelregression.service.EmailClassifierService;
 import com.learning.ai.modelregression.storage.CaseResult;
 import com.learning.ai.modelregression.storage.EvaluationRun;
+import jakarta.annotation.PreDestroy;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,11 @@ public class EvaluationRunner {
         this.judge = judge;
         this.executorService = Executors.newFixedThreadPool(4); // Bounded executor for parallel processing
         this.modelName = modelName;
+    }
+
+    @PreDestroy
+    public void destroy() {
+        this.executorService.shutdown();
     }
 
     public EvaluationRun runEvaluation(GoldenDataset dataset, PromptConfig promptConfig) {
@@ -80,6 +86,21 @@ public class EvaluationRunner {
     private CaseResult processCase(GoldenCase goldenCase, PromptConfig promptConfig) {
         EmailClassifierService.ClassificationResult result =
                 classifierService.classify(goldenCase.email(), promptConfig);
+
+        if (result.error() || result.classification() == null) {
+            return new CaseResult(
+                    goldenCase.id(),
+                    false,
+                    0,
+                    result.latencyMs(),
+                    result.inputTokens() + result.outputTokens(),
+                    false,
+                    goldenCase.email(),
+                    goldenCase.expectedCategory().name(),
+                    goldenCase.expectedSummary(),
+                    "ERROR",
+                    "ERROR");
+        }
 
         boolean categoryMatch =
                 goldenCase.expectedCategory() == result.classification().category();

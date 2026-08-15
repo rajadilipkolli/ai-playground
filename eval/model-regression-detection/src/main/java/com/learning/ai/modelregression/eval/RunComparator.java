@@ -37,11 +37,23 @@ public class RunComparator {
             status = Status.WARN;
         }
 
-        // We can't perfectly compute improved/regressed without joining case results from DB.
-        // For simplicity in this demo, if the previous run didn't load case results, we can just return empty lists.
-        // To do this fully we would fetch case results for the previous run from DB.
         List<CaseResult> regressed = new ArrayList<>();
         List<CaseResult> improved = new ArrayList<>();
+
+        for (CaseResult currentCase : currentRun.caseResults()) {
+            Optional<CaseResult> previousCaseOpt = previousRun.caseResults().stream()
+                    .filter(pc -> pc.caseId().equals(currentCase.caseId()))
+                    .findFirst();
+
+            if (previousCaseOpt.isPresent()) {
+                CaseResult previousCase = previousCaseOpt.get();
+                if (previousCase.pass() && !currentCase.pass()) {
+                    regressed.add(currentCase);
+                } else if (!previousCase.pass() && currentCase.pass()) {
+                    improved.add(currentCase);
+                }
+            }
+        }
 
         return new ComparisonResult(status, passRateDelta, regressed, improved);
     }
