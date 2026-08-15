@@ -74,7 +74,7 @@ jobs:
           fi
 
       - name: Upload HTML Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: regression-report
           path: eval/model-regression-detection/target/regression-report.html
