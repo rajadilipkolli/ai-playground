@@ -29,6 +29,8 @@ Below is the summary of implementations in this repository
 |                                     | [rag implementation using springai with openai llm](./rag/rag-springai-openai-llm)                | RAG Implementation using springai, PGVector store, Tika document reader and openai LLM with spring boot                                                                                                                                                                                   |
 | ChatBot                             | [chatbox using ollama](./chatbot/chatbot-ollama-springai)                                         | ChatBox using Ollama3 LLM and chromadb                                                                                                                                                                                                                                                    |
 | Agent                               | [agent using ollama springai](./agent/agent-ollama-springai)                                      | Agent implementation using Ollama, Spring AI, persistent Postgres chat memory and LGTM stack                                                                                                                                                                                              |
+| Eval                                | [model regression detection](./eval/model-regression-detection)                                   | Model Regression Detection framework using Spring AI, Ollama, PGVector, and HTML reporting for CI/CD pipelines                                                                                                                                                                            |
+
 
 
 ### Credits
