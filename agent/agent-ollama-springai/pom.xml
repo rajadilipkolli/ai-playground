@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <spring-ai.version>2.0.0</spring-ai.version>
+        <spring-ai.version>2.0.1</spring-ai.version>
         <otelInstrumentation.version>2.10.0-alpha</otelInstrumentation.version>
         <project.testresult.directory>${project.build.directory}/test-results</project.testresult.directory>
         <spotless.version>3.10.0</spotless.version>
