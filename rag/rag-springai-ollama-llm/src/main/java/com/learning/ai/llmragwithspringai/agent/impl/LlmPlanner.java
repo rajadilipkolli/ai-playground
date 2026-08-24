@@ -4,6 +4,8 @@ import com.learning.ai.llmragwithspringai.agent.api.AgentGoal;
 import com.learning.ai.llmragwithspringai.agent.api.PlanStep;
 import com.learning.ai.llmragwithspringai.agent.api.Planner;
 import com.learning.ai.llmragwithspringai.config.properties.AgentProperties;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -13,8 +15,8 @@ import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.core.io.Resource;
+import tools.jackson.core.JsonParser;
 import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -81,15 +83,22 @@ public class LlmPlanner implements Planner {
         }
         json = json.trim();
 
-        JsonNode root = jsonMapper
-                .reader()
-                .without(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
-                .readTree(json);
-        if (root.isObject() && root.has("steps")) {
-            root = root.get("steps");
+        List<PlanStep> steps = new ArrayList<>();
+        try (JsonParser parser = jsonMapper.createParser(json)) {
+            Iterator<JsonNode> it = jsonMapper.readValues(parser, JsonNode.class);
+            while (it.hasNext()) {
+                JsonNode node = it.next();
+                if (node.isArray()) {
+                    steps.addAll(jsonMapper.treeToValue(node, new TypeReference<List<PlanStep>>() {}));
+                } else if (node.isObject()) {
+                    if (node.has("steps") && node.get("steps").isArray()) {
+                        steps.addAll(jsonMapper.treeToValue(node.get("steps"), new TypeReference<List<PlanStep>>() {}));
+                    } else {
+                        steps.add(jsonMapper.treeToValue(node, PlanStep.class));
+                    }
+                }
+            }
         }
-
-        List<PlanStep> steps = jsonMapper.treeToValue(root, new TypeReference<List<PlanStep>>() {});
         if (steps.size() > plannerProps.getMaxSteps()) {
             return steps.subList(0, plannerProps.getMaxSteps());
         }

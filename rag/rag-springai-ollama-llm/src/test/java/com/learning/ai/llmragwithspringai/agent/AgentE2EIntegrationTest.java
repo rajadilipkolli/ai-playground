@@ -13,7 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.test.context.TestPropertySource;
 
-@TestPropertySource(properties = {"rag.agent.enabled=true", "rag.agent.memory.persistent=false"})
+@TestPropertySource(
+        properties = {
+            "rag.agent.enabled=true",
+            "rag.agent.memory.persistent=false",
+            "rag.agent.orchestrator.step-timeout-seconds=300"
+        })
 class AgentE2EIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
