@@ -265,9 +265,24 @@ public class DataIndexerService {
                 document = Loader.loadPDF(resource.getFile());
             } else {
                 tempFile = File.createTempFile("vision-ingest-", ".pdf");
+                boolean sizeExceeded = false;
                 try (InputStream in = resource.getInputStream();
                         OutputStream out = new FileOutputStream(tempFile)) {
-                    in.transferTo(out);
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    long totalCopied = 0;
+                    while ((read = in.read(buffer)) != -1) {
+                        totalCopied += read;
+                        if (totalCopied > maxPdfSize) {
+                            sizeExceeded = true;
+                            break;
+                        }
+                        out.write(buffer, 0, read);
+                    }
+                }
+                if (sizeExceeded) {
+                    tempFile.delete();
+                    throw new IllegalArgumentException("PDF exceeds maximum allowed size of " + maxPdfSize + " bytes");
                 }
                 document = Loader.loadPDF(tempFile);
             }
@@ -351,6 +366,8 @@ public class DataIndexerService {
                     documents.add(new Document(pageContent.toString(), metadata));
                 }
             }
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             LOGGER.error("Failed to extract text and images from PDF using vision model", e);
             throw new IllegalStateException("Vision-based PDF ingestion failed", e);
