@@ -340,7 +340,7 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Order(116)
     void testMissingQuestionField() {
         given().contentType(ContentType.JSON)
-                .body("{}")
+                .body("{\"conversationId\": \"test-id\"}")
                 .when()
                 .post("/api/ai/chat")
                 .then()

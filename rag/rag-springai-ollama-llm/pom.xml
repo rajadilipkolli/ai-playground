@@ -222,8 +222,8 @@
                         <palantirJavaFormat>
                             <version>2.90.0</version>
                         </palantirJavaFormat>
-                        <importOrder/>
-                        <removeUnusedImports/>
+                        <importOrder />
+                        <removeUnusedImports />
                     </java>
                 </configuration>
                 <executions>
@@ -281,6 +281,11 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>net/sf/jsqlparser/**</exclude>
+                    </excludes>
+                </configuration>
                 <version>0.8.15</version>
                 <executions>
                     <execution>

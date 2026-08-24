@@ -14,6 +14,8 @@ import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.core.io.Resource;
 import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 public class LlmPlanner implements Planner {
@@ -79,7 +81,15 @@ public class LlmPlanner implements Planner {
         }
         json = json.trim();
 
-        List<PlanStep> steps = jsonMapper.readValue(json, new TypeReference<List<PlanStep>>() {});
+        JsonNode root = jsonMapper
+                .reader()
+                .without(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                .readTree(json);
+        if (root.isObject() && root.has("steps")) {
+            root = root.get("steps");
+        }
+
+        List<PlanStep> steps = jsonMapper.treeToValue(root, new TypeReference<List<PlanStep>>() {});
         if (steps.size() > plannerProps.getMaxSteps()) {
             return steps.subList(0, plannerProps.getMaxSteps());
         }
