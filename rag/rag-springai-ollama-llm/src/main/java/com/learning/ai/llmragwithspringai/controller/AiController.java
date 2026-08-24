@@ -5,6 +5,7 @@ import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.service.AIChatService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import java.security.Principal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,7 +31,16 @@ class AiController {
     @PostMapping("/chat")
     AIChatResponse chat(
             @RequestBody @Valid AIChatRequest aiChatRequest,
-            @RequestParam(defaultValue = "false") boolean includeDiagnostics) {
-        return aiChatService.chat(aiChatRequest, includeDiagnostics);
+            @RequestParam(defaultValue = "false") boolean includeDiagnostics,
+            Principal principal) {
+        String owner = (principal != null && principal.getName() != null) ? principal.getName() : aiChatRequest.owner();
+        AIChatRequest authenticatedRequest = new AIChatRequest(
+                aiChatRequest.question(),
+                aiChatRequest.documentType(),
+                owner,
+                aiChatRequest.category(),
+                aiChatRequest.conversationId(),
+                aiChatRequest.filters());
+        return aiChatService.chat(authenticatedRequest, includeDiagnostics);
     }
 }

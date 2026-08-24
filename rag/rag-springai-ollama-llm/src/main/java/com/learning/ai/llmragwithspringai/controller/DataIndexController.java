@@ -3,6 +3,7 @@ package com.learning.ai.llmragwithspringai.controller;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.service.DataIndexerService;
+import java.security.Principal;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -35,11 +36,14 @@ class DataIndexController {
     ResponseEntity<?> load(
             @RequestPart("file") MultipartFile multipartFile,
             @RequestParam(value = "documentType", required = false) String documentType,
-            @RequestParam(value = "owner", required = false) String owner,
-            @RequestParam(value = "category", required = false) String category) {
+            @RequestParam(value = "category", required = false) String category,
+            Principal principal) {
         if (multipartFile.isEmpty()) {
             return ResponseEntity.badRequest().body("Uploaded file is empty");
         }
+
+        String owner = (principal != null && principal.getName() != null) ? principal.getName() : null;
+
         try {
             IngestionResult result =
                     this.dataIndexerService.loadData(multipartFile.getResource(), documentType, owner, category);

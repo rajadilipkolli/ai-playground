@@ -137,10 +137,10 @@ public class AIChatService {
                                     words, guardrailsProperties.getFailureMessage(), Ordered.HIGHEST_PRECEDENCE));
                         }
 
-                        String chatId = request.conversationId() != null
-                                        && !request.conversationId().isBlank()
-                                ? request.conversationId()
-                                : "default-chat-session";
+                        String chatId = request.conversationId();
+                        if (chatId == null || chatId.isBlank()) {
+                            throw new IllegalArgumentException("Conversation ID is required for chat memory isolation");
+                        }
                         advisors.add(
                                 MessageChatMemoryAdvisor.builder(chatMemory).build());
 
@@ -148,7 +148,7 @@ public class AIChatService {
                                 .system(reactSystemPrompt)
                                 .user(effectiveQuestion)
                                 .advisors(advisors)
-                                .advisors(a -> a.param("chat_memory_conversation_id", chatId)
+                                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatId)
                                         .param("chat_memory_response_size", 100))
                                 .tools(toolCallbacks);
 

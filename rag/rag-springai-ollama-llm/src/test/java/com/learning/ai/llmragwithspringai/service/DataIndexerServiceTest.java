@@ -34,6 +34,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.TransactionStatus;
@@ -81,7 +82,9 @@ class DataIndexerServiceTest {
 
         chatClient = mock(ChatClient.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
         lenient().when(chatClientBuilder.build()).thenReturn(chatClient);
-        lenient().when(ragIngestionProperties.getPdf()).thenReturn(new RagIngestionProperties.Pdf());
+        RagIngestionProperties.Pdf pdfProps = new RagIngestionProperties.Pdf();
+        pdfProps.setTopPagesToSkip(0);
+        lenient().when(ragIngestionProperties.getPdf()).thenReturn(pdfProps);
 
         lenient()
                 .doAnswer(invocation -> {
@@ -202,13 +205,13 @@ class DataIndexerServiceTest {
 
         List<Document> ingestedDocs = captor.getValue();
         assertThat(ingestedDocs).hasSize(1);
-        assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("documentType", "POLICY");
-        assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("owner", "HR");
-        assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("category", "EmployeeBenefits");
+        assertThat(ingestedDocs.getFirst().getMetadata()).containsEntry("documentType", "POLICY");
+        assertThat(ingestedDocs.getFirst().getMetadata()).containsEntry("owner", "HR");
+        assertThat(ingestedDocs.getFirst().getMetadata()).containsEntry("category", "EmployeeBenefits");
     }
 
     @Test
-    void testPdfIngestionWithVisionEnabled() throws Exception {
+    void testPdfIngestionWithVisionEnabled() {
         DataIndexerService visionService = new DataIndexerService(
                 tokenTextSplitter,
                 vectorStore,
@@ -220,7 +223,7 @@ class DataIndexerServiceTest {
                 true,
                 "llava");
 
-        Resource resource = new org.springframework.core.io.FileSystemResource("src/test/resources/minimal-vision.pdf");
+        Resource resource = new FileSystemResource("src/test/resources/minimal-vision.pdf");
 
         // First query (hash) -> empty
         // Second query (filename) -> empty
@@ -245,7 +248,7 @@ class DataIndexerServiceTest {
         verify(vectorStore).accept(captor.capture());
         List ingested = captor.getValue();
         assertThat(ingested).isNotEmpty();
-        Document ingestedDoc = (Document) ingested.get(0);
+        Document ingestedDoc = (Document) ingested.getFirst();
         assertThat(ingestedDoc.getText()).contains("Described image content");
         assertThat(ingestedDoc.getText()).contains("Vision Model Test Document");
         assertThat(ingestedDoc.getText()).contains("Here is a pie chart");
@@ -260,7 +263,7 @@ class DataIndexerServiceTest {
         if (capturedPrompt.getOptions() instanceof OllamaChatOptions opts) {
             assertThat(opts.getModel()).isEqualTo("llava");
         }
-        assertThat(((UserMessage) capturedPrompt.getInstructions().get(0)).getMedia())
+        assertThat(((UserMessage) capturedPrompt.getInstructions().getFirst()).getMedia())
                 .isNotEmpty();
     }
 }

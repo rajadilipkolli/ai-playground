@@ -7,6 +7,7 @@ import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
 import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,7 +44,12 @@ class HybridDocumentRetrieverConcurrencyIntTest extends AbstractIntegrationTest 
                 CompletableFuture<AIChatResponse> future = CompletableFuture.supplyAsync(
                         () -> {
                             AIChatRequest request = new AIChatRequest(
-                                    "Who is Rohit Sharma?", null, "cricket_board", "sports", null, null);
+                                    "Who is Rohit Sharma?",
+                                    null,
+                                    "cricket_board",
+                                    "sports",
+                                    UUID.randomUUID().toString(),
+                                    null);
                             return aiChatService.chat(request, false);
                         },
                         executorService);

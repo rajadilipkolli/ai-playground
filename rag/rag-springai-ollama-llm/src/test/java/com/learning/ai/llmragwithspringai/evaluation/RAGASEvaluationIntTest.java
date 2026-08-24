@@ -7,6 +7,7 @@ import com.learning.ai.llmragwithspringai.model.request.AIChatRequest;
 import com.learning.ai.llmragwithspringai.model.response.AIChatResponse;
 import com.learning.ai.llmragwithspringai.model.response.RetrievalDiagnostic;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,7 +55,14 @@ class RAGASEvaluationIntTest extends AbstractIntegrationTest {
 
         // 1. Invoke RAG Pipeline
         AIChatResponse chatResponse = aiChatService.chat(
-                new AIChatRequest(entry.question(), "profile", "cricket_board", "sports", null, null), true);
+                new AIChatRequest(
+                        entry.question(),
+                        "profile",
+                        "cricket_board",
+                        "sports",
+                        UUID.randomUUID().toString(),
+                        null),
+                true);
         String responseText = chatResponse.queryResponse();
 
         List<RetrievalDiagnostic> diagnostics = chatResponse.diagnostics();
@@ -75,8 +83,8 @@ class RAGASEvaluationIntTest extends AbstractIntegrationTest {
         // 3. Asserts
         if (!entry.expectedContextKeywords().isEmpty()) {
             // Factual questions
-            // Relevancy metrics can be flaky depending on the embedded model, so we don't block the build by default.
-            if (Boolean.parseBoolean(System.getProperty("strict.relevancy.check", "false"))) {
+            // Relevancy metrics are checked strictly unless skipped by CI explicitly.
+            if (!Boolean.parseBoolean(System.getProperty("skip.relevancy.check", "false"))) {
                 assertThat(relevancyResponse.isPass())
                         .as("Relevancy evaluation should pass")
                         .isTrue();
