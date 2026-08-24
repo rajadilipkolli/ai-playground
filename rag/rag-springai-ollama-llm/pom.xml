@@ -62,7 +62,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-chat-memory</artifactId>
+            <artifactId>spring-ai-starter-model-chat-memory-repository-jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -111,6 +111,10 @@
         </dependency>
         <dependency>
             <groupId>net.ttddyy.observation</groupId>
+            <artifactId>datasource-micrometer-opentelemetry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.ttddyy.observation</groupId>
             <artifactId>datasource-micrometer-spring-boot</artifactId>
         </dependency>
         <dependency>
@@ -122,6 +126,13 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api-incubator</artifactId>
             <version>1.62.0-alpha</version>
+        </dependency>
+        <dependency>
+            <groupId>com.julien-dubois.bootui</groupId>
+            <artifactId>bootui-spring-boot-starter</artifactId>
+            <version>1.14.1</version>
+            <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -211,8 +222,8 @@
                         <palantirJavaFormat>
                             <version>2.90.0</version>
                         </palantirJavaFormat>
-                        <importOrder/>
-                        <removeUnusedImports/>
+                        <importOrder />
+                        <removeUnusedImports />
                     </java>
                 </configuration>
                 <executions>
@@ -270,6 +281,11 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>net/sf/jsqlparser/**</exclude>
+                    </excludes>
+                </configuration>
                 <version>0.8.15</version>
                 <executions>
                     <execution>

@@ -27,6 +27,15 @@ public class RagIngestionProperties {
         @Min(0)
         private int topPagesToSkip = 1;
 
+        @Min(0)
+        private long maxPdfSizeBytes = 20971520L; // 20MB default
+
+        @Min(0)
+        private int maxImagesPerPdf = 50;
+
+        @Min(0)
+        private long maxPixelsPerImage = 4000000L;
+
         public int getBottomLinesToDelete() {
             return bottomLinesToDelete;
         }
@@ -41,6 +50,30 @@ public class RagIngestionProperties {
 
         public void setTopPagesToSkip(int topPagesToSkip) {
             this.topPagesToSkip = topPagesToSkip;
+        }
+
+        public long getMaxPdfSizeBytes() {
+            return maxPdfSizeBytes;
+        }
+
+        public void setMaxPdfSizeBytes(long maxPdfSizeBytes) {
+            this.maxPdfSizeBytes = maxPdfSizeBytes;
+        }
+
+        public int getMaxImagesPerPdf() {
+            return maxImagesPerPdf;
+        }
+
+        public void setMaxImagesPerPdf(int maxImagesPerPdf) {
+            this.maxImagesPerPdf = maxImagesPerPdf;
+        }
+
+        public long getMaxPixelsPerImage() {
+            return maxPixelsPerImage;
+        }
+
+        public void setMaxPixelsPerImage(long maxPixelsPerImage) {
+            this.maxPixelsPerImage = maxPixelsPerImage;
         }
     }
 }

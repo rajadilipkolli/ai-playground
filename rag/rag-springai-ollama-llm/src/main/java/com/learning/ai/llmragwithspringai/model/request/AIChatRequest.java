@@ -24,6 +24,11 @@ public record AIChatRequest(
         @Pattern(regexp = "^[a-zA-Z0-9_-]*$", message = "Invalid characters in category")
         String category,
 
+        @NotBlank(message = "Conversation ID cannot be empty")
+        @Size(max = 100, message = "Conversation ID exceeds maximum length")
+        @Pattern(regexp = "^[a-zA-Z0-9_-]*$", message = "Invalid characters in conversation ID")
+        String conversationId,
+
         @Size(max = 10, message = "Too many filters")
         Map<
                         @Size(max = 50) @Pattern(regexp = "^[a-zA-Z0-9_-]*$") String,

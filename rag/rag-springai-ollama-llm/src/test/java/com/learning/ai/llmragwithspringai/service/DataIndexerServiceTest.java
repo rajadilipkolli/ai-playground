@@ -2,14 +2,18 @@ package com.learning.ai.llmragwithspringai.service;
 
 import static com.learning.ai.llmragwithspringai.util.TestResourceUtil.createMockResource;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.learning.ai.llmragwithspringai.config.properties.RagIngestionProperties;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import io.micrometer.core.instrument.Counter;
@@ -17,17 +21,28 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class DataIndexerServiceTest {
@@ -50,13 +65,50 @@ class DataIndexerServiceTest {
     @Mock
     private Counter counter;
 
-    @InjectMocks
+    @Mock
+    private RagIngestionProperties ragIngestionProperties;
+
+    @Mock
+    private ChatClient.Builder chatClientBuilder;
+
+    @Mock
+    private ChatClient chatClient;
+
+    @Mock
+    private TransactionTemplate transactionTemplate;
+
     private DataIndexerService dataIndexerService;
 
     @BeforeEach
     void setUp() {
         lenient().when(meterRegistry.timer(anyString())).thenReturn(timer);
         lenient().when(meterRegistry.counter(anyString())).thenReturn(counter);
+
+        chatClient = mock(ChatClient.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
+        lenient().when(chatClientBuilder.build()).thenReturn(chatClient);
+        RagIngestionProperties.Pdf pdfProps = new RagIngestionProperties.Pdf();
+        pdfProps.setTopPagesToSkip(0);
+        lenient().when(ragIngestionProperties.getPdf()).thenReturn(pdfProps);
+
+        lenient()
+                .doAnswer(invocation -> {
+                    Consumer<TransactionStatus> callback = invocation.getArgument(0);
+                    callback.accept(null);
+                    return null;
+                })
+                .when(transactionTemplate)
+                .executeWithoutResult(org.mockito.ArgumentMatchers.any());
+
+        dataIndexerService = new DataIndexerService(
+                tokenTextSplitter,
+                vectorStore,
+                meterRegistry,
+                jdbcTemplate,
+                chatClientBuilder,
+                transactionTemplate,
+                ragIngestionProperties,
+                false,
+                "llava");
     }
 
     @Test
@@ -137,13 +189,7 @@ class DataIndexerServiceTest {
         // First query (hash) -> empty
         // Second query (filename) -> empty
         lenient()
-                .when(jdbcTemplate.queryForList(
-                        anyString(),
-                        eq(String.class),
-                        org.mockito.ArgumentMatchers.<Object>any(),
-                        org.mockito.ArgumentMatchers.<Object>any(),
-                        org.mockito.ArgumentMatchers.<Object>any(),
-                        org.mockito.ArgumentMatchers.<Object>any()))
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), any(), any(), any(), any()))
                 .thenReturn(Collections.emptyList());
         lenient()
                 .when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
@@ -158,13 +204,113 @@ class DataIndexerServiceTest {
 
         verify(vectorStore, never()).delete(anyList());
 
-        org.mockito.ArgumentCaptor<List<Document>> captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<Document>> captor = ArgumentCaptor.forClass(List.class);
         verify(vectorStore).accept(captor.capture());
 
         List<Document> ingestedDocs = captor.getValue();
         assertThat(ingestedDocs).hasSize(1);
-        assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("documentType", "POLICY");
-        assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("owner", "HR");
-        assertThat(ingestedDocs.get(0).getMetadata()).containsEntry("category", "EmployeeBenefits");
+        assertThat(ingestedDocs.getFirst().getMetadata()).containsEntry("documentType", "POLICY");
+        assertThat(ingestedDocs.getFirst().getMetadata()).containsEntry("owner", "HR");
+        assertThat(ingestedDocs.getFirst().getMetadata()).containsEntry("category", "EmployeeBenefits");
+    }
+
+    @Test
+    void testPdfIngestionWithVisionEnabled() {
+        DataIndexerService visionService = new DataIndexerService(
+                tokenTextSplitter,
+                vectorStore,
+                meterRegistry,
+                jdbcTemplate,
+                chatClientBuilder,
+                transactionTemplate,
+                ragIngestionProperties,
+                true,
+                "llava");
+
+        Resource resource = new FileSystemResource("src/test/resources/minimal-vision.pdf");
+
+        // First query (hash) -> empty
+        // Second query (filename) -> empty
+        lenient()
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        lenient()
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
+                .thenReturn(Collections.emptyList());
+
+        lenient().when(tokenTextSplitter.apply(anyList())).thenAnswer(inv -> inv.getArgument(0));
+
+        // stub chat client to return expected description
+        ArgumentCaptor<Prompt> promptCaptor = ArgumentCaptor.forClass(Prompt.class);
+        lenient()
+                .when(chatClient.prompt(promptCaptor.capture()).call().content())
+                .thenReturn("Described image content");
+
+        IngestionResult result = visionService.loadData(resource, null, null, null);
+
+        ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
+        verify(vectorStore).accept(captor.capture());
+        List ingested = captor.getValue();
+        assertThat(ingested).isNotEmpty();
+        Document ingestedDoc = (Document) ingested.getFirst();
+        assertThat(ingestedDoc.getText()).contains("Described image content");
+        assertThat(ingestedDoc.getText()).contains("Vision Model Test Document");
+        assertThat(ingestedDoc.getText()).contains("Here is a pie chart");
+        assertThat(ingestedDoc.getText()).contains("Language");
+        assertThat(ingestedDoc.getText()).contains("Java");
+        assertThat(result.status()).isEqualTo(IngestionStatus.INGESTED);
+
+        Prompt capturedPrompt = promptCaptor.getValue();
+        assertThat(capturedPrompt.getOptions()).isInstanceOf(OllamaChatOptions.class);
+        OllamaChatOptions opts = (OllamaChatOptions) capturedPrompt.getOptions();
+        assertThat(opts.getModel()).isEqualTo("llava");
+        assertThat(((UserMessage) capturedPrompt.getInstructions().getFirst()).getMedia())
+                .isNotEmpty();
+    }
+
+    @Test
+    void testPdfIngestionWithVisionImageLimitExceeded() {
+        RagIngestionProperties.Pdf pdfProperties = mock(RagIngestionProperties.Pdf.class);
+        when(pdfProperties.getMaxImagesPerPdf()).thenReturn(2);
+        when(pdfProperties.getMaxPdfSizeBytes()).thenReturn(10L * 1024 * 1024);
+        when(pdfProperties.getMaxPixelsPerImage()).thenReturn(5000000L);
+        when(ragIngestionProperties.getPdf()).thenReturn(pdfProperties);
+
+        Resource resource = new FileSystemResource("src/test/resources/multi-vision.pdf");
+
+        lenient()
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        lenient()
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
+                .thenReturn(Collections.emptyList());
+
+        ChatClient.ChatClientRequestSpec requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
+        lenient().when(chatClientBuilder.build()).thenReturn(chatClient);
+        lenient().when(chatClient.prompt(any(Prompt.class))).thenReturn(requestSpec);
+
+        ChatResponse mockResponse =
+                new ChatResponse(List.of(new Generation(new AssistantMessage("Described image content"))));
+        ChatClient.CallResponseSpec callResponseSpec = mock(ChatClient.CallResponseSpec.class);
+        lenient().when(requestSpec.call()).thenReturn(callResponseSpec);
+        lenient().when(callResponseSpec.chatResponse()).thenReturn(mockResponse);
+
+        DataIndexerService visionService = new DataIndexerService(
+                tokenTextSplitter,
+                vectorStore,
+                meterRegistry,
+                jdbcTemplate,
+                chatClientBuilder,
+                transactionTemplate,
+                ragIngestionProperties,
+                true,
+                "llava");
+
+        IngestionResult result = visionService.loadData(resource, null, null, null);
+
+        ArgumentCaptor<Prompt> promptCaptor = ArgumentCaptor.forClass(Prompt.class);
+        verify(chatClient, times(2)).prompt(promptCaptor.capture()); // Limit is 2
+
+        assertThat(result.status()).isEqualTo(IngestionStatus.INGESTED);
     }
 }

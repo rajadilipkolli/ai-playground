@@ -40,6 +40,7 @@ class DataIndexController {
         if (multipartFile.isEmpty()) {
             return ResponseEntity.badRequest().body("Uploaded file is empty");
         }
+
         try {
             IngestionResult result =
                     this.dataIndexerService.loadData(multipartFile.getResource(), documentType, owner, category);

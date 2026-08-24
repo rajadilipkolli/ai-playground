@@ -1,25 +1,52 @@
 package com.learning.ai.llmragwithspringai.service;
 
 import com.learning.ai.llmragwithspringai.config.properties.RagIngestionProperties;
+import com.learning.ai.llmragwithspringai.exception.PdfSizeLimitExceededException;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.annotation.Observed;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import javax.imageio.ImageIO;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.cos.COSBase;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDResources;
+import org.apache.pdfbox.pdmodel.graphics.PDXObject;
+import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.content.Media;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.document.DocumentReader;
 import org.springframework.ai.document.DocumentTransformer;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.JsonReader;
 import org.springframework.ai.reader.TextReader;
@@ -27,12 +54,14 @@ import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StopWatch;
 
 @Service
@@ -44,23 +73,34 @@ public class DataIndexerService {
     private final VectorStore vectorStore;
     private final MeterRegistry meterRegistry;
     private final JdbcTemplate jdbcTemplate;
+    private final ChatClient chatClient;
+    private final TransactionTemplate transactionTemplate;
     private final RagIngestionProperties ragIngestionProperties;
+    private final boolean visionEnabled;
+    private final String visionModel;
 
     public DataIndexerService(
             TextSplitter tokenTextSplitter,
             VectorStore vectorStore,
             MeterRegistry meterRegistry,
             JdbcTemplate jdbcTemplate,
-            RagIngestionProperties ragIngestionProperties) {
+            ChatClient.Builder chatClientBuilder,
+            TransactionTemplate transactionTemplate,
+            RagIngestionProperties ragIngestionProperties,
+            @Value("${rag.ingestion.vision.enabled:false}") boolean visionEnabled,
+            @Value("${rag.ingestion.vision.model:llava}") String visionModel) {
         this.tokenTextSplitter = tokenTextSplitter;
         this.vectorStore = vectorStore;
         this.meterRegistry = meterRegistry;
         this.jdbcTemplate = jdbcTemplate;
+        this.chatClient = chatClientBuilder.build();
+        this.transactionTemplate = transactionTemplate;
         this.ragIngestionProperties = ragIngestionProperties;
+        this.visionEnabled = visionEnabled;
+        this.visionModel = visionModel;
     }
 
     @Observed(name = "rag.ingest", contextualName = "rag-ingest")
-    @Transactional
     public IngestionResult loadData(Resource documentResource, String documentType, String owner, String category) {
         String filename = documentResource.getFilename();
         if (filename == null) {
@@ -96,7 +136,6 @@ public class DataIndexerService {
                     owner,
                     category,
                     existingByFilename.size());
-            vectorStore.delete(existingByFilename);
             chunksDeleted = existingByFilename.size();
         }
 
@@ -104,18 +143,25 @@ public class DataIndexerService {
 
         String lowerFilename = filename.toLowerCase(Locale.ROOT);
         DocumentReader documentReader = null;
+        List<Document> rawDocuments = null;
+
         if (lowerFilename.endsWith(".pdf")) {
-            LOGGER.info("Loading PDF document");
-            PdfDocumentReaderConfig pdfDocumentReaderConfig = PdfDocumentReaderConfig.builder()
-                    .withPageExtractedTextFormatter(ExtractedTextFormatter.builder()
-                            .withNumberOfBottomTextLinesToDelete(
-                                    ragIngestionProperties.getPdf().getBottomLinesToDelete())
-                            .withNumberOfTopPagesToSkipBeforeDelete(
-                                    ragIngestionProperties.getPdf().getTopPagesToSkip())
-                            .build())
-                    .withPagesPerDocument(1)
-                    .build();
-            documentReader = new PagePdfDocumentReader(rereadableResource, pdfDocumentReaderConfig);
+            if (visionEnabled) {
+                LOGGER.info("Vision-based ingestion is enabled. Extracting images from PDF.");
+                rawDocuments = readPdfWithVision(rereadableResource);
+            } else {
+                LOGGER.info("Loading PDF document");
+                PdfDocumentReaderConfig pdfDocumentReaderConfig = PdfDocumentReaderConfig.builder()
+                        .withPageExtractedTextFormatter(ExtractedTextFormatter.builder()
+                                .withNumberOfBottomTextLinesToDelete(
+                                        ragIngestionProperties.getPdf().getBottomLinesToDelete())
+                                .withNumberOfTopPagesToSkipBeforeDelete(
+                                        ragIngestionProperties.getPdf().getTopPagesToSkip())
+                                .build())
+                        .withPagesPerDocument(1)
+                        .build();
+                documentReader = new PagePdfDocumentReader(rereadableResource, pdfDocumentReaderConfig);
+            }
         } else if (lowerFilename.endsWith(".txt")) {
             documentReader = new TextReader(rereadableResource);
         } else if (lowerFilename.endsWith(".json")) {
@@ -123,6 +169,10 @@ public class DataIndexerService {
         }
 
         if (documentReader != null) {
+            rawDocuments = documentReader.get();
+        }
+
+        if (rawDocuments != null && !rawDocuments.isEmpty()) {
             LOGGER.info("Loading text document to vector database");
             DocumentTransformer metadataEnricher = documents -> {
                 final String finalFilename =
@@ -140,7 +190,7 @@ public class DataIndexerService {
                 return documents;
             };
 
-            List<Document> docsToIngest = metadataEnricher.apply(tokenTextSplitter.apply(documentReader.get())).stream()
+            List<Document> docsToIngest = metadataEnricher.apply(tokenTextSplitter.apply(rawDocuments)).stream()
                     .map(d -> {
                         String deterministicId = UUID.nameUUIDFromBytes(
                                         (contentHash + d.getText()).getBytes(StandardCharsets.UTF_8))
@@ -155,11 +205,14 @@ public class DataIndexerService {
                     .toList();
 
             try {
-                vectorStore.accept(docsToIngest);
+                transactionTemplate.executeWithoutResult(status -> {
+                    if (!existingByFilename.isEmpty()) {
+                        vectorStore.delete(existingByFilename);
+                    }
+                    vectorStore.accept(docsToIngest);
+                });
             } catch (DuplicateKeyException e) {
                 LOGGER.warn("Concurrent insertion detected for document {}, skipping ingestion.", filename);
-                // Roll back to restore any deleted chunks
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new IngestionResult(IngestionStatus.SKIPPED_DUPLICATE, filename, 0, 0);
             }
 
@@ -176,6 +229,165 @@ public class DataIndexerService {
         }
 
         return new IngestionResult(IngestionStatus.UNSUPPORTED_FORMAT, filename, 0, 0); // fallback
+    }
+
+    private void extractImagesRecursive(
+            PDResources resources, Set<COSBase> visited, List<PDImageXObject> extracted, int[] remainingBudget) {
+        if (resources == null || remainingBudget[0] <= 0) return;
+        Iterable<COSName> xObjectNames = resources.getXObjectNames();
+        if (xObjectNames != null) {
+            for (COSName name : xObjectNames) {
+                if (remainingBudget[0] <= 0) break;
+                try {
+                    PDXObject xObject = resources.getXObject(name);
+                    if (xObject == null || !visited.add(xObject.getCOSObject())) continue;
+                    if (xObject instanceof PDImageXObject image) {
+                        extracted.add(image);
+                        remainingBudget[0]--;
+                    } else if (xObject instanceof PDFormXObject form) {
+                        extractImagesRecursive(form.getResources(), visited, extracted, remainingBudget);
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to extract XObject {}", name, e);
+                }
+            }
+        }
+    }
+
+    private List<Document> readPdfWithVision(Resource resource) {
+        long maxPdfSize = ragIngestionProperties.getPdf().getMaxPdfSizeBytes();
+        try {
+            if (resource.contentLength() > maxPdfSize) {
+                throw new PdfSizeLimitExceededException("PDF exceeds maximum allowed size of " + maxPdfSize + " bytes");
+            }
+        } catch (IOException e) {
+            LOGGER.warn("Could not determine content length for resource {}", resource.getFilename());
+        }
+
+        List<Document> documents = new ArrayList<>();
+        File tempFile = null;
+        try {
+            PDDocument document;
+            if (resource.isFile()) {
+                document = Loader.loadPDF(resource.getFile());
+            } else {
+                tempFile = File.createTempFile("vision-ingest-", ".pdf");
+                boolean sizeExceeded = false;
+                try (InputStream in = resource.getInputStream();
+                        OutputStream out = new FileOutputStream(tempFile)) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    long totalCopied = 0;
+                    while ((read = in.read(buffer)) != -1) {
+                        totalCopied += read;
+                        if (totalCopied > maxPdfSize) {
+                            sizeExceeded = true;
+                            break;
+                        }
+                        out.write(buffer, 0, read);
+                    }
+                }
+                if (sizeExceeded) {
+                    tempFile.delete();
+                    throw new PdfSizeLimitExceededException(
+                            "PDF exceeds maximum allowed size of " + maxPdfSize + " bytes");
+                }
+                document = Loader.loadPDF(tempFile);
+            }
+
+            try (document) {
+                PDFTextStripper stripper = new PDFTextStripper();
+
+                int topPagesToSkip = ragIngestionProperties.getPdf().getTopPagesToSkip();
+                int bottomLinesToDelete = ragIngestionProperties.getPdf().getBottomLinesToDelete();
+
+                int maxImages = ragIngestionProperties.getPdf().getMaxImagesPerPdf();
+                long maxPixels = ragIngestionProperties.getPdf().getMaxPixelsPerImage();
+                int imageCount = 0;
+                int[] remainingBudget = {maxImages};
+                Set<COSBase> visited = new HashSet<>();
+
+                int pageCount = document.getNumberOfPages();
+                for (int i = topPagesToSkip; i < pageCount; i++) {
+                    PDPage page = document.getPage(i);
+
+                    stripper.setStartPage(i + 1);
+                    stripper.setEndPage(i + 1);
+                    String text = stripper.getText(document);
+
+                    if (bottomLinesToDelete > 0) {
+                        String[] lines = text.split("\r?\n");
+                        if (lines.length > bottomLinesToDelete) {
+                            text = String.join(
+                                    "\n", java.util.Arrays.copyOfRange(lines, 0, lines.length - bottomLinesToDelete));
+                        } else {
+                            text = "";
+                        }
+                    }
+
+                    StringBuilder pageContent = new StringBuilder(text);
+
+                    List<PDImageXObject> extracted = new ArrayList<>();
+                    if (remainingBudget[0] > 0) {
+                        extractImagesRecursive(page.getResources(), visited, extracted, remainingBudget);
+                    }
+
+                    for (PDImageXObject image : extracted) {
+                        if (imageCount >= maxImages) {
+                            LOGGER.warn(
+                                    "Maximum image count ({}) reached for PDF, skipping remaining images.", maxImages);
+                            break;
+                        }
+
+                        long pixels = (long) image.getWidth() * image.getHeight();
+                        if (pixels > maxPixels) {
+                            LOGGER.warn("Image exceeds maximum pixel count ({} > {}), skipping.", pixels, maxPixels);
+                            continue;
+                        }
+
+                        imageCount++;
+                        BufferedImage bufferedImage = image.getImage();
+
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        ImageIO.write(bufferedImage, "png", baos);
+                        byte[] imageBytes = baos.toByteArray();
+
+                        String promptText =
+                                "Please describe this image in detail. Extract any textual content, tables, or structural data exactly as they appear.";
+                        UserMessage userMessage = UserMessage.builder()
+                                .text(promptText)
+                                .media(new Media(MimeTypeUtils.IMAGE_PNG, new ByteArrayResource(imageBytes)))
+                                .build();
+
+                        Prompt prompt = new Prompt(
+                                userMessage,
+                                OllamaChatOptions.builder().model(visionModel).build());
+
+                        LOGGER.info("Calling Ollama vision model ({}) for image on page {}", visionModel, i + 1);
+                        String imageDescription =
+                                chatClient.prompt(prompt).call().content();
+
+                        pageContent.append("\n\n--- Image Content ---\n");
+                        pageContent.append(imageDescription);
+                        pageContent.append("\n---------------------\n");
+                    }
+
+                    Map<String, Object> metadata = new HashMap<>();
+                    metadata.put("page_number", i + 1);
+                    documents.add(new Document(pageContent.toString(), metadata));
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Failed to extract text and images from PDF using vision model", e);
+            throw new IllegalStateException("Vision-based PDF ingestion failed", e);
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+        return documents;
     }
 
     private List<String> findDocumentsByContentHashAndScope(

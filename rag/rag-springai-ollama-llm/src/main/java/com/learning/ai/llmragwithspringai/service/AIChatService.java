@@ -21,9 +21,13 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SafeGuardAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
@@ -52,6 +56,7 @@ public class AIChatService {
     private final Optional<QueryAnalyzer> queryAnalyzer;
     private final RagQueryProperties ragQueryProperties;
     private final Resource reactSystemPrompt;
+    private final ChatMemory chatMemory;
 
     public AIChatService(
             ChatClient.Builder builder,
@@ -62,7 +67,9 @@ public class AIChatService {
             Optional<QueryExpander> queryExpander,
             Optional<QueryAnalyzer> queryAnalyzer,
             RagQueryProperties ragQueryProperties,
-            @Value("classpath:prompts/react-system-prompt.txt") Resource reactSystemPrompt) {
+            @Value("classpath:prompts/react-system-prompt.txt") Resource reactSystemPrompt,
+            ChatMemoryRepository chatMemoryRepository) {
+        this.aiClient = builder.build();
         this.meterRegistry = meterRegistry;
         this.documentRetriever = documentRetriever;
         this.toolCallbacks = toolCallbacks;
@@ -71,9 +78,10 @@ public class AIChatService {
         this.queryAnalyzer = queryAnalyzer;
         this.ragQueryProperties = ragQueryProperties;
         this.reactSystemPrompt = reactSystemPrompt;
-        this.aiClient =
-                builder.build(); // We will apply the advisor per request to use dynamic properties if needed, or we
-        // can build it once.
+        this.chatMemory = MessageWindowChatMemory.builder()
+                .chatMemoryRepository(chatMemoryRepository)
+                .maxMessages(100)
+                .build();
     }
 
     @Observed(name = "rag.chat", contextualName = "rag-chat")
@@ -132,10 +140,18 @@ public class AIChatService {
                                     words, guardrailsProperties.getFailureMessage(), Ordered.HIGHEST_PRECEDENCE));
                         }
 
+                        String chatId = request.conversationId();
+                        if (chatId == null || chatId.isBlank()) {
+                            throw new IllegalArgumentException("Conversation ID is required for chat memory isolation");
+                        }
+                        advisors.add(
+                                MessageChatMemoryAdvisor.builder(chatMemory).build());
+
                         ChatClient.ChatClientRequestSpec callRequestSpec = aiClient.prompt()
                                 .system(reactSystemPrompt)
                                 .user(effectiveQuestion)
                                 .advisors(advisors)
+                                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatId))
                                 .tools(toolCallbacks);
 
                         ChatClient.CallResponseSpec callResponse;

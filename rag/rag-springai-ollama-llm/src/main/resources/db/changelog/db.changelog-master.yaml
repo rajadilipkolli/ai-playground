@@ -54,3 +54,18 @@ databaseChangeLog:
                   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
               );
               CREATE INDEX IF NOT EXISTS agent_memory_session_id_idx ON agent_memory(session_id);
+  - changeSet:
+      id: 4
+      author: ai
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE IF NOT EXISTS spring_ai_chat_memory (
+                  conversation_id VARCHAR(255) NOT NULL,
+                  sequence_id INT NOT NULL,
+                  type VARCHAR(50) NOT NULL,
+                  content TEXT NOT NULL,
+                  "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (conversation_id, sequence_id)
+              );
+              CREATE INDEX IF NOT EXISTS spring_ai_chat_memory_conversation_id_idx ON spring_ai_chat_memory(conversation_id);
