@@ -9,6 +9,7 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,7 +29,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
@@ -257,13 +261,56 @@ class DataIndexerServiceTest {
         assertThat(result.status()).isEqualTo(IngestionStatus.INGESTED);
 
         Prompt capturedPrompt = promptCaptor.getValue();
-        // Since OllamaChatOptions is used in the codebase, we should verify that.
-        // We know we passed options.getModel()
-        // It's possible getOptions is castable to OllamaChatOptions
-        if (capturedPrompt.getOptions() instanceof OllamaChatOptions opts) {
-            assertThat(opts.getModel()).isEqualTo("llava");
-        }
+        assertThat(capturedPrompt.getOptions()).isInstanceOf(OllamaChatOptions.class);
+        OllamaChatOptions opts = (OllamaChatOptions) capturedPrompt.getOptions();
+        assertThat(opts.getModel()).isEqualTo("llava");
         assertThat(((UserMessage) capturedPrompt.getInstructions().getFirst()).getMedia())
                 .isNotEmpty();
+    }
+
+    @Test
+    void testPdfIngestionWithVisionImageLimitExceeded() {
+        RagIngestionProperties.Pdf pdfProperties = mock(RagIngestionProperties.Pdf.class);
+        when(pdfProperties.getMaxImagesPerPdf()).thenReturn(2);
+        when(pdfProperties.getMaxPdfSizeBytes()).thenReturn(10L * 1024 * 1024);
+        when(pdfProperties.getMaxPixelsPerImage()).thenReturn(5000000L);
+        when(ragIngestionProperties.getPdf()).thenReturn(pdfProperties);
+
+        Resource resource = new FileSystemResource("src/test/resources/multi-vision.pdf");
+
+        lenient()
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        lenient()
+                .when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
+                .thenReturn(Collections.emptyList());
+
+        ChatClient.ChatClientRequestSpec requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
+        lenient().when(chatClientBuilder.build()).thenReturn(chatClient);
+        lenient().when(chatClient.prompt(any(Prompt.class))).thenReturn(requestSpec);
+
+        ChatResponse mockResponse =
+                new ChatResponse(List.of(new Generation(new AssistantMessage("Described image content"))));
+        ChatClient.CallResponseSpec callResponseSpec = mock(ChatClient.CallResponseSpec.class);
+        lenient().when(requestSpec.call()).thenReturn(callResponseSpec);
+        lenient().when(callResponseSpec.chatResponse()).thenReturn(mockResponse);
+
+        DataIndexerService visionService = new DataIndexerService(
+                tokenTextSplitter,
+                vectorStore,
+                meterRegistry,
+                jdbcTemplate,
+                chatClientBuilder,
+                transactionTemplate,
+                ragIngestionProperties,
+                true,
+                "llava");
+
+        IngestionResult result = visionService.loadData(resource, null, null, null);
+
+        ArgumentCaptor<Prompt> promptCaptor = ArgumentCaptor.forClass(Prompt.class);
+        verify(chatClient, times(2)).prompt(promptCaptor.capture()); // Limit is 2
+
+        assertThat(result.status()).isEqualTo(IngestionStatus.INGESTED);
     }
 }

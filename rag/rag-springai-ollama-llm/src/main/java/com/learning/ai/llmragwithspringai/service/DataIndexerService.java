@@ -1,6 +1,7 @@
 package com.learning.ai.llmragwithspringai.service;
 
 import com.learning.ai.llmragwithspringai.config.properties.RagIngestionProperties;
+import com.learning.ai.llmragwithspringai.exception.PdfSizeLimitExceededException;
 import com.learning.ai.llmragwithspringai.model.response.IngestionResult;
 import com.learning.ai.llmragwithspringai.model.response.IngestionStatus;
 import com.learning.ai.llmragwithspringai.util.ContentHashUtil;
@@ -230,19 +231,25 @@ public class DataIndexerService {
         return new IngestionResult(IngestionStatus.UNSUPPORTED_FORMAT, filename, 0, 0); // fallback
     }
 
-    private void extractImagesRecursive(PDResources resources, Set<COSBase> visited, List<PDImageXObject> extracted) {
-        if (resources == null) return;
-        for (COSName name : resources.getXObjectNames()) {
-            try {
-                PDXObject xObject = resources.getXObject(name);
-                if (xObject == null || !visited.add(xObject.getCOSObject())) continue;
-                if (xObject instanceof PDImageXObject image) {
-                    extracted.add(image);
-                } else if (xObject instanceof PDFormXObject form) {
-                    extractImagesRecursive(form.getResources(), visited, extracted);
+    private void extractImagesRecursive(
+            PDResources resources, Set<COSBase> visited, List<PDImageXObject> extracted, int[] remainingBudget) {
+        if (resources == null || remainingBudget[0] <= 0) return;
+        Iterable<COSName> xObjectNames = resources.getXObjectNames();
+        if (xObjectNames != null) {
+            for (COSName name : xObjectNames) {
+                if (remainingBudget[0] <= 0) break;
+                try {
+                    PDXObject xObject = resources.getXObject(name);
+                    if (xObject == null || !visited.add(xObject.getCOSObject())) continue;
+                    if (xObject instanceof PDImageXObject image) {
+                        extracted.add(image);
+                        remainingBudget[0]--;
+                    } else if (xObject instanceof PDFormXObject form) {
+                        extractImagesRecursive(form.getResources(), visited, extracted, remainingBudget);
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to extract XObject {}", name, e);
                 }
-            } catch (Exception e) {
-                LOGGER.warn("Failed to extract XObject {}", name, e);
             }
         }
     }
@@ -251,7 +258,7 @@ public class DataIndexerService {
         long maxPdfSize = ragIngestionProperties.getPdf().getMaxPdfSizeBytes();
         try {
             if (resource.contentLength() > maxPdfSize) {
-                throw new IllegalArgumentException("PDF exceeds maximum allowed size of " + maxPdfSize + " bytes");
+                throw new PdfSizeLimitExceededException("PDF exceeds maximum allowed size of " + maxPdfSize + " bytes");
             }
         } catch (IOException e) {
             LOGGER.warn("Could not determine content length for resource {}", resource.getFilename());
@@ -282,7 +289,8 @@ public class DataIndexerService {
                 }
                 if (sizeExceeded) {
                     tempFile.delete();
-                    throw new IllegalArgumentException("PDF exceeds maximum allowed size of " + maxPdfSize + " bytes");
+                    throw new PdfSizeLimitExceededException(
+                            "PDF exceeds maximum allowed size of " + maxPdfSize + " bytes");
                 }
                 document = Loader.loadPDF(tempFile);
             }
@@ -296,6 +304,8 @@ public class DataIndexerService {
                 int maxImages = ragIngestionProperties.getPdf().getMaxImagesPerPdf();
                 long maxPixels = ragIngestionProperties.getPdf().getMaxPixelsPerImage();
                 int imageCount = 0;
+                int[] remainingBudget = {maxImages};
+                Set<COSBase> visited = new HashSet<>();
 
                 int pageCount = document.getNumberOfPages();
                 for (int i = topPagesToSkip; i < pageCount; i++) {
@@ -317,9 +327,10 @@ public class DataIndexerService {
 
                     StringBuilder pageContent = new StringBuilder(text);
 
-                    Set<COSBase> visited = new HashSet<>();
                     List<PDImageXObject> extracted = new ArrayList<>();
-                    extractImagesRecursive(page.getResources(), visited, extracted);
+                    if (remainingBudget[0] > 0) {
+                        extractImagesRecursive(page.getResources(), visited, extracted, remainingBudget);
+                    }
 
                     for (PDImageXObject image : extracted) {
                         if (imageCount >= maxImages) {

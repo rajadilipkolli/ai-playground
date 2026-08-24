@@ -26,6 +26,8 @@ import org.springframework.ai.chat.client.advisor.SafeGuardAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
@@ -66,7 +68,8 @@ public class AIChatService {
             Optional<QueryAnalyzer> queryAnalyzer,
             RagQueryProperties ragQueryProperties,
             @Value("classpath:prompts/react-system-prompt.txt") Resource reactSystemPrompt,
-            ChatMemory chatMemory) {
+            ChatMemoryRepository chatMemoryRepository) {
+        this.aiClient = builder.build();
         this.meterRegistry = meterRegistry;
         this.documentRetriever = documentRetriever;
         this.toolCallbacks = toolCallbacks;
@@ -75,10 +78,10 @@ public class AIChatService {
         this.queryAnalyzer = queryAnalyzer;
         this.ragQueryProperties = ragQueryProperties;
         this.reactSystemPrompt = reactSystemPrompt;
-        this.chatMemory = chatMemory;
-        this.aiClient =
-                builder.build(); // We will apply the advisor per request to use dynamic properties if needed, or we
-        // can build it once.
+        this.chatMemory = MessageWindowChatMemory.builder()
+                .chatMemoryRepository(chatMemoryRepository)
+                .maxMessages(100)
+                .build();
     }
 
     @Observed(name = "rag.chat", contextualName = "rag-chat")
@@ -148,8 +151,7 @@ public class AIChatService {
                                 .system(reactSystemPrompt)
                                 .user(effectiveQuestion)
                                 .advisors(advisors)
-                                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatId)
-                                        .param("chat_memory_response_size", 100))
+                                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatId))
                                 .tools(toolCallbacks);
 
                         ChatClient.CallResponseSpec callResponse;

@@ -1,5 +1,6 @@
 package com.learning.ai.llmragwithspringai.config;
 
+import com.learning.ai.llmragwithspringai.exception.PdfSizeLimitExceededException;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Comparator;
 import java.util.List;
@@ -55,6 +56,15 @@ public class GlobalExceptionHandler {
                 .sorted(Comparator.comparing(ApiValidationError::field))
                 .toList();
         problemDetail.setProperty("violations", validationErrorsList);
+        return problemDetail;
+    }
+
+    @ExceptionHandler(PdfSizeLimitExceededException.class)
+    @ResponseStatus(HttpStatus.CONTENT_TOO_LARGE)
+    ProblemDetail onException(PdfSizeLimitExceededException exception) {
+        ProblemDetail problemDetail =
+                ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(413), exception.getMessage());
+        problemDetail.setTitle("Payload Too Large");
         return problemDetail;
     }
 
