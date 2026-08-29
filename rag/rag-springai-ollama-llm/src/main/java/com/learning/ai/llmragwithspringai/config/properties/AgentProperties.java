@@ -1,6 +1,7 @@
 package com.learning.ai.llmragwithspringai.config.properties;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -106,8 +107,8 @@ public class AgentProperties {
 
     public static class Orchestrator {
         @Positive
-        @jakarta.validation.constraints.Max(Long.MAX_VALUE / 1000)
-        private long stepTimeoutSeconds = 30;
+        @Max(Long.MAX_VALUE / 1000)
+        private Long stepTimeoutSeconds = 90L;
 
         @Min(0)
         private int maxToolCallsPerStep = 3;
@@ -115,11 +116,11 @@ public class AgentProperties {
         @Min(1)
         private int maxPlanningCycles = 10;
 
-        public long getStepTimeoutSeconds() {
+        public Long getStepTimeoutSeconds() {
             return stepTimeoutSeconds;
         }
 
-        public void setStepTimeoutSeconds(long stepTimeoutSeconds) {
+        public void setStepTimeoutSeconds(Long stepTimeoutSeconds) {
             this.stepTimeoutSeconds = stepTimeoutSeconds;
         }
 
