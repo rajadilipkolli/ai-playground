@@ -4,13 +4,16 @@ import com.learning.ai.llmragwithspringai.agent.api.AgentQuery;
 import com.learning.ai.llmragwithspringai.agent.api.AgentResult;
 import com.learning.ai.llmragwithspringai.agent.api.Orchestrator;
 import com.learning.ai.llmragwithspringai.model.request.AgentRunRequest;
+import jakarta.validation.Valid;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Validated
 @RestController
 @RequestMapping("/api/agent")
 @ConditionalOnProperty(name = "rag.agent.enabled", havingValue = "true")
@@ -23,7 +26,7 @@ public class AgentController {
     }
 
     @PostMapping("/run")
-    public ResponseEntity<?> runAgent(@RequestBody AgentRunRequest request) {
+    public ResponseEntity<?> runAgent(@RequestBody @Valid AgentRunRequest request) {
         if (request == null || request.query() == null || request.query().isBlank()) {
             return ResponseEntity.badRequest().build();
         }

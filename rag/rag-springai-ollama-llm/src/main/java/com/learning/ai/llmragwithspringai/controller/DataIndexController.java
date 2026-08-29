@@ -60,8 +60,8 @@ class DataIndexController {
     }
 
     @GetMapping("count")
-    Map<String, Long> count() {
-        return Map.of("count", dataIndexerService.count());
+    CountRecord count() {
+        return new CountRecord(dataIndexerService.count());
     }
 
     @DeleteMapping("cache")
@@ -75,4 +75,6 @@ class DataIndexController {
         }
         return ResponseEntity.ok(Map.of("message", "No cache configured"));
     }
+
+    private record CountRecord(long count) {}
 }
