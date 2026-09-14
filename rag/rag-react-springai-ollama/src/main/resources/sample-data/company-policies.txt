@@ -1,3 +1,0 @@
-The annual employee bonus is calculated by multiplying the base salary by the performance multiplier and then adding a $500 flat bonus.
-Our company's flagship product, the Quantum Widget, was released in 2024. It costs $1,250 per unit.
-If a customer buys more than 5 units of Quantum Widgets, they get a 10% discount on the entire order.

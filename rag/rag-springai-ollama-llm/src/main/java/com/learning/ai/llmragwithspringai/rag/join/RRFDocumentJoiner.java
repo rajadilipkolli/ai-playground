@@ -14,11 +14,11 @@ public class RRFDocumentJoiner implements DocumentJoiner {
     private final int topK;
 
     public RRFDocumentJoiner(int k, int topK) {
-        if (k < 0) {
-            throw new IllegalArgumentException("k must be >= 0");
+        if (k < 1) {
+            throw new IllegalArgumentException("k must be >= 1");
         }
-        if (topK < 0) {
-            throw new IllegalArgumentException("topK must be >= 0");
+        if (topK < 1) {
+            throw new IllegalArgumentException("topK must be >= 1");
         }
         this.k = k;
         this.topK = topK;

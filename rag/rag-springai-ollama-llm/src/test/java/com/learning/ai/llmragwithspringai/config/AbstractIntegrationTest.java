@@ -2,6 +2,7 @@ package com.learning.ai.llmragwithspringai.config;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
+import com.learning.ai.llmragwithspringai.rag.query.QueryAnalyzer;
 import com.learning.ai.llmragwithspringai.service.AIChatService;
 import com.learning.ai.llmragwithspringai.service.DataIndexerService;
 import org.springframework.ai.chat.client.ChatClient;
@@ -30,4 +31,7 @@ public abstract class AbstractIntegrationTest {
 
     @Autowired
     protected JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    protected QueryAnalyzer queryAnalyzer;
 }

@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum IngestionStatus {
     INGESTED("ingested"),
     SKIPPED_DUPLICATE("skipped_duplicate"),
-    REPLACED("replaced");
+    REPLACED("replaced"),
+    UNSUPPORTED_FORMAT("unsupported_format");
 
     private final String value;
 
