@@ -22,7 +22,7 @@ public class TestcontainersConfiguration {
 
     @Bean
     GenericContainer<?> doclingServeContainer() {
-        return new GenericContainer<>("ghcr.io/docling-project/docling-serve:1.9.0")
+        return new GenericContainer<>("ghcr.io/docling-project/docling-serve:v1.9.0")
                 .withExposedPorts(5001)
                 .waitingFor(Wait.forHttp("/ready").forPort(5001).forStatusCode(200))
                 .withStartupTimeout(Duration.ofMinutes(2));
