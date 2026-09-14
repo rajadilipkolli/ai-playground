@@ -1,14 +1,21 @@
 services:
   docling-serve:
-    image: dslim/docling-serve:latest
+    image: ghcr.io/docling-project/docling-serve:1.9.0
+    container_name: docling-serve
     ports:
-      - "5001:5001"
+      - "8000:8000"
     environment:
-      - WORKERS=4
-    # healthcheck details depending on the docling-serve image spec
+      - HOST=0.0.0.0
+      - PORT=8000
+      # Optional: Adjust logging verbosity (DEBUG, INFO, WARNING, ERROR)
+      - LOG_LEVEL=info
+    volumes:
+      # Caches AI models on your host machine to speed up container restarts
+      - docling_model_cache:/tmp/docling
+    restart: unless-stopped
 
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg18
     environment:
       - POSTGRES_USER=doclinguser
       - POSTGRES_PASSWORD=doclingpass
@@ -20,3 +27,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+volumes:
+  docling_model_cache:

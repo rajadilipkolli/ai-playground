@@ -41,7 +41,7 @@ public class DoclingDocumentParser implements DocumentParser {
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("file", new InputStreamResource(inputStream) {
+            body.add("files", new InputStreamResource(inputStream) {
                 /** Supplies the filename required for the multipart upload. */
                 @Override
                 public String getFilename() {

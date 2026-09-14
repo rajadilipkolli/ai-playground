@@ -19,6 +19,9 @@ Once running, Spring Boot uses Liquibase to auto-create the `vector_store` table
 ### Scaling Docling
 Docling parsing is CPU and memory intensive. In production, consider deploying `docling-serve` in a Kubernetes cluster with autoscaling based on CPU utilization. Set `WORKERS` appropriately in the Docker environment.
 
+### Docling Image Versioning
+Currently, test configurations may use the `ghcr.io/docling-project/docling-serve:latest` tag. Note that this carries a reproducibility risk, as the image content can change between runs, causing nondeterministic behavior. A pinned tag (for example, `ghcr.io/docling-project/docling-serve:v1.9.0`) is the safer option for both tests and deployments, though `:latest` may be used if explicitly required for testing the cutting edge.
+
 ### Database Sizing
 PgVector requires sufficient RAM for indexing. Use `HNSW` or `IVFFlat` indexes if your dataset grows beyond 1 million vectors. The current Liquibase schema does not specify an HNSW index, which is fine for small datasets but should be added for scale.
 
