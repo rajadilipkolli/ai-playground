@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ public class DocumentParserService {
     private final DocumentParser fallbackParser;
 
     /** Creates a Docling parser with a PDFBox fallback. */
+    @Autowired
     public DocumentParserService(
             @Value("${docling.server.url}") String doclingServerUrl,
             @Value("${docling.connect-timeout:5s}") Duration connectTimeout,
