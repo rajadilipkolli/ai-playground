@@ -5,14 +5,18 @@ import com.learning.ai.repository.IngestionJobRepository;
 import com.learning.ai.service.BatchIngestionService;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,10 +31,15 @@ public class BatchIngestionController {
 
     private final BatchIngestionService batchIngestionService;
     private final IngestionJobRepository jobRepository;
+    private final Path allowedBaseDirectory;
 
-    public BatchIngestionController(BatchIngestionService batchIngestionService, IngestionJobRepository jobRepository) {
+    public BatchIngestionController(
+            BatchIngestionService batchIngestionService,
+            IngestionJobRepository jobRepository,
+            @Value("${ingestion.allowed-base-directory}") String allowedBaseDirectory) {
         this.batchIngestionService = batchIngestionService;
         this.jobRepository = jobRepository;
+        this.allowedBaseDirectory = Paths.get(allowedBaseDirectory).toAbsolutePath().normalize();
     }
 
     @PostMapping("/batch")
@@ -49,14 +58,24 @@ public class BatchIngestionController {
     }
 
     @PostMapping("/directory")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> ingestDirectory(@RequestParam("path") String directoryPath) {
-        Path path = Paths.get(directoryPath);
-        if (!Files.exists(path) || !Files.isDirectory(path)) {
+        final Path basePath;
+        final Path path;
+        try {
+            basePath = allowedBaseDirectory.toRealPath();
+            Path requestedPath = Paths.get(directoryPath);
+            path = (requestedPath.isAbsolute() ? requestedPath : basePath.resolve(requestedPath)).toRealPath();
+        } catch (IOException | InvalidPathException e) {
             return ResponseEntity.badRequest().body("Invalid directory path");
         }
-        
+
+        if (!path.startsWith(basePath) || !Files.isDirectory(path)) {
+            return ResponseEntity.badRequest().body("Directory path is outside the allowed base directory");
+        }
+
         try (Stream<Path> paths = Files.walk(path)) {
-            List<Path> files = paths.filter(Files::isRegularFile)
+            List<Path> files = paths.filter(p -> Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS))
                                     .filter(p -> p.toString().toLowerCase().endsWith(".pdf"))
                                     .collect(Collectors.toList());
             

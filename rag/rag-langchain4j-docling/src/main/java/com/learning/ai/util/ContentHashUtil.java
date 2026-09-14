@@ -27,6 +27,8 @@ public class ContentHashUtil {
                 sb.append(String.format("%02x", b));
             }
             return sb.toString();
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Failed to calculate content hash", e);
         }

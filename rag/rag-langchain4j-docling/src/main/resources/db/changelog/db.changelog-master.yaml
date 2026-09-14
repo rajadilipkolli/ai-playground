@@ -33,3 +33,28 @@ databaseChangeLog:
                   FOR EACH ROW
                   EXECUTE PROCEDURE update_content_tsv();
               UPDATE vector_store SET content_tsv = to_tsvector('english', coalesce(content, '')) WHERE content_tsv IS NULL;
+  - changeSet:
+      id: 2
+      author: ai
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE vector_store RENAME COLUMN id TO embedding_id;
+              ALTER TABLE vector_store RENAME COLUMN content TO text;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE OR REPLACE FUNCTION update_content_tsv() RETURNS trigger AS $$
+              BEGIN
+                  NEW.content_tsv := to_tsvector('english', coalesce(NEW.text, ''));
+                  RETURN NEW;
+              END
+              $$ LANGUAGE plpgsql;
+        - sql:
+            sql: |
+              DROP TRIGGER IF EXISTS trigger_update_content_tsv ON vector_store;
+              CREATE TRIGGER trigger_update_content_tsv
+                  BEFORE INSERT OR UPDATE ON vector_store
+                  FOR EACH ROW
+                  EXECUTE PROCEDURE update_content_tsv();
+              UPDATE vector_store SET content_tsv = to_tsvector('english', coalesce(text, ''));

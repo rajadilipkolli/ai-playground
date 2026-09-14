@@ -3,11 +3,13 @@ package com.learning.ai.parser;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentParser;
 import java.io.InputStream;
+import java.time.Duration;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -18,8 +20,15 @@ public class DoclingDocumentParser implements DocumentParser {
     private final RestTemplate restTemplate;
 
     public DoclingDocumentParser(String doclingServerUrl) {
+        this(doclingServerUrl, Duration.ofSeconds(5), Duration.ofMinutes(2));
+    }
+
+    public DoclingDocumentParser(String doclingServerUrl, Duration connectTimeout, Duration readTimeout) {
         this.doclingServerUrl = doclingServerUrl;
-        this.restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(connectTimeout);
+        requestFactory.setReadTimeout(readTimeout);
+        this.restTemplate = new RestTemplate(requestFactory);
     }
 
     @Override

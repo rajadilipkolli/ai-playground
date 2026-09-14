@@ -4,6 +4,7 @@ import dev.langchain4j.data.segment.TextSegment;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -12,9 +13,15 @@ import org.springframework.stereotype.Service;
 public class MetadataEnricher {
 
     public List<TextSegment> enrich(List<TextSegment> segments, String sourceFilename, String contentHash) {
+        return enrich(segments, sourceFilename, sourceFilename, contentHash);
+    }
+
+    public List<TextSegment> enrich(
+            List<TextSegment> segments, String sourceFilename, String sourcePath, String contentHash) {
         String documentId = UUID.randomUUID().toString();
         String ingestedAt = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
-        
+
+        List<String> sectionStack = new ArrayList<>();
         String currentSectionPath = "root";
         int tableCounter = 0;
         
@@ -24,6 +31,7 @@ public class MetadataEnricher {
             // Set provenance
             metadata.put("document_id", documentId);
             metadata.put("source_filename", sourceFilename);
+            metadata.put("source_path", sourcePath);
             metadata.put("content_hash", contentHash);
             metadata.put("ingested_at", ingestedAt);
             
@@ -37,12 +45,16 @@ public class MetadataEnricher {
                 }
                 metadata.put("heading_level", String.valueOf(headingLevel));
                 
-                // Very basic section path logic
-                String headingText = text.replace("#", "").trim().split("\n")[0];
+                String headingText = text.substring(headingLevel).trim().split("\n")[0];
                 if (headingText.length() > 50) {
                     headingText = headingText.substring(0, 50);
                 }
-                currentSectionPath = currentSectionPath + "/" + headingText.replaceAll("[^a-zA-Z0-9_-]", "");
+                headingText = headingText.replaceAll("[^a-zA-Z0-9_-]", "");
+                while (sectionStack.size() >= headingLevel) {
+                    sectionStack.remove(sectionStack.size() - 1);
+                }
+                sectionStack.add(headingText);
+                currentSectionPath = "root/" + String.join("/", sectionStack);
                 metadata.put("element_type", "heading");
             } else if (metadata.getString("element_type") == null) {
                 metadata.put("element_type", "text");

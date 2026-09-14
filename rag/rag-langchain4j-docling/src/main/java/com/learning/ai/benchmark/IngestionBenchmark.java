@@ -29,6 +29,14 @@ public class IngestionBenchmark {
         getIngestionTimer().record(java.time.Duration.ofMillis(timeInMillis));
     }
 
+    public void recordDocumentProcessed(String batchId, long timeInMillis) {
+        recordDocumentProcessed(timeInMillis);
+        BenchmarkResult result = results.get(batchId);
+        if (result != null) {
+            result.recordDocumentProcessed();
+        }
+    }
+
     public void startBatch(String batchId, int totalFiles) {
         results.put(batchId, new BenchmarkResult(batchId, totalFiles, System.currentTimeMillis()));
     }
@@ -52,6 +60,7 @@ public class IngestionBenchmark {
         public long endTime;
         public double docsPerSecond;
         public long memoryUsedBytes;
+        private final AtomicInteger processedDocuments = new AtomicInteger();
 
         public BenchmarkResult(String batchId, int totalFiles, long startTime) {
             this.batchId = batchId;
@@ -64,11 +73,19 @@ public class IngestionBenchmark {
         public void calculateMetrics() {
             long durationMs = endTime - startTime;
             if (durationMs > 0) {
-                this.docsPerSecond = (double) totalFiles / (durationMs / 1000.0);
+                this.docsPerSecond = (double) processedDocuments.get() / (durationMs / 1000.0);
             }
             Runtime rt = Runtime.getRuntime();
             long memoryAtEnd = rt.totalMemory() - rt.freeMemory();
             this.memoryUsedBytes = memoryAtEnd - this.memoryUsedBytes;
+        }
+
+        public int getProcessedDocuments() {
+            return processedDocuments.get();
+        }
+
+        private void recordDocumentProcessed() {
+            processedDocuments.incrementAndGet();
         }
     }
 }

@@ -1,12 +1,14 @@
 package com.learning.ai.service;
 
+import com.learning.ai.benchmark.IngestionBenchmark;
 import com.learning.ai.model.IngestionJob;
 import com.learning.ai.repository.IngestionJobRepository;
 import com.learning.ai.util.ContentHashUtil;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import jakarta.annotation.PreDestroy;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +26,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import com.learning.ai.benchmark.IngestionBenchmark;
 
 @Service
 public class BatchIngestionService {
@@ -73,7 +75,8 @@ public class BatchIngestionService {
                 try {
                     byte[] bytes = file.getBytes();
                     Resource resource = new ByteArrayResource(bytes);
-                    processSingleDocument(file.getOriginalFilename(), resource);
+                    String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "document.pdf";
+                    processSingleDocument(jobId, filename, null, resource);
                     job.incrementProcessed();
                 } catch (Exception e) {
                     log.error("Failed to process file {}", file.getOriginalFilename(), e);
@@ -98,7 +101,7 @@ public class BatchIngestionService {
                 try {
                     byte[] bytes = Files.readAllBytes(file);
                     Resource resource = new ByteArrayResource(bytes);
-                    processSingleDocument(file.getFileName().toString(), resource);
+                    processSingleDocument(jobId, file.getFileName().toString(), file.toRealPath().toString(), resource);
                     job.incrementProcessed();
                 } catch (Exception e) {
                     log.error("Failed to process file {}", file.getFileName(), e);
@@ -119,34 +122,49 @@ public class BatchIngestionService {
         });
     }
 
-    private void processSingleDocument(String filename, Resource resource) throws Exception {
+    private void processSingleDocument(String batchId, String filename, String sourcePath, Resource resource) throws Exception {
         long startTime = System.currentTimeMillis();
         String contentHash = ContentHashUtil.calculateHash(resource);
+        String documentKey = sourcePath != null ? sourcePath : "upload:" + filename + ":" + contentHash;
 
         // Deduplication check
         List<String> existingHashes = jdbcTemplate.queryForList(
-                "SELECT DISTINCT metadata->>'content_hash' FROM vector_store WHERE metadata->>'source_filename' = ?",
-                String.class, filename);
+                "SELECT DISTINCT metadata->>'content_hash' FROM vector_store WHERE metadata->>'source_path' = ?",
+                String.class, documentKey);
 
         if (existingHashes.contains(contentHash)) {
             log.info("File {} with hash {} already exists. Skipping.", filename, contentHash);
             return;
         } else if (!existingHashes.isEmpty()) {
             log.info("File {} exists with different hash. Deleting old chunks.", filename);
-            jdbcTemplate.update("DELETE FROM vector_store WHERE metadata->>'source_filename' = ?", filename);
+            jdbcTemplate.update("DELETE FROM vector_store WHERE metadata->>'source_path' = ?", documentKey);
         }
 
         try (InputStream is = resource.getInputStream()) {
             Document document = documentParserService.parse(is);
             List<TextSegment> segments = chunker.chunk(document);
-            segments = metadataEnricher.enrich(segments, filename, contentHash);
+            segments = metadataEnricher.enrich(segments, filename, documentKey, contentHash);
             
             // Embed and store
             var embeddings = embeddingModel.embedAll(segments).content();
             embeddingStore.addAll(embeddings, segments);
             log.info("Successfully ingested file {} into {} chunks", filename, segments.size());
             long duration = System.currentTimeMillis() - startTime;
-            ingestionBenchmark.recordDocumentProcessed(duration);
+            ingestionBenchmark.recordDocumentProcessed(batchId, duration);
+        }
+    }
+
+    @PreDestroy
+    void shutdownExecutor() {
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("Ingestion executor did not stop in time; forcing shutdown");
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 }

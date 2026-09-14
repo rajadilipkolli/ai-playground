@@ -66,12 +66,8 @@ public class StructuredRetrievalService {
             filters.add(MetadataFilterBuilder.metadataKey("document_id").isEqualTo(request.documentId()));
         }
 
-        // Simulating sectionPath prefix match - typically using equality or some other method, 
-        // since exact prefix support varies by embedding store. We'll leave it out or implement a basic 'contains' if supported.
-        // For standard pgvector JSONB, we'll try a strict equal or just omit prefix matching for this demo unless we want to do JSONB raw query.
-        // Here, we just use equality for simplicity.
-        if (request.sectionPathPrefix() != null && !request.sectionPathPrefix().isBlank()) {
-            filters.add(MetadataFilterBuilder.metadataKey("section_path").isEqualTo(request.sectionPathPrefix()));
+        if (request.sectionPathExact() != null && !request.sectionPathExact().isBlank()) {
+            filters.add(MetadataFilterBuilder.metadataKey("section_path").isEqualTo(request.sectionPathExact()));
         }
 
         if (Boolean.TRUE.equals(request.hasTable())) {

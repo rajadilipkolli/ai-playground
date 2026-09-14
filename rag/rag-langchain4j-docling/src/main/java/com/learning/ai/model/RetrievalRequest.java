@@ -6,6 +6,6 @@ public record RetrievalRequest(
         Double minScore,
         String elementType,
         String documentId,
-        String sectionPathPrefix,
+        String sectionPathExact,
         Boolean hasTable
 ) {}
