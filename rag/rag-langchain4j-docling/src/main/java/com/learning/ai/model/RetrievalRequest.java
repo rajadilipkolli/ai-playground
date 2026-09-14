@@ -1,5 +1,6 @@
 package com.learning.ai.model;
 
+/** Describes a vector retrieval query and its optional metadata filters. */
 public record RetrievalRequest(
         String query,
         int maxResults,

@@ -21,6 +21,7 @@ public class DocumentParserService {
     private final DocumentParser primaryParser;
     private final DocumentParser fallbackParser;
 
+    /** Creates a Docling parser with a PDFBox fallback. */
     public DocumentParserService(
             @Value("${docling.server.url}") String doclingServerUrl,
             @Value("${docling.connect-timeout:5s}") Duration connectTimeout,
@@ -30,11 +31,13 @@ public class DocumentParserService {
                 new ApachePdfBoxDocumentParser());
     }
 
+    /** Creates the parser service from explicit primary and fallback parsers. */
     DocumentParserService(DocumentParser primaryParser, DocumentParser fallbackParser) {
         this.primaryParser = primaryParser;
         this.fallbackParser = fallbackParser;
     }
 
+    /** Parses a stream with Docling, falling back to PDFBox on failure. */
     public Document parse(InputStream inputStream) {
         final byte[] documentBytes;
         try {

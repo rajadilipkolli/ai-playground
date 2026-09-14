@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class DocumentParserServiceTests {
 
+    /** Verifies that fallback parsing receives a complete copy of the input. */
     @Test
     void fallbackReceivesFreshCopyOfInput() {
         byte[] input = "complete document".getBytes(StandardCharsets.UTF_8);
@@ -33,6 +34,7 @@ class DocumentParserServiceTests {
         assertThat(fallbackInput.get()).isEqualTo(input);
     }
 
+    /** Reads an entire stream for parser assertions. */
     private static byte[] readAllBytes(java.io.InputStream stream) {
         try {
             return stream.readAllBytes();

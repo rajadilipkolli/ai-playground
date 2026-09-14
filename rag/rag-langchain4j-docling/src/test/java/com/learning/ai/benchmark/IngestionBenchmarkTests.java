@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 class IngestionBenchmarkTests {
 
+    /** Verifies that overlapping batches maintain independent throughput counts. */
     @Test
     void calculatesThroughputFromCompletedDocumentsForEachOverlappingBatch() {
         IngestionBenchmark benchmark = new IngestionBenchmark(new SimpleMeterRegistry());

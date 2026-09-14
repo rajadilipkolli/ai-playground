@@ -18,6 +18,7 @@ class RagLangchain4jDoclingApplicationTests {
             .withUsername("doclinguser")
             .withPassword("doclingpass");
 
+    /** Verifies that the Spring application context starts successfully. */
     @Test
     void contextLoads() {
     }

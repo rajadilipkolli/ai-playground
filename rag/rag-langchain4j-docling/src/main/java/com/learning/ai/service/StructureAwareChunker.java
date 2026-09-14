@@ -15,6 +15,7 @@ public class StructureAwareChunker {
     private final DocumentSplitter textSplitter;
     private final int maxChunkSize;
 
+    /** Creates a chunker with the configured chunk size and overlap. */
     public StructureAwareChunker(
             @Value("${langchain4j.rag.chunking.size:300}") int chunkSize,
             @Value("${langchain4j.rag.chunking.overlap:50}") int overlap) {
@@ -22,6 +23,7 @@ public class StructureAwareChunker {
         this.textSplitter = DocumentSplitters.recursive(chunkSize, overlap);
     }
 
+    /** Splits a document while preserving Markdown table structure. */
     public List<TextSegment> chunk(Document document) {
         // Ideally, Docling returns structured elements (e.g. paragraphs, tables) as separated blocks.
         // For a generic Document containing plain text or markdown, we'll implement a custom logic
@@ -55,10 +57,12 @@ public class StructureAwareChunker {
         return finalSegments;
     }
     
+    /** Identifies a block that appears to contain a Markdown table. */
     private boolean isMarkdownTable(String block) {
         return block.contains("|") && block.contains("\n|") && block.contains("---");
     }
 
+    /** Splits an oversized table while repeating its header in each chunk. */
     private List<TextSegment> splitLargeTable(String tableContent, dev.langchain4j.data.document.Metadata metadata) {
         List<TextSegment> chunks = new ArrayList<>();
         String[] lines = tableContent.split("\n");

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 class MetadataEnricherTests {
 
+    /** Verifies that sibling headings replace the prior heading at their level. */
     @Test
     void replacesSiblingHeadingsAtTheSameLevel() {
         List<TextSegment> segments = List.of(

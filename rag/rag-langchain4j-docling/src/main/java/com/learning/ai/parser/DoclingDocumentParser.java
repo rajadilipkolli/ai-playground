@@ -19,10 +19,12 @@ public class DoclingDocumentParser implements DocumentParser {
     private final String doclingServerUrl;
     private final RestTemplate restTemplate;
 
+    /** Creates a parser with default connection and read timeouts. */
     public DoclingDocumentParser(String doclingServerUrl) {
         this(doclingServerUrl, Duration.ofSeconds(5), Duration.ofMinutes(2));
     }
 
+    /** Creates a parser with explicit connection and read timeouts. */
     public DoclingDocumentParser(String doclingServerUrl, Duration connectTimeout, Duration readTimeout) {
         this.doclingServerUrl = doclingServerUrl;
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
@@ -31,6 +33,7 @@ public class DoclingDocumentParser implements DocumentParser {
         this.restTemplate = new RestTemplate(requestFactory);
     }
 
+    /** Converts the supplied document stream to a LangChain4j document. */
     @Override
     public Document parse(InputStream inputStream) {
         try {
@@ -39,10 +42,12 @@ public class DoclingDocumentParser implements DocumentParser {
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", new InputStreamResource(inputStream) {
+                /** Supplies the filename required for the multipart upload. */
                 @Override
                 public String getFilename() {
                     return "document.pdf"; // Mock filename for parser
                 }
+                /** Leaves content length unknown so the client can stream the body. */
                 @Override
                 public long contentLength() {
                     return -1; // Let RestTemplate read it

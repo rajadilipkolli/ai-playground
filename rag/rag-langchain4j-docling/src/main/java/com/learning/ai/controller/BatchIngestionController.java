@@ -33,6 +33,7 @@ public class BatchIngestionController {
     private final IngestionJobRepository jobRepository;
     private final Path allowedBaseDirectory;
 
+    /** Creates the controller and normalizes the configured ingestion directory. */
     public BatchIngestionController(
             BatchIngestionService batchIngestionService,
             IngestionJobRepository jobRepository,
@@ -42,6 +43,7 @@ public class BatchIngestionController {
         this.allowedBaseDirectory = Paths.get(allowedBaseDirectory).toAbsolutePath().normalize();
     }
 
+    /** Accepts uploaded documents for asynchronous batch ingestion. */
     @PostMapping("/batch")
     public ResponseEntity<String> ingestBatch(@RequestParam("files") MultipartFile[] files) {
         if (files == null || files.length == 0) {
@@ -57,6 +59,7 @@ public class BatchIngestionController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(jobId);
     }
 
+    /** Accepts a permitted server directory for asynchronous PDF ingestion. */
     @PostMapping("/directory")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> ingestDirectory(@RequestParam("path") String directoryPath) {
@@ -95,6 +98,7 @@ public class BatchIngestionController {
         }
     }
 
+    /** Returns the current state of an ingestion job. */
     @GetMapping("/jobs/{jobId}")
     public ResponseEntity<IngestionJob> getJobStatus(@PathVariable String jobId) {
         return jobRepository.findById(jobId)
@@ -102,6 +106,7 @@ public class BatchIngestionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /** Returns the document failures recorded for an ingestion job. */
     @GetMapping("/jobs/{jobId}/failures")
     public ResponseEntity<List<String>> getJobFailures(@PathVariable String jobId) {
         return jobRepository.findById(jobId)

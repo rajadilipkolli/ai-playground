@@ -12,10 +12,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class MetadataEnricher {
 
+    /** Enriches segments using the source filename as their source path. */
     public List<TextSegment> enrich(List<TextSegment> segments, String sourceFilename, String contentHash) {
         return enrich(segments, sourceFilename, sourceFilename, contentHash);
     }
 
+    /** Adds provenance, structure, table, and page metadata to segments. */
     public List<TextSegment> enrich(
             List<TextSegment> segments, String sourceFilename, String sourcePath, String contentHash) {
         String documentId = UUID.randomUUID().toString();

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 class IngestionJobTests {
 
+    /** Verifies that concurrent counter updates are not lost. */
     @Test
     void updatesCountersAtomically() {
         IngestionJob job = new IngestionJob("job", 2_000);

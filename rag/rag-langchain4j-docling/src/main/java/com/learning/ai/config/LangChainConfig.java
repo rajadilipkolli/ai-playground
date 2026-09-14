@@ -18,11 +18,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 public class LangChainConfig {
 
+    /** Creates the local embedding model used for indexing and retrieval. */
     @Bean
     EmbeddingModel embeddingModel() {
         return new AllMiniLmL6V2EmbeddingModel();
     }
 
+    /** Creates the PostgreSQL vector store from the active JDBC connection. */
     @Bean
     EmbeddingStore<TextSegment> embeddingStore(JdbcConnectionDetails jdbcConnectionDetails) {
         String jdbcUrl = jdbcConnectionDetails.getJdbcUrl();
@@ -41,6 +43,7 @@ public class LangChainConfig {
                 .build();
     }
 
+    /** Creates the executor used for Docling work. */
     @Bean
     public ExecutorService doclingExecutorService() {
         return Executors.newFixedThreadPool(4); // Configurable pool size

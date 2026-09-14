@@ -16,10 +16,12 @@ public class RetrievalController {
 
     private final StructuredRetrievalService retrievalService;
 
+    /** Creates the retrieval controller. */
     public RetrievalController(StructuredRetrievalService retrievalService) {
         this.retrievalService = retrievalService;
     }
 
+    /** Validates and executes a structured retrieval request. */
     @PostMapping("/retrieve")
     @Operation(summary = "Structured Retrieval", description = "Query document chunks with vector similarity and metadata filters.")
     public ResponseEntity<RetrievalResponse> retrieve(@RequestBody RetrievalRequest request) {

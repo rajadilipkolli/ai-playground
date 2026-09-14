@@ -22,6 +22,7 @@ class BatchIngestionControllerTests {
     @TempDir
     Path tempDirectory;
 
+    /** Verifies that directory traversal outside the configured base is rejected. */
     @Test
     void rejectsDirectoriesOutsideConfiguredBase() throws Exception {
         Path allowed = Files.createDirectory(tempDirectory.resolve("allowed"));
@@ -36,6 +37,7 @@ class BatchIngestionControllerTests {
         verifyNoInteractions(service);
     }
 
+    /** Verifies that PDF files under the configured base are accepted. */
     @Test
     void acceptsPdfFilesUnderConfiguredBase() throws Exception {
         Path allowed = Files.createDirectory(tempDirectory.resolve("allowed"));
@@ -50,6 +52,7 @@ class BatchIngestionControllerTests {
         verify(service).processDirectory(anyString(), anyList());
     }
 
+    /** Verifies that directory ingestion requires the administrator role. */
     @Test
     void requiresAdminRoleForDirectoryIngestion() throws Exception {
         Method method = BatchIngestionController.class.getMethod("ingestDirectory", String.class);

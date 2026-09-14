@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 class RetrievalBenchmarkTests {
 
+    /** Verifies timer reuse and immutable exposure of recorded results. */
     @Test
     void reusesTimerAndExposesImmutableResults() {
         RetrievalBenchmark benchmark = new RetrievalBenchmark(new SimpleMeterRegistry());
@@ -21,6 +22,7 @@ class RetrievalBenchmarkTests {
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 
+    /** Verifies that blank queries are rejected before metrics are recorded. */
     @Test
     void rejectsBlankQueriesBeforeRecording() {
         RetrievalBenchmark benchmark = new RetrievalBenchmark(new SimpleMeterRegistry());

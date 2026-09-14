@@ -14,21 +14,25 @@ public class IngestionBenchmark {
     private final Map<String, BenchmarkResult> results = new ConcurrentHashMap<>();
     private final AtomicInteger processedDocuments = new AtomicInteger(0);
 
+    /** Creates an ingestion benchmark backed by the supplied meter registry. */
     public IngestionBenchmark(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
     }
 
+    /** Returns the timer used to measure document ingestion latency. */
     public Timer getIngestionTimer() {
         return Timer.builder("rag.ingestion.latency")
                 .description("Time taken to ingest a document")
                 .register(meterRegistry);
     }
 
+    /** Records the processing time for one document. */
     public void recordDocumentProcessed(long timeInMillis) {
         processedDocuments.incrementAndGet();
         getIngestionTimer().record(java.time.Duration.ofMillis(timeInMillis));
     }
 
+    /** Records a processed document for both global and batch metrics. */
     public void recordDocumentProcessed(String batchId, long timeInMillis) {
         recordDocumentProcessed(timeInMillis);
         BenchmarkResult result = results.get(batchId);
@@ -37,10 +41,12 @@ public class IngestionBenchmark {
         }
     }
 
+    /** Starts collecting metrics for a batch. */
     public void startBatch(String batchId, int totalFiles) {
         results.put(batchId, new BenchmarkResult(batchId, totalFiles, System.currentTimeMillis()));
     }
 
+    /** Finishes a batch and calculates its aggregate metrics. */
     public void endBatch(String batchId) {
         BenchmarkResult result = results.get(batchId);
         if (result != null) {
@@ -49,6 +55,7 @@ public class IngestionBenchmark {
         }
     }
 
+    /** Returns the benchmark results keyed by batch identifier. */
     public Map<String, BenchmarkResult> getResults() {
         return results;
     }
@@ -62,6 +69,7 @@ public class IngestionBenchmark {
         public long memoryUsedBytes;
         private final AtomicInteger processedDocuments = new AtomicInteger();
 
+        /** Creates the mutable metrics for an ingestion batch. */
         public BenchmarkResult(String batchId, int totalFiles, long startTime) {
             this.batchId = batchId;
             this.totalFiles = totalFiles;
@@ -70,6 +78,7 @@ public class IngestionBenchmark {
             this.memoryUsedBytes = rt.totalMemory() - rt.freeMemory();
         }
 
+        /** Calculates throughput and memory usage for the completed batch. */
         public void calculateMetrics() {
             long durationMs = endTime - startTime;
             if (durationMs > 0) {
@@ -80,10 +89,12 @@ public class IngestionBenchmark {
             this.memoryUsedBytes = memoryAtEnd - this.memoryUsedBytes;
         }
 
+        /** Returns the number of documents recorded for this batch. */
         public int getProcessedDocuments() {
             return processedDocuments.get();
         }
 
+        /** Increments the processed-document count for this batch. */
         private void recordDocumentProcessed() {
             processedDocuments.incrementAndGet();
         }

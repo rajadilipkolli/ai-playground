@@ -16,11 +16,13 @@ public class BenchmarkController {
     private final IngestionBenchmark ingestionBenchmark;
     private final RetrievalBenchmark retrievalBenchmark;
 
+    /** Creates the controller for ingestion and retrieval benchmark results. */
     public BenchmarkController(IngestionBenchmark ingestionBenchmark, RetrievalBenchmark retrievalBenchmark) {
         this.ingestionBenchmark = ingestionBenchmark;
         this.retrievalBenchmark = retrievalBenchmark;
     }
 
+    /** Returns all currently collected benchmark results. */
     @GetMapping("/results")
     public ResponseEntity<Map<String, Object>> getResults() {
         Map<String, Object> results = new HashMap<>();

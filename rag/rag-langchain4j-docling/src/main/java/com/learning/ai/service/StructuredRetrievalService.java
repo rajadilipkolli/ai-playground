@@ -24,12 +24,14 @@ public class StructuredRetrievalService {
     private final EmbeddingModel embeddingModel;
     private final RetrievalBenchmark retrievalBenchmark;
 
+    /** Creates the retrieval service and its benchmark recorder. */
     public StructuredRetrievalService(EmbeddingStore<TextSegment> embeddingStore, EmbeddingModel embeddingModel, RetrievalBenchmark retrievalBenchmark) {
         this.embeddingStore = embeddingStore;
         this.embeddingModel = embeddingModel;
         this.retrievalBenchmark = retrievalBenchmark;
     }
 
+    /** Embeds a query, applies metadata filters, and returns matching segments. */
     public RetrievalResponse retrieve(RetrievalRequest request) {
         long startTime = System.currentTimeMillis();
         Embedding queryEmbedding = embeddingModel.embed(request.query()).content();
@@ -55,6 +57,7 @@ public class StructuredRetrievalService {
         return new RetrievalResponse(matches);
     }
 
+    /** Builds the combined metadata filter requested by the caller. */
     private Filter buildFilter(RetrievalRequest request) {
         List<Filter> filters = new ArrayList<>();
 
@@ -86,6 +89,7 @@ public class StructuredRetrievalService {
         return combinedFilter;
     }
 
+    /** Converts an embedding-store match into the API response model. */
     private RetrievalMatch toMatchDTO(EmbeddingMatch<TextSegment> match) {
         return new RetrievalMatch(
                 match.embedded() != null ? match.embedded().text() : null,

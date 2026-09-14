@@ -42,6 +42,7 @@ public class BatchIngestionService {
     private final ExecutorService executorService;
     private final IngestionBenchmark ingestionBenchmark;
 
+    /** Creates the ingestion service and its bounded worker pool. */
     public BatchIngestionService(
             IngestionJobRepository jobRepository,
             DocumentParserService documentParserService,
@@ -63,6 +64,7 @@ public class BatchIngestionService {
         this.executorService = Executors.newFixedThreadPool(parallelism);
     }
 
+    /** Processes uploaded files asynchronously for an existing ingestion job. */
     public void processMultipartFiles(String jobId, MultipartFile[] files) {
         IngestionJob job = jobRepository.findById(jobId).orElseThrow();
         job.setStatus("PROCESSING");
@@ -89,6 +91,7 @@ public class BatchIngestionService {
         finalizeJob(job, futures);
     }
 
+    /** Processes filesystem documents asynchronously for an existing job. */
     public void processDirectory(String jobId, List<Path> files) {
         IngestionJob job = jobRepository.findById(jobId).orElseThrow();
         job.setStatus("PROCESSING");
@@ -114,6 +117,7 @@ public class BatchIngestionService {
         finalizeJob(job, futures);
     }
 
+    /** Completes a job after all of its document tasks finish. */
     private void finalizeJob(IngestionJob job, CompletableFuture<?>[] futures) {
         CompletableFuture.allOf(futures).whenComplete((res, ex) -> {
             job.setStatus(job.getFailedFiles() == job.getTotalFiles() ? "FAILED" : "COMPLETED");
@@ -122,6 +126,7 @@ public class BatchIngestionService {
         });
     }
 
+    /** Parses, chunks, enriches, embeds, and stores one document. */
     private void processSingleDocument(String batchId, String filename, String sourcePath, Resource resource) throws Exception {
         long startTime = System.currentTimeMillis();
         String contentHash = ContentHashUtil.calculateHash(resource);
@@ -154,6 +159,7 @@ public class BatchIngestionService {
         }
     }
 
+    /** Gracefully stops the ingestion worker pool during application shutdown. */
     @PreDestroy
     void shutdownExecutor() {
         executorService.shutdown();
