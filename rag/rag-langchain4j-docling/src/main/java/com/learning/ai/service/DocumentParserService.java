@@ -39,7 +39,12 @@ public class DocumentParserService {
         this.fallbackParser = fallbackParser;
     }
 
-    /** Parses a stream with Docling, falling back to PDFBox on failure. */
+    /**
+     * Parses a buffered copy of the stream with the primary parser, retrying the complete content with
+     * the fallback parser if the primary parser fails.
+     *
+     * @throws RuntimeException if the stream cannot be read or both parsers fail
+     */
     public Document parse(InputStream inputStream) {
         final byte[] documentBytes;
         try {

@@ -39,7 +39,7 @@ public class IngestionJob {
     public int getFailedFiles() { return failedFiles.get(); }
     /** Increments the failed file count. */
     public void incrementFailed() { failedFiles.incrementAndGet(); }
-    /** Returns the time at which processing started. */
+    /** Returns the time at which the queued job was created. */
     public Instant getStartedAt() { return startedAt; }
     /** Returns the time at which processing completed. */
     public Instant getCompletedAt() { return completedAt; }

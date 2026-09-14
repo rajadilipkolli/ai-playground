@@ -33,7 +33,11 @@ public class DoclingDocumentParser implements DocumentParser {
         this.restTemplate = new RestTemplate(requestFactory);
     }
 
-    /** Converts the supplied document stream to a LangChain4j document. */
+    /**
+     * Sends the supplied stream to Docling and wraps the response body as a LangChain4j document.
+     *
+     * @throws RuntimeException if Docling cannot be reached or does not return a successful response body
+     */
     @Override
     public Document parse(InputStream inputStream) {
         try {

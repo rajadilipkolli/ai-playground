@@ -26,7 +26,11 @@ public class RetrievalBenchmark {
         return retrievalTimer;
     }
 
-    /** Records the latency and match count for a query. */
+    /**
+     * Records the latency and match count for a query.
+     *
+     * @throws IllegalArgumentException if the query is {@code null} or blank
+     */
     public void recordQuery(String query, long timeInMillis, int returnedMatches) {
         if (query == null || query.isBlank()) {
             throw new IllegalArgumentException("Query must not be null or blank");

@@ -31,7 +31,10 @@ public class StructuredRetrievalService {
         this.retrievalBenchmark = retrievalBenchmark;
     }
 
-    /** Embeds a query, applies metadata filters, and returns matching segments. */
+    /**
+     * Embeds a query, applies metadata filters, and returns matching segments. Uses ten results when the
+     * requested maximum is not positive and a minimum score of zero when none is supplied.
+     */
     public RetrievalResponse retrieve(RetrievalRequest request) {
         long startTime = System.currentTimeMillis();
         Embedding queryEmbedding = embeddingModel.embed(request.query()).content();

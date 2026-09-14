@@ -43,7 +43,7 @@ public class LangChainConfig {
                 .build();
     }
 
-    /** Creates the executor used for Docling work. */
+    /** Creates a four-thread executor service bean. */
     @Bean
     public ExecutorService doclingExecutorService() {
         return Executors.newFixedThreadPool(4); // Configurable pool size

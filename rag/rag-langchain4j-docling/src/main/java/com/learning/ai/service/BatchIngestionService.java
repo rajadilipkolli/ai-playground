@@ -42,7 +42,7 @@ public class BatchIngestionService {
     private final ExecutorService executorService;
     private final IngestionBenchmark ingestionBenchmark;
 
-    /** Creates the ingestion service and its bounded worker pool. */
+    /** Creates the ingestion service and its fixed-size worker pool. */
     public BatchIngestionService(
             IngestionJobRepository jobRepository,
             DocumentParserService documentParserService,
@@ -126,7 +126,10 @@ public class BatchIngestionService {
         });
     }
 
-    /** Parses, chunks, enriches, embeds, and stores one document. */
+    /**
+     * Ingests one document unless its source and content hash already exist, replacing stale chunks for
+     * the same source before storing new ones.
+     */
     private void processSingleDocument(String batchId, String filename, String sourcePath, Resource resource) throws Exception {
         long startTime = System.currentTimeMillis();
         String contentHash = ContentHashUtil.calculateHash(resource);

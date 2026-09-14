@@ -8,7 +8,12 @@ public class ContentHashUtil {
 
     private static final int MAX_BYTES = 50 * 1024 * 1024; // 50 MB limit
 
-    /** Calculates a SHA-256 hash while enforcing the maximum document size. */
+    /**
+     * Calculates the lowercase hexadecimal SHA-256 hash of a resource up to 50 MiB.
+     *
+     * @throws IllegalArgumentException if the resource exceeds 50 MiB
+     * @throws RuntimeException if the resource cannot be read or SHA-256 is unavailable
+     */
     public static String calculateHash(Resource resource) {
         try (InputStream is = resource.getInputStream()) {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

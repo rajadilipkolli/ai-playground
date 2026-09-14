@@ -32,7 +32,7 @@ public class IngestionBenchmark {
         getIngestionTimer().record(java.time.Duration.ofMillis(timeInMillis));
     }
 
-    /** Records a processed document for both global and batch metrics. */
+    /** Records global metrics and, when the batch exists, increments its processed-document count. */
     public void recordDocumentProcessed(String batchId, long timeInMillis) {
         recordDocumentProcessed(timeInMillis);
         BenchmarkResult result = results.get(batchId);
@@ -41,7 +41,7 @@ public class IngestionBenchmark {
         }
     }
 
-    /** Starts collecting metrics for a batch. */
+    /** Starts collecting metrics for a batch, replacing any result with the same identifier. */
     public void startBatch(String batchId, int totalFiles) {
         results.put(batchId, new BenchmarkResult(batchId, totalFiles, System.currentTimeMillis()));
     }
@@ -55,7 +55,7 @@ public class IngestionBenchmark {
         }
     }
 
-    /** Returns the benchmark results keyed by batch identifier. */
+    /** Returns the live, mutable benchmark results keyed by batch identifier. */
     public Map<String, BenchmarkResult> getResults() {
         return results;
     }
