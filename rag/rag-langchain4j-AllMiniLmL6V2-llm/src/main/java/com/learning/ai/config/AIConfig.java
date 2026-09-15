@@ -53,6 +53,13 @@ class AIConfig {
     @Value("${langchain4j.rag.ingest.forceRefresh:false}")
     private boolean forceRefresh;
 
+    /**
+     * Creates the retriever that finds relevant text segments for each user question.
+     *
+     * @param embeddingStore the store containing embedded text segments
+     * @param embeddingModel the model used to embed user questions
+     * @return a retriever configured with the application's result limit and score threshold
+     */
     @Bean
     ContentRetriever contentRetriever(EmbeddingStore<TextSegment> embeddingStore, EmbeddingModel embeddingModel) {
         return EmbeddingStoreContentRetriever.builder()
@@ -63,6 +70,15 @@ class AIConfig {
                 .build();
     }
 
+    /**
+     * Builds the customer-support agent and connects it to its model, memory, tools, and retriever.
+     *
+     * @param chatModel the model that generates answers
+     * @param chatAssistantTools tools available to the agent
+     * @param contentRetriever the retriever that supplies relevant document content
+     * @param chatMemory the conversation memory used by the agent
+     * @return the configured customer-support agent
+     */
     @Bean
     AICustomerSupportAgent aiCustomerSupportAgent(
             ChatModel chatModel,
@@ -77,24 +93,46 @@ class AIConfig {
                 .build();
     }
 
+    /**
+     * Creates conversation memory with a bounded message window.
+     *
+     * @return memory retaining the latest 15 chat messages
+     */
     @Bean
     ChatMemory chatMemory() {
         return MessageWindowChatMemory.withMaxMessages(15);
     }
 
+    /**
+     * Creates the local model used to embed documents and user questions.
+     *
+     * @return an All-MiniLM-L6-v2 embedding model
+     */
     @Bean
     EmbeddingModel embeddingModel() {
         return new AllMiniLmL6V2EmbeddingModel();
     }
 
+    /**
+     * Creates the token estimator used to split documents within the model's token limits.
+     *
+     * @return an estimator configured for GPT-4o mini tokenization
+     */
     @Bean
     OpenAiTokenCountEstimator openAiTokenCountEstimator() {
         return new OpenAiTokenCountEstimator(OpenAiChatModelName.GPT_4_O_MINI.toString());
     }
 
+    /**
+     * Creates a listener that logs model activity and records request, response, and error metrics.
+     *
+     * @param meterRegistry the registry receiving model activity counters
+     * @return the model listener
+     */
     @Bean
     ChatModelListener chatModelListener(MeterRegistry meterRegistry) {
         return new ChatModelListener() {
+            /** Records an outgoing model request and increments its metric. */
             @Override
             public void onRequest(ChatModelRequestContext requestContext) {
                 log.info(
@@ -103,12 +141,14 @@ class AIConfig {
                 meterRegistry.counter("llm.requests").increment();
             }
 
+            /** Records a successful model response and increments its metric. */
             @Override
             public void onResponse(ChatModelResponseContext responseContext) {
                 log.info("Received response from LLM");
                 meterRegistry.counter("llm.responses").increment();
             }
 
+            /** Records a model error and increments its metric. */
             @Override
             public void onError(ChatModelErrorContext errorContext) {
                 log.error("Error during LLM call", errorContext.error());
@@ -117,6 +157,16 @@ class AIConfig {
         };
     }
 
+    /**
+     * Creates the PostgreSQL vector store and optionally ingests the bundled document.
+     *
+     * @param embeddingModel the model used to embed documents and test store contents
+     * @param resourceLoader the loader used to open the bundled PDF
+     * @param dataSource the PostgreSQL data source backing the vector store
+     * @param openAiTokenCountEstimator the estimator used when splitting the document
+     * @return the initialized embedding store
+     * @throws IOException if the bundled document cannot be read
+     */
     @Bean
     EmbeddingStore<TextSegment> embeddingStore(
             EmbeddingModel embeddingModel,

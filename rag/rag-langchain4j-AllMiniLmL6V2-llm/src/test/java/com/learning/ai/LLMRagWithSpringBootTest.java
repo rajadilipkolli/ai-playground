@@ -27,11 +27,13 @@ class LLMRagWithSpringBootTest {
     @LocalServerPort
     int serverPort;
 
+    /** Configures REST Assured to use the embedded application's random port. */
     @BeforeAll
     public void setUp() {
         RestAssured.port = serverPort;
     }
 
+    /** Verifies that document-backed questions return the expected person. */
     @Test
     void whenRequestGetFromPdf_thenOK() {
         given().contentType(ContentType.JSON)
@@ -46,6 +48,7 @@ class LLMRagWithSpringBootTest {
                 .all();
     }
 
+    /** Verifies that unrelated questions do not produce a matching document answer. */
     @Test
     void whenRequestGetFromPdfNoMatchingDocuments_thenHandleGracefully() {
         given().contentType(ContentType.JSON)
@@ -61,6 +64,7 @@ class LLMRagWithSpringBootTest {
                 .all();
     }
 
+    /** Verifies that callers can request retrieval diagnostics with an answer. */
     @Test
     void whenRequestGetFromPdfWithDiagnostics_thenOK() {
         given().contentType(ContentType.JSON)
@@ -76,6 +80,7 @@ class LLMRagWithSpringBootTest {
                 .all();
     }
 
+    /** Verifies that an empty question is rejected as a bad request. */
     @Test
     void whenRequestWithEmptyQuery_thenBadRequest() {
         given().contentType(ContentType.JSON)
