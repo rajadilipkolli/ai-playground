@@ -49,7 +49,8 @@ public class DoclingDocumentParser implements DocumentParser {
 
             // Force HTTP/1.1 to avoid Uvicorn 400 Bad Request on HTTP/2 preface
             HttpResponse<String> response;
-            try (HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build()) {
+            try (HttpClient client =
+                    HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build()) {
 
                 response = client.send(request, HttpResponse.BodyHandlers.ofString());
             }
