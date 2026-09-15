@@ -28,4 +28,4 @@ PgVector requires sufficient RAM for indexing. Use `HNSW` or `IVFFlat` indexes i
 ### Performance Tuning
 - Monitor ingestion throughput using `GET /api/benchmark/results`.
 - Adjust `ingestion.parallelism` to balance throughput with Docling server load.
-- Ensure `spring.threads.virtual.enabled=true` is set to utilize virtual threads for blocking REST calls to Docling.
+- Ensure `spring.threads.virtual.enabled=true` is set to utilize virtual threads for concurrent REST calls via the official `langchain4j-document-parser-docling` integration.

@@ -1,17 +1,13 @@
 package com.learning.ai.service;
 
-import com.learning.ai.parser.DoclingDocumentParser;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentParser;
 import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,20 +19,9 @@ public class DocumentParserService {
     private final DocumentParser fallbackParser;
 
     /** Creates a Docling parser with a PDFBox fallback. */
-    @Autowired
-    public DocumentParserService(
-            @Value("${docling.server.url}") String doclingServerUrl,
-            @Value("${spring.http.clients.connect-timeout}") Duration connectTimeout,
-            @Value("${spring.http.clients.read-timeout}") Duration readTimeout) {
-        this(
-                new DoclingDocumentParser(doclingServerUrl, connectTimeout, readTimeout),
-                new ApachePdfBoxDocumentParser());
-    }
-
-    /** Creates the parser service from explicit primary and fallback parsers. */
-    DocumentParserService(DocumentParser primaryParser, DocumentParser fallbackParser) {
-        this.primaryParser = primaryParser;
-        this.fallbackParser = fallbackParser;
+    public DocumentParserService(DocumentParser doclingDocumentParser) {
+        this.primaryParser = doclingDocumentParser;
+        this.fallbackParser = new ApachePdfBoxDocumentParser();
     }
 
     /**
