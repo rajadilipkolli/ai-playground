@@ -17,8 +17,6 @@ public class TestcontainersConfiguration {
 
     private static final Logger POSTGRES_LOG = LoggerFactory.getLogger("postgres");
 
-    private static final Logger DOCLING_LOG = LoggerFactory.getLogger("docling");
-
     /** Creates the PostgreSQL container used by integration tests. */
     @Bean(initMethod = "start", destroyMethod = "stop")
     @ServiceConnection
@@ -36,7 +34,7 @@ public class TestcontainersConfiguration {
     @Bean
     DoclingServeContainer doclingServeContainer() {
         return new DoclingServeContainer(DoclingServeContainerConfig.builder()
-                .image("ghcr.io/docling-project/docling-serve:v1.32.0")
+                .image("ghcr.io/docling-project/docling-serve:v1.33.0")
                 .enableUi(true)
                 .build());
     }
