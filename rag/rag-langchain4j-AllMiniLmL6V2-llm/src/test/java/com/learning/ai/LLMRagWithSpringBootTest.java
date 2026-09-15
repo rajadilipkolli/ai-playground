@@ -75,4 +75,16 @@ class LLMRagWithSpringBootTest {
                 .log()
                 .all();
     }
+
+    @Test
+    void whenRequestWithEmptyQuery_thenBadRequest() {
+        given().contentType(ContentType.JSON)
+                .body(new AIChatRequest(""))
+                .when()
+                .request(Method.POST, "/api/ai/chat")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .log()
+                .all();
+    }
 }

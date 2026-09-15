@@ -8,7 +8,7 @@ import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.listener.ChatModelErrorContext;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
@@ -16,8 +16,9 @@ import dev.langchain4j.model.chat.listener.ChatModelResponseContext;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
-import dev.langchain4j.model.openai.OpenAiTokenizer;
+import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -26,11 +27,10 @@ import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -54,13 +54,23 @@ class AIConfig {
     private boolean forceRefresh;
 
     @Bean
+    ContentRetriever contentRetriever(EmbeddingStore<TextSegment> embeddingStore, EmbeddingModel embeddingModel) {
+        return EmbeddingStoreContentRetriever.builder()
+                .embeddingStore(embeddingStore)
+                .embeddingModel(embeddingModel)
+                .maxResults(3)
+                .minScore(0.6)
+                .build();
+    }
+
+    @Bean
     AICustomerSupportAgent aiCustomerSupportAgent(
-            ChatLanguageModel chatLanguageModel,
+            ChatModel chatModel,
             ChatTools chatAssistantTools,
             ContentRetriever contentRetriever,
             ChatMemory chatMemory) {
         return AiServices.builder(AICustomerSupportAgent.class)
-                .chatLanguageModel(chatLanguageModel)
+                .chatModel(chatModel)
                 .chatMemory(chatMemory)
                 .tools(chatAssistantTools)
                 .contentRetriever(contentRetriever)
@@ -78,8 +88,8 @@ class AIConfig {
     }
 
     @Bean
-    OpenAiTokenizer openAiTokenizer() {
-        return new OpenAiTokenizer(OpenAiChatModelName.GPT_3_5_TURBO.toString());
+    OpenAiTokenCountEstimator openAiTokenCountEstimator() {
+        return new OpenAiTokenCountEstimator(OpenAiChatModelName.GPT_4_O_MINI.toString());
     }
 
     @Bean
@@ -87,7 +97,9 @@ class AIConfig {
         return new ChatModelListener() {
             @Override
             public void onRequest(ChatModelRequestContext requestContext) {
-                log.info("Sending request to LLM: {}", requestContext.request().messages());
+                log.info(
+                        "Sending request to LLM: {}",
+                        requestContext.chatRequest().messages());
                 meterRegistry.counter("llm.requests").increment();
             }
 
@@ -109,26 +121,17 @@ class AIConfig {
     EmbeddingStore<TextSegment> embeddingStore(
             EmbeddingModel embeddingModel,
             ResourceLoader resourceLoader,
-            JdbcConnectionDetails jdbcConnectionDetails,
-            OpenAiTokenizer openAiTokenizer)
+            DataSource dataSource,
+            OpenAiTokenCountEstimator openAiTokenCountEstimator)
             throws IOException {
 
         // Normally, you would already have your embedding store filled with your data.
         // However, for the purpose of this demonstration, we will:
 
-        String jdbcUrl = jdbcConnectionDetails.getJdbcUrl();
-        URI uri = URI.create(jdbcUrl.substring(5));
-        String host = uri.getHost();
-        int dbPort = uri.getPort();
-        String path = uri.getPath();
         // 1. Create an postgres embedding store
         // dimension of the embedding is 384 (all-minilm) and 1536 (openai)
-        EmbeddingStore<TextSegment> embeddingStore = PgVectorEmbeddingStore.builder()
-                .host(host)
-                .port(dbPort != -1 ? dbPort : 5432)
-                .user(jdbcConnectionDetails.getUsername())
-                .password(jdbcConnectionDetails.getPassword())
-                .database(path.substring(1))
+        EmbeddingStore<TextSegment> embeddingStore = PgVectorEmbeddingStore.datasourceBuilder()
+                .datasource(dataSource)
                 .table("ai_vector_store")
                 .dropTableFirst(forceRefresh)
                 .dimension(384)
@@ -158,7 +161,7 @@ class AIConfig {
                 // Since we are using an OpenAiTokenizer (which differs slightly from the model's native tokenizer),
                 // we apply a conservative max size to avoid truncation errors, while maintaining a healthy overlap.
                 DocumentSplitter documentSplitter =
-                        DocumentSplitters.recursive(chunkSize, chunkOverlap, openAiTokenizer);
+                        DocumentSplitters.recursive(chunkSize, chunkOverlap, openAiTokenCountEstimator);
                 EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
                         .documentSplitter(documentSplitter)
                         .embeddingModel(embeddingModel)
