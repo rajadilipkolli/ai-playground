@@ -20,6 +20,5 @@ class RagLangchain4jDoclingApplicationTests {
 
     /** Verifies that the Spring application context starts successfully. */
     @Test
-    void contextLoads() {
-    }
+    void contextLoads() {}
 }

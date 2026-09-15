@@ -29,19 +29,19 @@ public class MetadataEnricher {
         List<String> sectionStack = new ArrayList<>();
         String currentSectionPath = "root";
         int tableCounter = 0;
-        
+
         for (TextSegment segment : segments) {
             dev.langchain4j.data.document.Metadata metadata = segment.metadata();
-            
+
             // Set provenance
             metadata.put("document_id", documentId);
             metadata.put("source_filename", sourceFilename);
             metadata.put("source_path", sourcePath);
             metadata.put("content_hash", contentHash);
             metadata.put("ingested_at", ingestedAt);
-            
+
             String text = segment.text();
-            
+
             // Heuristic for heading tracking (Assuming markdown output from Docling)
             if (text.startsWith("#")) {
                 int headingLevel = 0;
@@ -49,7 +49,7 @@ public class MetadataEnricher {
                     headingLevel++;
                 }
                 metadata.put("heading_level", String.valueOf(headingLevel));
-                
+
                 String headingText = text.substring(headingLevel).trim().split("\n")[0];
                 if (headingText.length() > 50) {
                     headingText = headingText.substring(0, 50);
@@ -64,15 +64,15 @@ public class MetadataEnricher {
             } else if (metadata.getString("element_type") == null) {
                 metadata.put("element_type", "text");
             }
-            
+
             if ("table".equals(metadata.getString("element_type"))) {
                 if (!metadata.containsKey("table_id")) {
                     metadata.put("table_id", "tbl_" + (++tableCounter));
                 }
             }
-            
+
             metadata.put("section_path", currentSectionPath);
-            
+
             // Try to extract page number if Docling left a tag, otherwise leave it absent
             // Example tag Docling might add: <!-- Page 1 -->
             if (text.contains("<!-- Page ")) {
@@ -85,7 +85,7 @@ public class MetadataEnricher {
                 }
             }
         }
-        
+
         return segments;
     }
 }

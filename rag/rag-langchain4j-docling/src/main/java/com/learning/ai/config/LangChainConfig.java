@@ -5,15 +5,11 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
-import java.net.URI;
-import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
+import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-// NOTE: langchain4j-document-parser-docling components will be defined here or injected automatically if starter provides them.
-// The DoclingDocumentParser might not have a generic interface if it's new, but we set up the executor and embedding store for now.
 
 @Configuration(proxyBeanMethods = false)
 public class LangChainConfig {
@@ -24,21 +20,13 @@ public class LangChainConfig {
         return new AllMiniLmL6V2EmbeddingModel();
     }
 
-    /** Creates the PostgreSQL vector store from the active JDBC connection. */
+    /** Creates the PostgreSQL vector store from datasource. */
     @Bean
-    EmbeddingStore<TextSegment> embeddingStore(JdbcConnectionDetails jdbcConnectionDetails) {
-        String jdbcUrl = jdbcConnectionDetails.getJdbcUrl();
-        URI uri = URI.create(jdbcUrl.substring(5));
-        String host = uri.getHost();
-        int dbPort = uri.getPort();
-        String path = uri.getPath();
-        return PgVectorEmbeddingStore.builder()
-                .host(host)
-                .port(dbPort)
-                .database(path.substring(1))
-                .user(jdbcConnectionDetails.getUsername())
-                .password(jdbcConnectionDetails.getPassword())
+    EmbeddingStore<TextSegment> embeddingStore(DataSource dataSource) {
+        return PgVectorEmbeddingStore.datasourceBuilder()
+                .datasource(dataSource)
                 .table("vector_store")
+                .createTable(false)
                 .dimension(384)
                 .build();
     }

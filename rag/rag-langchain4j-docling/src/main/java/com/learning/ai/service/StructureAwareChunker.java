@@ -30,33 +30,35 @@ public class StructureAwareChunker {
         // that looks for table boundaries (e.g. markdown tables like |---|---|).
         // Since we don't have the rich Docling structure in the raw Document yet, we'll approximate it.
         // We'll split the document into logical sections (e.g. separated by double newlines) and then process.
-        
+
         List<TextSegment> finalSegments = new ArrayList<>();
         String content = document.text();
-        
+
         // Simple heuristic: split by double newlines to isolate tables or paragraphs
         String[] blocks = content.split("\n\n");
-        
+
         for (String block : blocks) {
             block = block.trim();
             if (block.isEmpty()) continue;
-            
+
             if (isMarkdownTable(block)) {
                 if (block.length() <= maxChunkSize) {
-                    finalSegments.add(TextSegment.from(block, document.metadata().copy().put("element_type", "table")));
+                    finalSegments.add(
+                            TextSegment.from(block, document.metadata().copy().put("element_type", "table")));
                 } else {
                     finalSegments.addAll(splitLargeTable(block, document.metadata()));
                 }
             } else {
                 // Regular text section
-                Document sectionDoc = Document.from(block, document.metadata().copy().put("element_type", "text"));
+                Document sectionDoc =
+                        Document.from(block, document.metadata().copy().put("element_type", "text"));
                 finalSegments.addAll(textSplitter.split(sectionDoc));
             }
         }
-        
+
         return finalSegments;
     }
-    
+
     /** Identifies a block that appears to contain a Markdown table. */
     private boolean isMarkdownTable(String block) {
         return block.contains("|") && block.contains("\n|") && block.contains("---");
@@ -66,7 +68,7 @@ public class StructureAwareChunker {
     private List<TextSegment> splitLargeTable(String tableContent, dev.langchain4j.data.document.Metadata metadata) {
         List<TextSegment> chunks = new ArrayList<>();
         String[] lines = tableContent.split("\n");
-        
+
         // Extract header
         StringBuilder header = new StringBuilder();
         int dataStartIndex = 0;
@@ -77,20 +79,22 @@ public class StructureAwareChunker {
                 break;
             }
         }
-        
+
         StringBuilder currentChunk = new StringBuilder(header);
         for (int i = dataStartIndex; i < lines.length; i++) {
             if (currentChunk.length() + lines[i].length() > maxChunkSize && currentChunk.length() > header.length()) {
-                chunks.add(TextSegment.from(currentChunk.toString().trim(), metadata.copy().put("element_type", "table")));
+                chunks.add(TextSegment.from(
+                        currentChunk.toString().trim(), metadata.copy().put("element_type", "table")));
                 currentChunk = new StringBuilder(header);
             }
             currentChunk.append(lines[i]).append("\n");
         }
-        
+
         if (currentChunk.length() > header.length()) {
-            chunks.add(TextSegment.from(currentChunk.toString().trim(), metadata.copy().put("element_type", "table")));
+            chunks.add(TextSegment.from(
+                    currentChunk.toString().trim(), metadata.copy().put("element_type", "table")));
         }
-        
+
         return chunks;
     }
 }

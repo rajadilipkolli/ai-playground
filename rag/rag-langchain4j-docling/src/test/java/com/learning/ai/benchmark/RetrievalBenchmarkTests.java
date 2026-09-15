@@ -16,10 +16,8 @@ class RetrievalBenchmarkTests {
         assertThat(benchmark.getRetrievalTimer()).isSameAs(benchmark.getRetrievalTimer());
         benchmark.recordQuery("query", 12, 3);
 
-        assertThat(benchmark.getResults().get("query"))
-                .isEqualTo(new RetrievalBenchmark.QueryResult("query", 12, 3));
-        assertThatThrownBy(() -> benchmark.getResults().clear())
-                .isInstanceOf(UnsupportedOperationException.class);
+        assertThat(benchmark.getResults().get("query")).isEqualTo(new RetrievalBenchmark.QueryResult("query", 12, 3));
+        assertThatThrownBy(() -> benchmark.getResults().clear()).isInstanceOf(UnsupportedOperationException.class);
     }
 
     /** Verifies that blank queries are rejected before metrics are recorded. */

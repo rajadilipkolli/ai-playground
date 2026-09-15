@@ -73,19 +73,22 @@ public class BatchIngestionService {
         CompletableFuture<?>[] futures = new CompletableFuture<?>[files.length];
         for (int i = 0; i < files.length; i++) {
             MultipartFile file = files[i];
-            futures[i] = CompletableFuture.runAsync(() -> {
-                try {
-                    byte[] bytes = file.getBytes();
-                    Resource resource = new ByteArrayResource(bytes);
-                    String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "document.pdf";
-                    processSingleDocument(jobId, filename, null, resource);
-                    job.incrementProcessed();
-                } catch (Exception e) {
-                    log.error("Failed to process file {}", file.getOriginalFilename(), e);
-                    job.incrementFailed();
-                    job.addFailedDocument(file.getOriginalFilename() + ": " + e.getMessage());
-                }
-            }, executorService);
+            futures[i] = CompletableFuture.runAsync(
+                    () -> {
+                        try {
+                            byte[] bytes = file.getBytes();
+                            Resource resource = new ByteArrayResource(bytes);
+                            String filename =
+                                    file.getOriginalFilename() != null ? file.getOriginalFilename() : "document.pdf";
+                            processSingleDocument(jobId, filename, null, resource);
+                            job.incrementProcessed();
+                        } catch (Exception e) {
+                            log.error("Failed to process file {}", file.getOriginalFilename(), e);
+                            job.incrementFailed();
+                            job.addFailedDocument(file.getOriginalFilename() + ": " + e.getMessage());
+                        }
+                    },
+                    executorService);
         }
 
         finalizeJob(job, futures);
@@ -100,18 +103,24 @@ public class BatchIngestionService {
         CompletableFuture<?>[] futures = new CompletableFuture<?>[files.size()];
         for (int i = 0; i < files.size(); i++) {
             Path file = files.get(i);
-            futures[i] = CompletableFuture.runAsync(() -> {
-                try {
-                    byte[] bytes = Files.readAllBytes(file);
-                    Resource resource = new ByteArrayResource(bytes);
-                    processSingleDocument(jobId, file.getFileName().toString(), file.toRealPath().toString(), resource);
-                    job.incrementProcessed();
-                } catch (Exception e) {
-                    log.error("Failed to process file {}", file.getFileName(), e);
-                    job.incrementFailed();
-                    job.addFailedDocument(file.getFileName().toString() + ": " + e.getMessage());
-                }
-            }, executorService);
+            futures[i] = CompletableFuture.runAsync(
+                    () -> {
+                        try {
+                            byte[] bytes = Files.readAllBytes(file);
+                            Resource resource = new ByteArrayResource(bytes);
+                            processSingleDocument(
+                                    jobId,
+                                    file.getFileName().toString(),
+                                    file.toRealPath().toString(),
+                                    resource);
+                            job.incrementProcessed();
+                        } catch (Exception e) {
+                            log.error("Failed to process file {}", file.getFileName(), e);
+                            job.incrementFailed();
+                            job.addFailedDocument(file.getFileName().toString() + ": " + e.getMessage());
+                        }
+                    },
+                    executorService);
         }
 
         finalizeJob(job, futures);
@@ -130,7 +139,8 @@ public class BatchIngestionService {
      * Ingests one document unless its source and content hash already exist, replacing stale chunks for
      * the same source before storing new ones.
      */
-    private void processSingleDocument(String batchId, String filename, String sourcePath, Resource resource) throws Exception {
+    private void processSingleDocument(String batchId, String filename, String sourcePath, Resource resource)
+            throws Exception {
         long startTime = System.currentTimeMillis();
         String contentHash = ContentHashUtil.calculateHash(resource);
         String documentKey = sourcePath != null ? sourcePath : "upload:" + filename + ":" + contentHash;
@@ -138,7 +148,8 @@ public class BatchIngestionService {
         // Deduplication check
         List<String> existingHashes = jdbcTemplate.queryForList(
                 "SELECT DISTINCT metadata->>'content_hash' FROM vector_store WHERE metadata->>'source_path' = ?",
-                String.class, documentKey);
+                String.class,
+                documentKey);
 
         if (existingHashes.contains(contentHash)) {
             log.info("File {} with hash {} already exists. Skipping.", filename, contentHash);
@@ -152,7 +163,7 @@ public class BatchIngestionService {
             Document document = documentParserService.parse(is);
             List<TextSegment> segments = chunker.chunk(document);
             segments = metadataEnricher.enrich(segments, filename, documentKey, contentHash);
-            
+
             // Embed and store
             var embeddings = embeddingModel.embedAll(segments).content();
             embeddingStore.addAll(embeddings, segments);

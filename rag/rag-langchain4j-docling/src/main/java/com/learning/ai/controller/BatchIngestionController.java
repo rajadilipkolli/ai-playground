@@ -40,7 +40,8 @@ public class BatchIngestionController {
             @Value("${ingestion.allowed-base-directory}") String allowedBaseDirectory) {
         this.batchIngestionService = batchIngestionService;
         this.jobRepository = jobRepository;
-        this.allowedBaseDirectory = Paths.get(allowedBaseDirectory).toAbsolutePath().normalize();
+        this.allowedBaseDirectory =
+                Paths.get(allowedBaseDirectory).toAbsolutePath().normalize();
     }
 
     /** Accepts uploaded documents for asynchronous batch ingestion. */
@@ -49,13 +50,13 @@ public class BatchIngestionController {
         if (files == null || files.length == 0) {
             return ResponseEntity.badRequest().body("No files provided");
         }
-        
+
         String jobId = UUID.randomUUID().toString();
         IngestionJob job = new IngestionJob(jobId, files.length);
         jobRepository.save(job);
-        
+
         batchIngestionService.processMultipartFiles(jobId, files);
-        
+
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(jobId);
     }
 
@@ -79,19 +80,19 @@ public class BatchIngestionController {
 
         try (Stream<Path> paths = Files.walk(path)) {
             List<Path> files = paths.filter(p -> Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS))
-                                    .filter(p -> p.toString().toLowerCase().endsWith(".pdf"))
-                                    .collect(Collectors.toList());
-            
+                    .filter(p -> p.toString().toLowerCase().endsWith(".pdf"))
+                    .collect(Collectors.toList());
+
             if (files.isEmpty()) {
                 return ResponseEntity.badRequest().body("No PDF files found in directory");
             }
-            
+
             String jobId = UUID.randomUUID().toString();
             IngestionJob job = new IngestionJob(jobId, files.size());
             jobRepository.save(job);
-            
+
             batchIngestionService.processDirectory(jobId, files);
-            
+
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(jobId);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error reading directory");
@@ -101,7 +102,8 @@ public class BatchIngestionController {
     /** Returns the current state of an ingestion job. */
     @GetMapping("/jobs/{jobId}")
     public ResponseEntity<IngestionJob> getJobStatus(@PathVariable String jobId) {
-        return jobRepository.findById(jobId)
+        return jobRepository
+                .findById(jobId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -109,7 +111,8 @@ public class BatchIngestionController {
     /** Returns the document failures recorded for an ingestion job. */
     @GetMapping("/jobs/{jobId}/failures")
     public ResponseEntity<List<String>> getJobFailures(@PathVariable String jobId) {
-        return jobRepository.findById(jobId)
+        return jobRepository
+                .findById(jobId)
                 .map(job -> ResponseEntity.ok(job.getFailedDocuments()))
                 .orElse(ResponseEntity.notFound().build());
     }

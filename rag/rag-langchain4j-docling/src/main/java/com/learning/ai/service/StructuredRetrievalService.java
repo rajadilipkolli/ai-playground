@@ -1,5 +1,6 @@
 package com.learning.ai.service;
 
+import com.learning.ai.benchmark.RetrievalBenchmark;
 import com.learning.ai.model.RetrievalMatch;
 import com.learning.ai.model.RetrievalRequest;
 import com.learning.ai.model.RetrievalResponse;
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
-import com.learning.ai.benchmark.RetrievalBenchmark;
 
 @Service
 public class StructuredRetrievalService {
@@ -25,7 +25,10 @@ public class StructuredRetrievalService {
     private final RetrievalBenchmark retrievalBenchmark;
 
     /** Creates the retrieval service and its benchmark recorder. */
-    public StructuredRetrievalService(EmbeddingStore<TextSegment> embeddingStore, EmbeddingModel embeddingModel, RetrievalBenchmark retrievalBenchmark) {
+    public StructuredRetrievalService(
+            EmbeddingStore<TextSegment> embeddingStore,
+            EmbeddingModel embeddingModel,
+            RetrievalBenchmark retrievalBenchmark) {
         this.embeddingStore = embeddingStore;
         this.embeddingModel = embeddingModel;
         this.retrievalBenchmark = retrievalBenchmark;
@@ -48,11 +51,11 @@ public class StructuredRetrievalService {
                 .filter(filter)
                 .build();
 
-        dev.langchain4j.store.embedding.EmbeddingSearchResult<TextSegment> result = embeddingStore.search(searchRequest);
+        dev.langchain4j.store.embedding.EmbeddingSearchResult<TextSegment> result =
+                embeddingStore.search(searchRequest);
 
-        List<RetrievalMatch> matches = result.matches().stream()
-                .map(this::toMatchDTO)
-                .collect(Collectors.toList());
+        List<RetrievalMatch> matches =
+                result.matches().stream().map(this::toMatchDTO).collect(Collectors.toList());
 
         long duration = System.currentTimeMillis() - startTime;
         retrievalBenchmark.recordQuery(request.query(), duration, matches.size());
@@ -97,7 +100,6 @@ public class StructuredRetrievalService {
         return new RetrievalMatch(
                 match.embedded() != null ? match.embedded().text() : null,
                 match.score(),
-                match.embedded() != null ? match.embedded().metadata().toMap() : null
-        );
+                match.embedded() != null ? match.embedded().metadata().toMap() : null);
     }
 }

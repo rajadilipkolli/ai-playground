@@ -23,12 +23,14 @@ public class RetrievalController {
 
     /** Validates and executes a structured retrieval request. */
     @PostMapping("/retrieve")
-    @Operation(summary = "Structured Retrieval", description = "Query document chunks with vector similarity and metadata filters.")
+    @Operation(
+            summary = "Structured Retrieval",
+            description = "Query document chunks with vector similarity and metadata filters.")
     public ResponseEntity<RetrievalResponse> retrieve(@RequestBody RetrievalRequest request) {
         if (request.query() == null || request.query().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-        
+
         RetrievalResponse response = retrievalService.retrieve(request);
         return ResponseEntity.ok(response);
     }

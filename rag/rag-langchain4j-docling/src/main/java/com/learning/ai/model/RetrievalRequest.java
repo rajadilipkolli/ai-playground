@@ -8,5 +8,4 @@ public record RetrievalRequest(
         String elementType,
         String documentId,
         String sectionPathExact,
-        Boolean hasTable
-) {}
+        Boolean hasTable) {}

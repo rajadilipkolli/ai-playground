@@ -3,10 +3,8 @@ services:
     image: ghcr.io/docling-project/docling-serve:v1.9.0
     container_name: docling-serve
     ports:
-      - "8000:8000"
+      - "15001:5001"
     environment:
-      - HOST=0.0.0.0
-      - PORT=8000
       # Optional: Adjust logging verbosity (DEBUG, INFO, WARNING, ERROR)
       - LOG_LEVEL=info
     volumes:

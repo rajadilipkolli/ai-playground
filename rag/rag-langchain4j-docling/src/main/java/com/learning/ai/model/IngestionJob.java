@@ -24,29 +24,55 @@ public class IngestionJob {
     }
 
     /** Returns the job identifier. */
-    public String getJobId() { return jobId; }
+    public String getJobId() {
+        return jobId;
+    }
     /** Returns the current job status. */
-    public String getStatus() { return status; }
+    public String getStatus() {
+        return status;
+    }
     /** Updates the current job status. */
-    public void setStatus(String status) { this.status = status; }
+    public void setStatus(String status) {
+        this.status = status;
+    }
     /** Returns the expected number of files. */
-    public int getTotalFiles() { return totalFiles.get(); }
+    public int getTotalFiles() {
+        return totalFiles.get();
+    }
     /** Returns the number of successfully processed files. */
-    public int getProcessedFiles() { return processedFiles.get(); }
+    public int getProcessedFiles() {
+        return processedFiles.get();
+    }
     /** Increments the successfully processed file count. */
-    public void incrementProcessed() { processedFiles.incrementAndGet(); }
+    public void incrementProcessed() {
+        processedFiles.incrementAndGet();
+    }
     /** Returns the number of failed files. */
-    public int getFailedFiles() { return failedFiles.get(); }
+    public int getFailedFiles() {
+        return failedFiles.get();
+    }
     /** Increments the failed file count. */
-    public void incrementFailed() { failedFiles.incrementAndGet(); }
+    public void incrementFailed() {
+        failedFiles.incrementAndGet();
+    }
     /** Returns the time at which the queued job was created. */
-    public Instant getStartedAt() { return startedAt; }
+    public Instant getStartedAt() {
+        return startedAt;
+    }
     /** Returns the time at which processing completed. */
-    public Instant getCompletedAt() { return completedAt; }
+    public Instant getCompletedAt() {
+        return completedAt;
+    }
     /** Records the time at which processing completed. */
-    public void setCompletedAt(Instant completedAt) { this.completedAt = completedAt; }
+    public void setCompletedAt(Instant completedAt) {
+        this.completedAt = completedAt;
+    }
     /** Returns the recorded document failure messages. */
-    public List<String> getFailedDocuments() { return failedDocuments; }
+    public List<String> getFailedDocuments() {
+        return failedDocuments;
+    }
     /** Adds a document failure message. */
-    public void addFailedDocument(String failure) { this.failedDocuments.add(failure); }
+    public void addFailedDocument(String failure) {
+        this.failedDocuments.add(failure);
+    }
 }

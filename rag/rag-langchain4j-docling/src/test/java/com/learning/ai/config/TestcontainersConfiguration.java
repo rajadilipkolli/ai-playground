@@ -1,14 +1,13 @@
 package com.learning.ai.config;
 
+import ai.docling.testcontainers.serve.DoclingServeContainer;
+import ai.docling.testcontainers.serve.config.DoclingServeContainerConfig;
 import java.time.Duration;
-
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistrar;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
@@ -16,23 +15,22 @@ public class TestcontainersConfiguration {
     @Bean
     @ServiceConnection
     PostgreSQLContainer postgresContainer() {
-        return new PostgreSQLContainer("pgvector/pgvector:pg18")
-                .withStartupTimeout(Duration.ofMinutes(2));
+        return new PostgreSQLContainer("pgvector/pgvector:pg18").withStartupTimeout(Duration.ofMinutes(2));
     }
 
     @Bean
-    GenericContainer<?> doclingServeContainer() {
-        return new GenericContainer<>("ghcr.io/docling-project/docling-serve:v1.9.0")
-                .withExposedPorts(5001)
-                .waitingFor(Wait.forHttp("/ready").forPort(5001).forStatusCode(200))
-                .withStartupTimeout(Duration.ofMinutes(2));
+    DoclingServeContainer doclingServeContainer() {
+        return new DoclingServeContainer(DoclingServeContainerConfig.builder()
+                .image("ghcr.io/docling-project/docling-serve:v1.9.0")
+                .enableUi(true)
+                .build());
     }
 
     @Bean
-    DynamicPropertyRegistrar dynamicPropertyRegistrar(GenericContainer<?> doclingServeContainer) {
+    DynamicPropertyRegistrar dynamicPropertyRegistrar(DoclingServeContainer doclingServeContainer) {
+        // Ensure the container is started and the API URL is available
         return registry -> {
-            registry.add("docling.server.url", () -> 
-                "http://" + doclingServeContainer.getHost() + ":" + doclingServeContainer.getMappedPort(5001));
+            registry.add("docling.server.url", doclingServeContainer::getApiUrl);
         };
     }
 }

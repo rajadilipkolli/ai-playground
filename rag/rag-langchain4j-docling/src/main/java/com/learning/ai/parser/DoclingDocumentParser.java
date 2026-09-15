@@ -3,34 +3,18 @@ package com.learning.ai.parser;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentParser;
 import java.io.InputStream;
-import java.time.Duration;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 public class DoclingDocumentParser implements DocumentParser {
 
     private final String doclingServerUrl;
-    private final RestTemplate restTemplate;
 
-    /** Creates a parser with default connection and read timeouts. */
     public DoclingDocumentParser(String doclingServerUrl) {
-        this(doclingServerUrl, Duration.ofSeconds(5), Duration.ofMinutes(2));
-    }
-
-    /** Creates a parser with explicit connection and read timeouts. */
-    public DoclingDocumentParser(String doclingServerUrl, Duration connectTimeout, Duration readTimeout) {
         this.doclingServerUrl = doclingServerUrl;
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(connectTimeout);
-        requestFactory.setReadTimeout(readTimeout);
-        this.restTemplate = new RestTemplate(requestFactory);
     }
 
     /**
@@ -41,35 +25,57 @@ public class DoclingDocumentParser implements DocumentParser {
     @Override
     public Document parse(InputStream inputStream) {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            byte[] fileBytes = inputStream.readAllBytes();
+            String boundary = "----WebKitFormBoundary" + System.currentTimeMillis();
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("files", new InputStreamResource(inputStream) {
-                /** Supplies the filename required for the multipart upload. */
-                @Override
-                public String getFilename() {
-                    return "document.pdf"; // Mock filename for parser
-                }
-                /** Leaves content length unknown so the client can stream the body. */
-                @Override
-                public long contentLength() {
-                    return -1; // Let RestTemplate read it
-                }
-            });
+            String header = "--" + boundary + "\r\n"
+                    + "Content-Disposition: form-data; name=\"files\"; filename=\"document.pdf\"\r\n"
+                    + "Content-Type: application/pdf\r\n\r\n";
+            String footer = "\r\n--" + boundary + "--\r\n";
 
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            byte[] headerBytes = header.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            byte[] footerBytes = footer.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            byte[] body = new byte[headerBytes.length + fileBytes.length + footerBytes.length];
+            System.arraycopy(headerBytes, 0, body, 0, headerBytes.length);
+            System.arraycopy(fileBytes, 0, body, headerBytes.length, fileBytes.length);
+            System.arraycopy(footerBytes, 0, body, headerBytes.length + fileBytes.length, footerBytes.length);
 
-            // Assuming standard docling-serve endpoint is /convert/file or similar, and returns markdown
-            ResponseEntity<String> response = restTemplate.postForEntity(doclingServerUrl + "/v1/convert/file?to=md", requestEntity, String.class);
-            
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                // Here we would ideally parse the JSON if using Docling JSON format.
-                // Assuming it returns Markdown directly or a JSON with a markdown field.
-                return Document.from(response.getBody());
-            } else {
-                throw new RuntimeException("Docling parser failed with status: " + response.getStatusCode());
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(doclingServerUrl + "/v1/convert/file?to=md"))
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                    .build();
+
+            // Force HTTP/1.1 to avoid Uvicorn 400 Bad Request on HTTP/2 preface
+            HttpResponse<String> response;
+            try (HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build()) {
+
+                response = client.send(request, HttpResponse.BodyHandlers.ofString());
             }
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException(
+                        "Docling parser failed with status: " + response.statusCode() + " body: " + response.body());
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            String responseStr = response.body();
+            // it's raw markdown
+            if (responseStr.trim().startsWith("{")) {
+                JsonNode node = mapper.readTree(responseStr);
+                if (node.has("document")
+                        && node.path("document").has("md_content")
+                        && !node.path("document").path("md_content").isNull()) {
+                    return Document.from(
+                            node.path("document").path("md_content").asString());
+                } else if (node.has("markdown")) {
+                    return Document.from(node.path("markdown").asString());
+                }
+            }
+            return Document.from(responseStr); // fallback to raw JSON
+
         } catch (Exception e) {
             throw new RuntimeException("Error communicating with Docling service: " + e.getMessage(), e);
         }
