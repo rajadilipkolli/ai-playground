@@ -7,6 +7,7 @@ import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentPa
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +24,13 @@ public class DocumentParserService {
 
     /** Creates a Docling parser with a PDFBox fallback. */
     @Autowired
-    public DocumentParserService(@Value("${docling.server.url}") String doclingServerUrl) {
-        this(new DoclingDocumentParser(doclingServerUrl), new ApachePdfBoxDocumentParser());
+    public DocumentParserService(
+            @Value("${docling.server.url}") String doclingServerUrl,
+            @Value("${spring.http.clients.connect-timeout}") Duration connectTimeout,
+            @Value("${spring.http.clients.read-timeout}") Duration readTimeout) {
+        this(
+                new DoclingDocumentParser(doclingServerUrl, connectTimeout, readTimeout),
+                new ApachePdfBoxDocumentParser());
     }
 
     /** Creates the parser service from explicit primary and fallback parsers. */

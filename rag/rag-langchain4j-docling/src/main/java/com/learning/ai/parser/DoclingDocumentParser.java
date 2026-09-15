@@ -6,15 +6,20 @@ import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 public class DoclingDocumentParser implements DocumentParser {
 
     private final String doclingServerUrl;
+    private final Duration connectTimeout;
+    private final Duration readTimeout;
 
-    public DoclingDocumentParser(String doclingServerUrl) {
+    public DoclingDocumentParser(String doclingServerUrl, Duration connectTimeout, Duration readTimeout) {
         this.doclingServerUrl = doclingServerUrl;
+        this.connectTimeout = connectTimeout;
+        this.readTimeout = readTimeout;
     }
 
     /**
@@ -44,13 +49,16 @@ public class DoclingDocumentParser implements DocumentParser {
                     .uri(java.net.URI.create(doclingServerUrl + "/v1/convert/file?to=md"))
                     .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                     .header("Accept", "application/json")
+                    .timeout(readTimeout)
                     .POST(HttpRequest.BodyPublishers.ofByteArray(body))
                     .build();
 
             // Force HTTP/1.1 to avoid Uvicorn 400 Bad Request on HTTP/2 preface
             HttpResponse<String> response;
-            try (HttpClient client =
-                    HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build()) {
+            try (HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(connectTimeout)
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .build()) {
 
                 response = client.send(request, HttpResponse.BodyHandlers.ofString());
             }
