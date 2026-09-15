@@ -19,6 +19,7 @@ public class TestcontainersConfiguration {
 
     private static final Logger DOCLING_LOG = LoggerFactory.getLogger("docling");
 
+    /** Creates the PostgreSQL container used by integration tests. */
     @Bean(initMethod = "start", destroyMethod = "stop")
     @ServiceConnection
     PostgreSQLContainer postgresContainer() {
@@ -40,6 +41,7 @@ public class TestcontainersConfiguration {
                 .build());
     }
 
+    /** Registers the running Docling container URL with the Spring test context. */
     @Bean
     DynamicPropertyRegistrar dynamicPropertyRegistrar(DoclingServeContainer doclingServeContainer) {
         return registry -> registry.add("docling.server-url", doclingServeContainer::getApiUrl);

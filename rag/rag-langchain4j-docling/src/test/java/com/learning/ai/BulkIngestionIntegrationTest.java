@@ -45,6 +45,7 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
         return Path.of(new ClassPathResource(fileName).getURL().toURI());
     }
 
+    /** Uploads the sample PDF and captures the asynchronous ingestion job identifier. */
     @Test
     @Order(1)
     void uploadPdfContentAndAssertJobId() throws IOException, URISyntaxException {
@@ -83,6 +84,7 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
                 });
     }
 
+    /** Verifies that the sample PDF produced entries in the vector store. */
     @Test
     @Order(3)
     void verifyVectorStoreRows() {
@@ -93,6 +95,7 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
         assertThat(rowCount).isNotNull().isGreaterThan(0);
     }
 
+    /** Verifies the structural metadata stored for the sample PDF. */
     @Test
     @Order(4)
     void verifyVectorStoreMetadata() {
@@ -134,6 +137,7 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
         assertThat(foundHeadingWithSectionPath).isTrue();
     }
 
+    /** Verifies that table content from the sample PDF can be retrieved. */
     @Test
     @Order(5)
     void retrieveTableContent() {

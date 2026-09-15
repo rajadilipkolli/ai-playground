@@ -38,6 +38,7 @@ public class LangChainConfig {
                 .build();
     }
 
+    /** Creates the client used to submit document conversion requests to Docling. */
     @Bean
     DoclingServeApi doclingServeApi(DoclingProperties doclingProperties) {
         return DoclingServeApi.builder()
@@ -48,6 +49,7 @@ public class LangChainConfig {
                 .build();
     }
 
+    /** Creates the LangChain4j parser backed by asynchronous Docling requests. */
     @Bean
     DocumentParser doclingDocumentParser(DoclingServeApi doclingServeApi) {
         Executor executor = Executors.newVirtualThreadPerTaskExecutor();

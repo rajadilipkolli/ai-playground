@@ -11,10 +11,12 @@ public class DoclingProperties {
     @NotBlank
     private String serverUrl;
 
+    /** Returns the base URL of the Docling server. */
     public String getServerUrl() {
         return serverUrl;
     }
 
+    /** Sets the base URL of the Docling server. */
     public void setServerUrl(String serverUrl) {
         this.serverUrl = serverUrl;
     }
