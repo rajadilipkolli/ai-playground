@@ -380,7 +380,11 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
     @Test
     @Order(152)
     void testActuatorMetricsRagIngest() {
-        given().when().get("/actuator/metrics/rag.ingest").then().statusCode(200).body("name", is("rag.ingest"));
+        given().when()
+                .get("/actuator/metrics/rag.ingest")
+                .then()
+                .statusCode(200)
+                .body("name", is("rag.ingest"));
     }
 
     @Test
