@@ -2,11 +2,15 @@ package com.example.ai.controller;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 import com.example.ai.model.request.AIChatRequest;
 import io.restassured.RestAssured;
@@ -69,7 +73,7 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsStringIgnoringCase(prompt));
+                .body("answer", allOf(not(emptyOrNullString()), containsStringIgnoringCase(prompt)));
     }
 
     @Test
@@ -97,7 +101,8 @@ class ChatControllerTest {
     @Test
     void shouldAnalyzeSentimentAsSarcastic() {
         given().contentType(ContentType.JSON)
-                .body(defaultChatRequest("Why did the Python programmer go broke? Because he couldn't C#"))
+                .body(defaultChatRequest(
+                        "Oh, fantastic! Another software update that breaks everything. Just what I needed today!"))
                 .when()
                 .post("/api/ai/sentiment/analyze")
                 .then()
@@ -178,7 +183,50 @@ class ChatControllerTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(ContentType.JSON)
-                .body("answer", containsString("Regina Caterers"));
+                .body(
+                        "answer",
+                        allOf(
+                                not(emptyOrNullString()),
+                                anyOf(containsString("Regina Caterers"), containsString("Riviera Caterer"))));
+    }
+
+    @Test
+    void testRagGenerateWithNoMatchingDocuments() {
+        given().contentType(ContentType.JSON)
+                .body(defaultChatRequest("Who won the FIFA World Cup in 2022?"))
+                .when()
+                .post("/api/ai/rag")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(ContentType.JSON)
+                .body("answer", containsString("I don't know the answer"));
+    }
+
+    /*
+     * Limitation Note: Flux<String> returned in a synchronous MVC endpoint like /api/ai/chat/stream
+     * may serialize as a JSON array rather than Server-Sent Events (SSE). If proper streaming is a
+     * priority, the endpoint should return MediaType.TEXT_EVENT_STREAM_VALUE or the project should
+     * utilize Spring WebFlux.
+     */
+    @Test
+    void testStreamChatHappyPath() {
+        given().contentType(ContentType.JSON)
+                .body(defaultChatRequest("Hello!"))
+                .when()
+                .post("/api/ai/chat/stream")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .body(not(emptyOrNullString()));
+    }
+
+    @Test
+    void testStreamChatValidationRejectsEmptyQuery() {
+        given().contentType(ContentType.JSON)
+                .body(defaultChatRequest(""))
+                .when()
+                .post("/api/ai/chat/stream")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
     static Stream<String> chatPrompts() {

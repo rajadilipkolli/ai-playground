@@ -2,10 +2,11 @@ package com.learning.ai.llmragwithspringai.evaluation;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -15,9 +16,17 @@ import tools.jackson.databind.json.JsonMapper;
 public class GoldenDatasetLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GoldenDatasetLoader.class);
-    private static final String GOLDEN_DATASET_PATH = "golden-dataset.json";
+    private static final String GOLDEN_DATASET_PATH = "keyword-golden-dataset.json";
 
-    private static final JsonMapper objectMapper = new JsonMapper();
+    private final JsonMapper jsonMapper;
+
+    public GoldenDatasetLoader(JsonMapper jsonMapper) {
+        this.jsonMapper = jsonMapper;
+    }
+
+    public GoldenDatasetLoader() {
+        this(new JsonMapper());
+    }
 
     /**
      * Load the golden dataset from classpath resources.
@@ -26,14 +35,14 @@ public class GoldenDatasetLoader {
      * @throws IOException if the resource cannot be read
      */
     public static List<GoldenDatasetEntry> loadGoldenDataset() throws IOException {
-        try (InputStream inputStream =
-                GoldenDatasetLoader.class.getClassLoader().getResourceAsStream(GOLDEN_DATASET_PATH)) {
-            if (inputStream == null) {
-                throw new IOException("Golden dataset file not found on classpath: " + GOLDEN_DATASET_PATH);
-            }
-            GoldenDatasetEntry[] entries = objectMapper.readValue(inputStream, GoldenDatasetEntry[].class);
-            LOGGER.info("Loaded {} golden dataset entries from {}", entries.length, GOLDEN_DATASET_PATH);
-            return Arrays.asList(entries);
+        List<GoldenDatasetEntry> entries = new GoldenDatasetLoader().loadDataset(GOLDEN_DATASET_PATH);
+        LOGGER.info("Loaded {} golden dataset entries from {}", entries.size(), GOLDEN_DATASET_PATH);
+        return entries;
+    }
+
+    public List<GoldenDatasetEntry> loadDataset(String classpathResource) throws IOException {
+        try (InputStream is = new ClassPathResource(classpathResource).getInputStream()) {
+            return jsonMapper.readValue(is, new TypeReference<List<GoldenDatasetEntry>>() {});
         }
     }
 }

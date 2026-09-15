@@ -21,9 +21,13 @@ public class OpenSearchExample {
     private static final int batchSize = 200;
 
     public static void main(String[] args) throws IOException, InterruptedException, URISyntaxException {
+        run("http://localhost:9200", args);
+    }
+
+    public static void run(String serverUrl, String[] args) throws IOException, InterruptedException, URISyntaxException {
 
         EmbeddingStore<TextSegment> embeddingStore = OpenSearchEmbeddingStore.builder()
-                .serverUrl("http://localhost:9200")
+                .serverUrl(serverUrl)
                 .indexName("langchain4j_restaurant")
                 .build();
 

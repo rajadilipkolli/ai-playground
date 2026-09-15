@@ -1,8 +1,5 @@
 package com.example.ai.config;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,11 +8,8 @@ import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.restclient.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
-import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.util.StreamUtils;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(value = "spring.ai.openai.api-key", havingValue = "demo")
@@ -28,34 +22,10 @@ public class LoggingConfig {
         return restClientBuilder -> restClientBuilder
                 .requestFactory(new BufferingClientHttpRequestFactory(
                         ClientHttpRequestFactoryBuilder.httpComponents().build()))
-                .requestInterceptor((request, body, execution) -> {
-                    logRequest(request, body);
-                    ClientHttpResponse response = execution.execute(request, body);
-                    logResponse(response);
-                    return new CustomClientHttpResponse(response);
-                })
+                .requestInterceptor(new HttpLoggingInterceptor())
                 .defaultHeaders(httpHeaders -> {
                     httpHeaders.setContentType(MediaType.APPLICATION_JSON);
                     httpHeaders.setAccept(List.of(MediaType.ALL));
                 });
-    }
-
-    private void logResponse(ClientHttpResponse response) throws IOException {
-        LOGGER.info("============================response begin==========================================");
-        LOGGER.info("Status code  : {}", response.getStatusCode());
-        LOGGER.info("Status text  : {}", response.getStatusText());
-        LOGGER.info("Headers      : {}", response.getHeaders());
-        LOGGER.info("Response body: {}", StreamUtils.copyToString(response.getBody(), Charset.defaultCharset()));
-        LOGGER.info("=======================response end=================================================");
-    }
-
-    private void logRequest(HttpRequest request, byte[] body) {
-
-        LOGGER.info("===========================request begin================================================");
-        LOGGER.info("URI         : {}", request.getURI());
-        LOGGER.info("Method      : {}", request.getMethod());
-        LOGGER.info("Headers     : {}", request.getHeaders());
-        LOGGER.info("Request body: {}", new String(body, StandardCharsets.UTF_8));
-        LOGGER.info("==========================request end================================================");
     }
 }

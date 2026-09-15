@@ -7,4 +7,7 @@ import java.util.List;
  * Each entry contains a question and expected keywords for answer and context validation.
  */
 public record GoldenDatasetEntry(
-        String question, List<String> expectedAnswerKeywords, List<String> expectedContextKeywords) {}
+        String question,
+        List<String> expectedAnswerKeywords,
+        List<String> expectedContextKeywords,
+        String groundTruthAnswer) {}

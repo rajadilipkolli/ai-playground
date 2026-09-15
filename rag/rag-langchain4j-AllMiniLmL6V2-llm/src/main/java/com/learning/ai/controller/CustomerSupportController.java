@@ -1,13 +1,14 @@
 package com.learning.ai.controller;
 
 import com.learning.ai.domain.request.AIChatRequest;
-import com.learning.ai.domain.response.AICustomerSupportResponse;
+import com.learning.ai.domain.response.AICustomerSupportResponseWrapper;
 import com.learning.ai.service.CustomerSupportService;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -22,7 +23,9 @@ class CustomerSupportController {
     }
 
     @PostMapping("/chat")
-    AICustomerSupportResponse customerSupportChat(@RequestBody @Valid AIChatRequest aiChatRequest) {
-        return customerSupportService.chat(aiChatRequest.question());
+    AICustomerSupportResponseWrapper customerSupportChat(
+            @RequestBody @Valid AIChatRequest aiChatRequest,
+            @RequestParam(defaultValue = "false") boolean includeDiagnostics) {
+        return customerSupportService.chat(aiChatRequest.question(), includeDiagnostics);
     }
 }

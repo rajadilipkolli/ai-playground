@@ -3,6 +3,8 @@ package com.example.chatbot.controller;
 import com.example.chatbot.model.request.AIChatRequest;
 import com.example.chatbot.model.response.AIChatResponse;
 import com.example.chatbot.service.ChatbotService;
+import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/ai")
+@Validated
 class ChatbotController {
 
     private final ChatbotService chatbotService;
@@ -20,7 +23,7 @@ class ChatbotController {
     }
 
     @PostMapping("/chat/{conversationId}")
-    AIChatResponse chat(@PathVariable String conversationId, @RequestBody AIChatRequest request) {
+    AIChatResponse chat(@PathVariable String conversationId, @RequestBody @Valid AIChatRequest request) {
         return chatbotService.chat(conversationId, request);
     }
 }

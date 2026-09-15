@@ -1,7 +1,5 @@
 package com.learning.ai.config;
 
-import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocument;
-
 import com.learning.ai.service.AICustomerSupportAgent;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
@@ -10,19 +8,29 @@ import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.listener.ChatModelErrorContext;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
+import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
+import dev.langchain4j.model.chat.listener.ChatModelResponseContext;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
-import dev.langchain4j.model.openai.OpenAiTokenizer;
+import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
-import java.net.URI;
-import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
+import java.io.InputStream;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -31,89 +39,192 @@ import org.springframework.core.io.ResourceLoader;
 @Configuration(proxyBeanMethods = false)
 class AIConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(AIConfig.class);
+
+    @Value("${langchain4j.rag.chunking.size:300}")
+    private int chunkSize;
+
+    @Value("${langchain4j.rag.chunking.overlap:50}")
+    private int chunkOverlap;
+
+    @Value("${langchain4j.rag.ingest.enabled:false}")
+    private boolean ingestEnabled;
+
+    @Value("${langchain4j.rag.ingest.forceRefresh:false}")
+    private boolean forceRefresh;
+
+    /**
+     * Creates the retriever that finds relevant text segments for each user question.
+     *
+     * @param embeddingStore the store containing embedded text segments
+     * @param embeddingModel the model used to embed user questions
+     * @return a retriever configured with the application's result limit and score threshold
+     */
+    @Bean
+    ContentRetriever contentRetriever(EmbeddingStore<TextSegment> embeddingStore, EmbeddingModel embeddingModel) {
+        return EmbeddingStoreContentRetriever.builder()
+                .embeddingStore(embeddingStore)
+                .embeddingModel(embeddingModel)
+                .maxResults(3)
+                .minScore(0.6)
+                .build();
+    }
+
+    /**
+     * Builds the customer-support agent and connects it to its model, memory, tools, and retriever.
+     *
+     * @param chatModel the model that generates answers
+     * @param chatAssistantTools tools available to the agent
+     * @param contentRetriever the retriever that supplies relevant document content
+     * @param chatMemory the conversation memory used by the agent
+     * @return the configured customer-support agent
+     */
     @Bean
     AICustomerSupportAgent aiCustomerSupportAgent(
-            ChatLanguageModel chatLanguageModel,
+            ChatModel chatModel,
             ChatTools chatAssistantTools,
             ContentRetriever contentRetriever,
             ChatMemory chatMemory) {
         return AiServices.builder(AICustomerSupportAgent.class)
-                .chatLanguageModel(chatLanguageModel)
+                .chatModel(chatModel)
                 .chatMemory(chatMemory)
                 .tools(chatAssistantTools)
                 .contentRetriever(contentRetriever)
                 .build();
     }
 
+    /**
+     * Creates conversation memory with a bounded message window.
+     *
+     * @return memory retaining the latest 15 chat messages
+     */
     @Bean
     ChatMemory chatMemory() {
         return MessageWindowChatMemory.withMaxMessages(15);
     }
 
-    //    @Bean
-    //    ChatMemory chatMemory(Tokenizer tokenizer) {
-    //        return TokenWindowChatMemory.withMaxTokens(1000, tokenizer);
-    //    }
-
+    /**
+     * Creates the local model used to embed documents and user questions.
+     *
+     * @return an All-MiniLM-L6-v2 embedding model
+     */
     @Bean
     EmbeddingModel embeddingModel() {
         return new AllMiniLmL6V2EmbeddingModel();
     }
 
+    /**
+     * Creates the token estimator used to split documents within the model's token limits.
+     *
+     * @return an estimator configured for GPT-4o mini tokenization
+     */
     @Bean
-    OpenAiTokenizer openAiTokenizer() {
-        return new OpenAiTokenizer(OpenAiChatModelName.GPT_3_5_TURBO.toString());
+    OpenAiTokenCountEstimator openAiTokenCountEstimator() {
+        return new OpenAiTokenCountEstimator(OpenAiChatModelName.GPT_4_O_MINI.toString());
     }
 
+    /**
+     * Creates a listener that logs model activity and records request, response, and error metrics.
+     *
+     * @param meterRegistry the registry receiving model activity counters
+     * @return the model listener
+     */
+    @Bean
+    ChatModelListener chatModelListener(MeterRegistry meterRegistry) {
+        return new ChatModelListener() {
+            /** Records an outgoing model request and increments its metric. */
+            @Override
+            public void onRequest(ChatModelRequestContext requestContext) {
+                log.info(
+                        "Sending request to LLM: {}",
+                        requestContext.chatRequest().messages());
+                meterRegistry.counter("llm.requests").increment();
+            }
+
+            /** Records a successful model response and increments its metric. */
+            @Override
+            public void onResponse(ChatModelResponseContext responseContext) {
+                log.info("Received response from LLM");
+                meterRegistry.counter("llm.responses").increment();
+            }
+
+            /** Records a model error and increments its metric. */
+            @Override
+            public void onError(ChatModelErrorContext errorContext) {
+                log.error("Error during LLM call", errorContext.error());
+                meterRegistry.counter("llm.errors").increment();
+            }
+        };
+    }
+
+    /**
+     * Creates the PostgreSQL vector store and optionally ingests the bundled document.
+     *
+     * @param embeddingModel the model used to embed documents and test store contents
+     * @param resourceLoader the loader used to open the bundled PDF
+     * @param dataSource the PostgreSQL data source backing the vector store
+     * @param openAiTokenCountEstimator the estimator used when splitting the document
+     * @return the initialized embedding store
+     * @throws IOException if the bundled document cannot be read
+     */
     @Bean
     EmbeddingStore<TextSegment> embeddingStore(
             EmbeddingModel embeddingModel,
             ResourceLoader resourceLoader,
-            JdbcConnectionDetails jdbcConnectionDetails,
-            OpenAiTokenizer openAiTokenizer)
+            DataSource dataSource,
+            OpenAiTokenCountEstimator openAiTokenCountEstimator)
             throws IOException {
 
         // Normally, you would already have your embedding store filled with your data.
         // However, for the purpose of this demonstration, we will:
 
-        String jdbcUrl = jdbcConnectionDetails.getJdbcUrl();
-        URI uri = URI.create(jdbcUrl.substring(5));
-        String host = uri.getHost();
-        int dbPort = uri.getPort();
-        String path = uri.getPath();
         // 1. Create an postgres embedding store
         // dimension of the embedding is 384 (all-minilm) and 1536 (openai)
-        EmbeddingStore<TextSegment> embeddingStore = PgVectorEmbeddingStore.builder()
-                .host(host)
-                .port(dbPort != -1 ? dbPort : 5432)
-                .user(jdbcConnectionDetails.getUsername())
-                .password(jdbcConnectionDetails.getPassword())
-                .database(path.substring(1))
+        EmbeddingStore<TextSegment> embeddingStore = PgVectorEmbeddingStore.datasourceBuilder()
+                .datasource(dataSource)
                 .table("ai_vector_store")
-                .dropTableFirst(true)
+                .dropTableFirst(forceRefresh)
                 .dimension(384)
                 .build();
 
-        // 2. Load an example document (medicaid-wa-faqs.pdf)
-        Resource pdfResource = resourceLoader.getResource("classpath:Rohit.pdf");
-        Document document = loadDocument(pdfResource.getFile().toPath(), new ApachePdfBoxDocumentParser());
+        if (ingestEnabled) {
+            boolean isEmpty = false;
+            if (!forceRefresh) {
+                var testEmbedding = embeddingModel.embed("test").content();
+                var searchRequest = EmbeddingSearchRequest.builder()
+                        .queryEmbedding(testEmbedding)
+                        .maxResults(1)
+                        .build();
+                isEmpty = embeddingStore.search(searchRequest).matches().isEmpty();
+            }
 
-        //        URL url = new URL("https://en.wikipedia.org/wiki/MS_Dhoni");
-        //        Document htmlDocument = UrlDocumentLoader.load(url, new TextDocumentParser());
-        //        HtmlTextExtractor transformer = new HtmlTextExtractor(null, null, true);
-        //        Document dhoniDocument = transformer.transform(htmlDocument);
+            if (forceRefresh || isEmpty) {
+                log.info(
+                        "Ingesting document into vector store (forceRefresh={}, isEmpty={})...", forceRefresh, isEmpty);
+                Resource pdfResource = resourceLoader.getResource("classpath:Rohit.pdf");
+                Document document;
+                try (InputStream inputStream = pdfResource.getInputStream()) {
+                    document = new ApachePdfBoxDocumentParser().parse(inputStream);
+                }
 
-        // 3. Split the document into segments 500 tokens each
-        // 4. Convert segments into embeddings
-        // 5. Store embeddings into embedding store
-        // All this can be done manually, but we will use EmbeddingStoreIngestor to automate this:
-        DocumentSplitter documentSplitter = DocumentSplitters.recursive(500, 0, openAiTokenizer);
-        EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
-                .documentSplitter(documentSplitter)
-                .embeddingModel(embeddingModel)
-                .embeddingStore(embeddingStore)
-                .build();
-        ingestor.ingest(document /*, dhoniDocument*/);
+                // Note: The langchain4j-embeddings-all-minilm-l6-v2 model has a recommended max token window of 256.
+                // Since we are using an OpenAiTokenizer (which differs slightly from the model's native tokenizer),
+                // we apply a conservative max size to avoid truncation errors, while maintaining a healthy overlap.
+                DocumentSplitter documentSplitter =
+                        DocumentSplitters.recursive(chunkSize, chunkOverlap, openAiTokenCountEstimator);
+                EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
+                        .documentSplitter(documentSplitter)
+                        .embeddingModel(embeddingModel)
+                        .embeddingStore(embeddingStore)
+                        .build();
+                ingestor.ingest(document);
+                log.info("Document ingestion complete.");
+            } else {
+                log.info("Document ingestion skipped. Store is not empty and forceRefresh is false.");
+            }
+        } else {
+            log.info("Document ingestion skipped (langchain4j.rag.ingest.enabled=false).");
+        }
 
         return embeddingStore;
     }

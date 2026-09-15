@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.6</version>
+        <version>4.1.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.learning.ai</groupId>
@@ -16,8 +16,8 @@
 
     <properties>
         <java.version>25</java.version>
-        <spring-ai.version>2.0.0-M6</spring-ai.version>
-        <spotless.version>3.5.1</spotless.version>
+        <spring-ai.version>2.0.1</spring-ai.version>
+        <spotless.version>3.10.2</spotless.version>
     </properties>
 
     <dependencies>
@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-advisors-vector-store</artifactId>
+            <artifactId>spring-ai-vector-store-advisor</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -60,7 +60,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.3</version>
+            <version>3.1.1</version>
         </dependency>
 
         <dependency>
@@ -70,7 +70,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -100,7 +100,7 @@
             <dependency>
                 <groupId>io.rest-assured</groupId>
                 <artifactId>rest-assured</artifactId>
-                <version>6.0.0</version>
+                <version>6.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.ai</groupId>

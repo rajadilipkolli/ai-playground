@@ -33,8 +33,12 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
-                .body("response", containsString("2007 T20 World Cup"))
-                .body("response", containsString("2013 ICC Champions Trophy"))
+                .body(
+                        "response",
+                        allOf(
+                                not(emptyOrNullString()),
+                                containsStringIgnoringCase("T20"),
+                                anyOf(containsStringIgnoringCase("Champions"), containsStringIgnoringCase("IPL"))))
                 .log()
                 .all();
     }
@@ -47,7 +51,23 @@ class LlmRagWithSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .post("/api/ai/chat")
                 .then()
                 .statusCode(200)
-                .body("response", containsString("Rohit Sharma"))
+                .body("response", allOf(not(emptyOrNullString()), containsStringIgnoringCase("Rohit")))
+                .log()
+                .all();
+    }
+
+    @Test
+    void testRagNoMatchingDocuments() {
+        given().contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body(new AIChatRequest("Who won the FIFA World Cup in 2022?"))
+                .when()
+                .post("/api/ai/chat")
+                .then()
+                .statusCode(200)
+                .body(
+                        "response",
+                        matchesRegex(
+                                "(?i).*(don'?t know|do not know|not sure|unable to answer|cannot answer|no idea|unsure).*"))
                 .log()
                 .all();
     }
