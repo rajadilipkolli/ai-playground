@@ -5,9 +5,9 @@
     "expectedContextKeywords": ["Rohit", "Sharma", "cricket"]
   },
   {
-    "question": "When did Rohit Sharma make his cricket debut?",
-    "expectedAnswerKeywords": ["debut", "2007", "cricket"],
-    "expectedContextKeywords": ["debut", "2007", "first"]
+    "question": "When was Rohit Sharma born?",
+    "expectedAnswerKeywords": ["April", "30", "1987"],
+    "expectedContextKeywords": ["born", "April", "1987"]
   },
   {
     "question": "What are Rohit Sharma's major cricket achievements?",
