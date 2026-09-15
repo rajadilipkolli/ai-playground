@@ -154,10 +154,9 @@ public class BatchIngestionService {
         if (existingHashes.contains(contentHash)) {
             log.info("File {} with hash {} already exists. Skipping.", filename, contentHash);
             return;
-        } else if (!existingHashes.isEmpty()) {
-            log.info("File {} exists with different hash. Deleting old chunks.", filename);
-            jdbcTemplate.update("DELETE FROM vector_store WHERE metadata->>'source_path' = ?", documentKey);
         }
+
+        boolean hasStaleChunks = !existingHashes.isEmpty();
 
         try (InputStream is = resource.getInputStream()) {
             Document document = documentParserService.parse(is);
@@ -167,6 +166,15 @@ public class BatchIngestionService {
             // Embed and store
             var embeddings = embeddingModel.embedAll(segments).content();
             embeddingStore.addAll(embeddings, segments);
+
+            if (hasStaleChunks) {
+                log.info("File {} updated with new hash. Deleting old chunks.", filename);
+                jdbcTemplate.update(
+                        "DELETE FROM vector_store WHERE metadata->>'source_path' = ? AND (metadata->>'content_hash' != ? OR metadata->>'content_hash' IS NULL)",
+                        documentKey,
+                        contentHash);
+            }
+
             log.info("Successfully ingested file {} into {} chunks", filename, segments.size());
             long duration = System.currentTimeMillis() - startTime;
             ingestionBenchmark.recordDocumentProcessed(batchId, duration);
