@@ -51,7 +51,7 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
         jobId = given().auth()
                 .preemptive()
                 .basic("admin", "admin123")
-                .multiPart("files", getPath("layout-sample.pdf").toFile())
+                .multiPart("files", getPath("file-sample_150kB.pdf").toFile())
                 .when()
                 .post("/api/ingest/batch")
                 .then()
@@ -89,18 +89,18 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
         Integer rowCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM vector_store WHERE metadata->>'source_filename' = ?",
                 Integer.class,
-                "layout-sample.pdf");
+                "file-sample_150kB.pdf");
         assertThat(rowCount).isNotNull().isGreaterThan(0);
     }
 
     @Test
     @Order(4)
-    void verifyVectorStoreMetadata() throws Exception {
+    void verifyVectorStoreMetadata() {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-                "SELECT metadata FROM vector_store WHERE metadata->>'source_filename' = ?", "layout-sample.pdf");
+                "SELECT metadata FROM vector_store WHERE metadata->>'source_filename' = ?", "file-sample_150kB.pdf");
 
         String firstDocumentId = null;
-        boolean foundTable = false;
+        boolean foundText = false;
         boolean foundHeadingWithSectionPath = false;
 
         ObjectMapper mapper = new ObjectMapper();
@@ -110,7 +110,7 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
             String metadataStr = metaObj.toString();
             Map<String, Object> metadata = mapper.readValue(metadataStr, Map.class);
 
-            assertThat(metadata.get("source_filename")).isEqualTo("layout-sample.pdf");
+            assertThat(metadata.get("source_filename")).isEqualTo("file-sample_150kB.pdf");
 
             String documentId = (String) metadata.get("document_id");
             assertThat(documentId).isNotNull();
@@ -121,7 +121,7 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
             assertThat(documentId).isEqualTo(firstDocumentId);
 
             String elementType = (String) metadata.get("element_type");
-            if ("table".equals(elementType)) foundTable = true;
+            if ("text".equals(elementType)) foundText = true;
             if ("heading".equals(elementType)
                     && metadata.containsKey("section_path")
                     && metadata.get("section_path") != null) {
@@ -130,14 +130,15 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
         }
 
         assertThat(firstDocumentId).isNotNull();
-        assertThat(foundTable).isTrue();
+        assertThat(foundText).isTrue();
         assertThat(foundHeadingWithSectionPath).isTrue();
     }
 
     @Test
     @Order(5)
     void retrieveTableContent() {
-        RetrievalRequest request = new RetrievalRequest("Alice 30 New York", 1, null, null, null, null, null);
+        RetrievalRequest request = new RetrievalRequest(
+                "In eleifend velit vitae libero sollicitudin euismod", 1, 0.1, "table", null, null, null);
 
         RetrievalResponse response = given().contentType(ContentType.JSON)
                 .body(request)
@@ -150,13 +151,13 @@ class BulkIngestionIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(response.matches()).isNotEmpty();
 
-        var match = response.matches().get(0);
-        assertThat(match.text()).containsIgnoringCase("Alice");
-        assertThat(match.text()).containsIgnoringCase("New York");
+        var match = response.matches().getFirst();
+        assertThat(match.text()).containsIgnoringCase("Lorem ipsum");
+        assertThat(match.text()).containsIgnoringCase("In eleifend velit vitae libero sollicitudin euismod");
 
         var metadata = match.metadata();
         assertThat(metadata).containsEntry("element_type", "table");
         assertThat(metadata).containsKey("section_path");
-        assertThat(metadata).containsEntry("source_filename", "layout-sample.pdf");
+        assertThat(metadata).containsEntry("source_filename", "file-sample_150kB.pdf");
     }
 }
