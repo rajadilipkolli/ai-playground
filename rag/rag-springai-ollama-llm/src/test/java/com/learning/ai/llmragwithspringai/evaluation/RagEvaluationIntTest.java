@@ -11,6 +11,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
@@ -77,6 +78,8 @@ class RagEvaluationIntTest extends AbstractIntegrationTest {
         int totalEntries = goldenDataset.size();
         int passedEntries = 0;
 
+        assertThat(totalEntries).as("Golden dataset should not be empty").isGreaterThan(0);
+
         LOGGER.info("Starting evaluation of RAG pipeline against {} golden dataset entries", totalEntries);
 
         for (int i = 0; i < goldenDataset.size(); i++) {
@@ -85,11 +88,15 @@ class RagEvaluationIntTest extends AbstractIntegrationTest {
 
             try {
                 // Execute RAG pipeline
-                String response =
-                        ragChatClient.prompt().user(entry.question()).call().content();
+                ChatResponse chatResponse =
+                        ragChatClient.prompt().user(entry.question()).call().chatResponse();
+                String response = chatResponse.getResult().getOutput().getText();
 
-                // For simplicity, retrieve all documents to simulate context
-                List<Document> retrievedDocuments = vectorStore.similaritySearch(entry.question());
+                List<Document> retrievedDocuments =
+                        chatResponse.getMetadata().get(RetrievalAugmentationAdvisor.DOCUMENT_CONTEXT);
+                if (retrievedDocuments == null) {
+                    retrievedDocuments = List.of();
+                }
                 String context = retrievedDocuments.stream()
                         .map(Document::getText)
                         .reduce((a, b) -> a + "\n" + b)
@@ -132,7 +139,7 @@ class RagEvaluationIntTest extends AbstractIntegrationTest {
 
         LOGGER.info("=== RAG Evaluation Summary ===");
         LOGGER.info("Total Entries Evaluated: {}", totalEntries);
-        LOGGER.info("Entries Passed: {} ({:.1f}%)", passedEntries, passRate);
+        LOGGER.info("Entries Passed: {} ({}%)", passedEntries, passRate);
         LOGGER.info("=============================");
 
         // Assert that all entries passed
