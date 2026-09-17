@@ -18,7 +18,9 @@ import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugment
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.io.Resource;
 
 /**
  * Integration test for evaluating RAG pipeline using the golden dataset.
@@ -39,11 +41,17 @@ class RagEvaluationIntTest extends AbstractIntegrationTest {
     @Autowired
     private ChatClient.Builder chatClientBuilder;
 
+    @Value("classpath:Rohit_Gurunath_Sharma.pdf")
+    private Resource pdfResource;
+
     private ChatClient ragChatClient;
     private List<GoldenDatasetEntry> goldenDataset;
 
     @BeforeAll
     void setUp() throws IOException {
+        jdbcTemplate.execute("DELETE FROM vector_store");
+        dataIndexerService.loadData(pdfResource, "profile", "cricket_board", "sports");
+
         // Initialize the RAG-enabled ChatClient with a vector store document retriever
         var documentRetriever = VectorStoreDocumentRetriever.builder()
                 .vectorStore(vectorStore)
