@@ -3,19 +3,22 @@ package com.learning.ai.config;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PgVectorHealthIndicator implements HealthIndicator {
 
     private final EmbeddingModel embeddingModel;
+    private final JdbcTemplate jdbcTemplate;
 
     private volatile Health cachedHealth;
     private volatile long cachedAt = 0;
     private static final long TTL_MS = 5000;
 
-    public PgVectorHealthIndicator(EmbeddingModel embeddingModel) {
+    public PgVectorHealthIndicator(EmbeddingModel embeddingModel, JdbcTemplate jdbcTemplate) {
         this.embeddingModel = embeddingModel;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -34,9 +37,13 @@ public class PgVectorHealthIndicator implements HealthIndicator {
                         .build();
             }
 
+            // Check PgVector connectivity
+            jdbcTemplate.execute("SELECT 1");
+
             Health newHealth = Health.up()
                     .withDetail("embeddingModel", embeddingModel.getClass().getSimpleName())
                     .withDetail("embeddingDimension", embedding.dimension())
+                    .withDetail("database", "PgVector connectivity OK")
                     .build();
 
             cachedHealth = newHealth;

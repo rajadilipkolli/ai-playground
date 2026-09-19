@@ -31,6 +31,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -41,17 +43,23 @@ class AIConfig {
 
     private static final Logger log = LoggerFactory.getLogger(AIConfig.class);
 
-    @Value("${langchain4j.rag.chunking.size:300}")
+    @Value("${rag.chunking.size:300}")
     private int chunkSize;
 
-    @Value("${langchain4j.rag.chunking.overlap:50}")
+    @Value("${rag.chunking.overlap:50}")
     private int chunkOverlap;
 
-    @Value("${langchain4j.rag.ingest.enabled:false}")
+    @Value("${rag.ingest.enabled:false}")
     private boolean ingestEnabled;
 
-    @Value("${langchain4j.rag.ingest.forceRefresh:false}")
+    @Value("${rag.ingest.forceRefresh:false}")
     private boolean forceRefresh;
+
+    @Value("${rag.retrieval.maxResults:3}")
+    private int maxResults;
+
+    @Value("${rag.retrieval.minScore:0.6}")
+    private double minScore;
 
     /**
      * Creates the retriever that finds relevant text segments for each user question.
@@ -65,8 +73,8 @@ class AIConfig {
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
-                .maxResults(3)
-                .minScore(0.6)
+                .maxResults(maxResults)
+                .minScore(minScore)
                 .build();
     }
 
@@ -160,34 +168,28 @@ class AIConfig {
     /**
      * Creates the PostgreSQL vector store and optionally ingests the bundled document.
      *
-     * @param embeddingModel the model used to embed documents and test store contents
-     * @param resourceLoader the loader used to open the bundled PDF
      * @param dataSource the PostgreSQL data source backing the vector store
-     * @param openAiTokenCountEstimator the estimator used when splitting the document
      * @return the initialized embedding store
      * @throws IOException if the bundled document cannot be read
      */
     @Bean
-    EmbeddingStore<TextSegment> embeddingStore(
-            EmbeddingModel embeddingModel,
-            ResourceLoader resourceLoader,
-            DataSource dataSource,
-            OpenAiTokenCountEstimator openAiTokenCountEstimator)
-            throws IOException {
-
-        // Normally, you would already have your embedding store filled with your data.
-        // However, for the purpose of this demonstration, we will:
-
-        // 1. Create an postgres embedding store
-        // dimension of the embedding is 384 (all-minilm) and 1536 (openai)
-        EmbeddingStore<TextSegment> embeddingStore = PgVectorEmbeddingStore.datasourceBuilder()
+    EmbeddingStore<TextSegment> embeddingStore(DataSource dataSource) {
+        return PgVectorEmbeddingStore.datasourceBuilder()
                 .datasource(dataSource)
                 .table("ai_vector_store")
-                .dropTableFirst(forceRefresh)
+                .dropTableFirst(false)
                 .dimension(384)
                 .build();
+    }
 
-        if (ingestEnabled) {
+    @Bean
+    @ConditionalOnProperty(name = "rag.ingest.enabled", havingValue = "true")
+    ApplicationRunner ingestorRunner(
+            EmbeddingModel embeddingModel,
+            EmbeddingStore<TextSegment> embeddingStore,
+            ResourceLoader resourceLoader,
+            OpenAiTokenCountEstimator openAiTokenCountEstimator) {
+        return _ -> {
             boolean isEmpty = false;
             if (!forceRefresh) {
                 var testEmbedding = embeddingModel.embed("test").content();
@@ -222,10 +224,6 @@ class AIConfig {
             } else {
                 log.info("Document ingestion skipped. Store is not empty and forceRefresh is false.");
             }
-        } else {
-            log.info("Document ingestion skipped (langchain4j.rag.ingest.enabled=false).");
-        }
-
-        return embeddingStore;
+        };
     }
 }

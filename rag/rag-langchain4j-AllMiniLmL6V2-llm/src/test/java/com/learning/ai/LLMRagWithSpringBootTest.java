@@ -76,6 +76,7 @@ class LLMRagWithSpringBootTest {
                 .statusCode(HttpStatus.SC_OK)
                 .body("response.name", is("Rohit Gurunath Sharma"))
                 .body("diagnostics", notNullValue())
+                .body("diagnostics.size()", org.hamcrest.Matchers.greaterThan(0))
                 .log()
                 .all();
     }
