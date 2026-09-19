@@ -16,12 +16,12 @@ flowchart TD
 
 ### Document Chunking Strategy
 We use `DocumentSplitters.recursive` which is configured in `application.properties`:
-- `langchain4j.rag.chunking.size=300`: Defines the maximum number of characters/tokens per chunk.
-- `langchain4j.rag.chunking.overlap=50`: Overlaps chunks to prevent cutting off context at chunk boundaries.
+- `rag.chunking.size=300`: Defines the maximum number of characters/tokens per chunk.
+- `rag.chunking.overlap=50`: Overlaps chunks to prevent cutting off context at chunk boundaries.
 
 ### Retrieval Configuration
-- `langchain4j.rag.retrieval.maxResults=3`: Retrieves the top 3 segments from the vector store.
-- `langchain4j.rag.retrieval.minScore=0.6`: Filters out low-quality matches below the 0.6 similarity score threshold.
+- `rag.retrieval.maxResults=3`: Retrieves the top 3 segments from the vector store.
+- `rag.retrieval.minScore=0.6`: Filters out low-quality matches below the 0.6 similarity score threshold.
 
 ### Observability Setup
 The pipeline includes multiple layers of observability:
