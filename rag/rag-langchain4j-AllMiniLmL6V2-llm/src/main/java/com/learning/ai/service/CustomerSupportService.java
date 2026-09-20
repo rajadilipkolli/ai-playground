@@ -10,6 +10,7 @@ import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,19 +30,19 @@ public class CustomerSupportService {
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final AICustomerSupportAgent aiCustomerSupportAgent;
 
-    @Value("${langchain4j.rag.retrieval.maxResults:3}")
+    @Value("${rag.retrieval.maxResults:3}")
     private int maxResults;
 
-    @Value("${langchain4j.rag.retrieval.minScore:0.6}")
+    @Value("${rag.retrieval.minScore:0.6}")
     private double minScore;
 
-    private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry;
 
     public CustomerSupportService(
             EmbeddingModel embeddingModel,
             EmbeddingStore<TextSegment> embeddingStore,
             AICustomerSupportAgent aiCustomerSupportAgent,
-            io.micrometer.core.instrument.MeterRegistry meterRegistry) {
+            MeterRegistry meterRegistry) {
         this.embeddingModel = embeddingModel;
         this.embeddingStore = embeddingStore;
         this.aiCustomerSupportAgent = aiCustomerSupportAgent;

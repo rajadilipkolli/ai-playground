@@ -22,7 +22,8 @@ Welcome to the **RAG (Retrieval-Augmented Generation)** application! This projec
 When you ask a generic AI a specific question about your private data, it often doesn't know the answer. This project solves that by **RAG**.
 1. **Ingestion**: You upload your private documents. The system chops them into bite-sized pieces and saves them in a database.
 2. **Retrieval**: When you ask a question, the system searches the database for the most relevant pieces of information.
-3. **Generation**: It hands those pieces to the AI (Ollama) and says, "Answer the user's question using *only* this information."
+
+**Note**: Hybrid search, chat memory, and OTLP observability are the current default behavior of this module out of the box!
 
 ---
 
