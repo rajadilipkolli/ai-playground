@@ -177,7 +177,7 @@ class AIConfig {
         return PgVectorEmbeddingStore.datasourceBuilder()
                 .datasource(dataSource)
                 .table("ai_vector_store")
-                .dropTableFirst(false)
+                .dropTableFirst(ingestEnabled && forceRefresh)
                 .dimension(384)
                 .build();
     }
