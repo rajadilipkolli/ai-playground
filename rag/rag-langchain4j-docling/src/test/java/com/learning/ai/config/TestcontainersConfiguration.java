@@ -34,7 +34,7 @@ public class TestcontainersConfiguration {
     @Bean
     DoclingServeContainer doclingServeContainer() {
         return new DoclingServeContainer(DoclingServeContainerConfig.builder()
-                .image("ghcr.io/docling-project/docling-serve:v1.33.0")
+                .image("ghcr.io/docling-project/docling-serve:v1.35.0")
                 .enableUi(true)
                 .build());
     }
