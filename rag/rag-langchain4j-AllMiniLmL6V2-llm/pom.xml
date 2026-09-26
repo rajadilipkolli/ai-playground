@@ -18,7 +18,7 @@
     <properties>
         <java.version>25</java.version>
         <langchain4j.version>1.20.0-beta30</langchain4j.version>
-        <spotless.version>3.10.2</spotless.version>
+        <spotless.version>3.10.3</spotless.version>
     </properties>
     <dependencyManagement>
         <dependencies>
