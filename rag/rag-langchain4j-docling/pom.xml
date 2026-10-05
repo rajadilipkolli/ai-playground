@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <langchain4j.version>1.20.0-beta30</langchain4j.version>
+        <langchain4j.version>1.21.0-beta31</langchain4j.version>
 
         <project.testresult.directory>${project.build.directory}/test-results</project.testresult.directory>
         <spotless.version>3.10.3</spotless.version>
