@@ -17,9 +17,10 @@
 
     <properties>
         <java.version>25</java.version>
-        <langchain4j.version>1.20.0-beta30</langchain4j.version>
+        <langchain4j.version>1.21.0-beta31</langchain4j.version>
         <spotless.version>3.10.3</spotless.version>
     </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -54,7 +55,7 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>1.20.2</version>
+            <version>1.21.0</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
