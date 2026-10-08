@@ -73,7 +73,7 @@
         <dependency>
             <groupId>ai.docling</groupId>
             <artifactId>docling-serve-client</artifactId>
-            <version>0.6.6</version>
+            <version>0.7.0</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
