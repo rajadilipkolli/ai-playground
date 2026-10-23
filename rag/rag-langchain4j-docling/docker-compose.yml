@@ -1,6 +1,6 @@
 services:
   docling-serve:
-    image: ghcr.io/docling-project/docling-serve:v1.37.0
+    image: ghcr.io/docling-project/docling-serve:v1.38.0
     container_name: docling-serve
     ports:
       - "15001:5001"
