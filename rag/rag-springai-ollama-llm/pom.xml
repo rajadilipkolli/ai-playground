@@ -286,7 +286,7 @@
                         <exclude>net/sf/jsqlparser/**</exclude>
                     </excludes>
                 </configuration>
-                <version>0.8.15</version>
+                <version>0.8.16</version>
                 <executions>
                     <execution>
                         <goals>
