@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: postgres:18
+    image: postgres:19
     environment:
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: agent
