@@ -11,9 +11,6 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,7 +49,6 @@ public class LangChainConfig {
     /** Creates the LangChain4j parser backed by asynchronous Docling requests. */
     @Bean
     DocumentParser doclingDocumentParser(DoclingServeApi doclingServeApi) {
-        Executor executor = Executors.newVirtualThreadPerTaskExecutor();
         return DoclingDocumentParser.builder()
                 .doclingClient(doclingServeApi)
                 .documentRequest(ConvertDocumentRequest.builder()
@@ -60,8 +56,6 @@ public class LangChainConfig {
                                 .toFormat(OutputFormat.MARKDOWN)
                                 .build())
                         .build())
-                .requestExecutor((client, request) -> CompletableFuture.supplyAsync(
-                        () -> client.convertSource((ConvertDocumentRequest) request), executor))
                 .build();
     }
 }
