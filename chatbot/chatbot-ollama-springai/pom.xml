@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.1.1</version>
+		<version>4.1.2</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example.chatbot</groupId>
@@ -17,8 +17,8 @@
 
 	<properties>
 		<java.version>25</java.version>
-		<spotless.version>3.10.3</spotless.version>
-		<spring-ai.version>2.0.1</spring-ai.version>
+		<spotless.version>3.10.4</spotless.version>
+		<spring-ai.version>2.0.2</spring-ai.version>
 		<otelInstrumentation.version>2.10.0-alpha</otelInstrumentation.version>
 	</properties>
 
@@ -127,7 +127,7 @@
 		<dependency>
 			<groupId>com.redis</groupId>
 			<artifactId>testcontainers-redis</artifactId>
-			<version>3.0.0</version>
+			<version>3.0.1</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -137,7 +137,7 @@
 			<dependency>
 				<groupId>io.rest-assured</groupId>
 				<artifactId>rest-assured</artifactId>
-				<version>6.0.1</version>
+				<version>6.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.ai</groupId>
@@ -189,7 +189,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.15</version>
+				<version>0.8.16</version>
 				<executions>
 					<execution>
 						<goals>
