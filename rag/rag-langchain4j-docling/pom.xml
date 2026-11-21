@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <langchain4j.version>1.21.0-beta31</langchain4j.version>
+        <langchain4j.version>1.24.0-beta34</langchain4j.version>
 
         <project.testresult.directory>${project.build.directory}/test-results</project.testresult.directory>
         <spotless.version>3.12.0</spotless.version>
@@ -72,8 +72,13 @@
         </dependency>
         <dependency>
             <groupId>ai.docling</groupId>
+            <artifactId>docling-serve-api</artifactId>
+            <version>0.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.docling</groupId>
             <artifactId>docling-serve-client</artifactId>
-            <version>0.6.6</version>
+            <version>0.7.0</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
