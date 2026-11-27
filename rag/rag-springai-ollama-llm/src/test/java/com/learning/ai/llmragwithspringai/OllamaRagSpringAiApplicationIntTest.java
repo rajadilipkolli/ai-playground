@@ -379,6 +379,22 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
 
     @Test
     @Order(152)
+    void testActuatorMetricsRagIngest() {
+        given().when()
+                .get("/actuator/metrics/rag.ingest")
+                .then()
+                .statusCode(200)
+                .body("name", is("rag.ingest"));
+    }
+
+    @Test
+    @Order(153)
+    void testActuatorMetricsRagCount() {
+        given().when().get("/actuator/metrics/rag.count").then().statusCode(200).body("name", is("rag.count"));
+    }
+
+    @Test
+    @Order(154)
     void testActuatorPrometheusMetrics() {
         given().when()
                 .get("/actuator/prometheus")
@@ -387,6 +403,10 @@ class OllamaRagSpringAiApplicationIntTest extends AbstractIntegrationTest {
                 .body(containsString("rag_llm_calls_total"))
                 .body(containsString("rag_documents_retrieved_total"))
                 .body(containsString("rag_chat_seconds"))
+                .body(containsString("rag_ingest_seconds"))
+                .body(containsString("rag_count_seconds"))
+                .body(containsString("rag_ingestion_latency_seconds"))
+                .body(containsString("rag_documents_ingested_total"))
                 .body(containsString("rag_cache_hits_total"))
                 .body(containsString("rag_cache_misses_total"));
     }
